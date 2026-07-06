@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAILY GAMES — 本日のゲーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="logo" href="index.html">DAILY<span>GAMES</span></a>
+    <nav><a href="archive.html">過去のゲームで遊ぶ</a></nav>
+  </header>
+
+  <main class="marquee">
+    <div class="marquee-inner" id="today">
+      <p class="empty">読み込み中…</p>
+    </div>
+  </main>
+
+  <footer class="site">毎朝6時、Claude Code が新しいゲームを1本つくります。</footer>
+</div>
+
+<script>
+fetch('games.json?' + Date.now())
+  .then(r => r.json())
+  .then(data => {
+    const g = data.games && data.games[0];
+    const box = document.getElementById('today');
+    if (!g) {
+      box.innerHTML = '<p class="empty">まだゲームがありません。明日の朝6時をお楽しみに。</p>';
+      return;
+    }
+    box.innerHTML = `
+      <p class="eyebrow">TODAY'S GAME</p>
+      <h1 class="today-title"></h1>
+      <span class="today-genre"></span>
+      <p class="today-desc"></p>
+      <a class="play-btn" href="">あそぶ</a>
+      <p class="date-label"></p>`;
+    box.querySelector('.today-title').textContent = g.title;
+    box.querySelector('.today-genre').textContent = g.genre;
+    box.querySelector('.today-desc').textContent = g.description;
+    box.querySelector('.play-btn').href = g.path;
+    box.querySelector('.date-label').textContent = g.date + ' 配信';
+  })
+  .catch(() => {
+    document.getElementById('today').innerHTML =
+      '<p class="empty">games.json を読み込めませんでした。</p>';
+  });
+</script>
+</body>
+</html>

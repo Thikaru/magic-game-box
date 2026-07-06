@@ -1,0 +1,88 @@
+/* ===== Daily Games — 駄菓子屋ゲーセン風トークン ===== */
+:root {
+  --carpet: #1a2470;      /* ゲーセン絨毯の紺 */
+  --carpet-deep: #121a55;
+  --marquee: #ffd23f;     /* 筐体マーキーの黄 */
+  --coin: #ff5da2;        /* コインピンク */
+  --crt: #4dd8e6;         /* CRTシアン */
+  --paper: #fffdf5;
+  --ink: #1c1c28;
+  --display: 'DotGothic16', monospace;
+  --body: 'M PLUS Rounded 1c', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--body);
+  color: var(--paper);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(77,216,230,.12) 0 2px, transparent 3px) 0 0/90px 90px,
+    radial-gradient(circle at 70% 60%, rgba(255,93,162,.14) 0 2px, transparent 3px) 30px 40px/110px 110px,
+    linear-gradient(180deg, var(--carpet), var(--carpet-deep));
+  min-height: 100vh;
+}
+
+.wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+
+header.site {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 28px;
+}
+.logo { font-family: var(--display); font-size: 1.5rem; letter-spacing: .06em; color: var(--marquee); text-decoration: none; }
+.logo span { color: var(--crt); }
+nav a { color: var(--paper); text-decoration: none; font-size: .95rem; opacity: .85; border-bottom: 2px dotted var(--coin); }
+nav a:hover, nav a:focus-visible { opacity: 1; }
+
+/* --- 本日のゲーム: マーキーパネル(このサイトの顔) --- */
+.marquee {
+  border: 6px solid var(--marquee);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.25));
+  padding: 8px;
+}
+.marquee-inner {
+  border: 3px dashed rgba(255,210,63,.55);
+  border-radius: 12px;
+  padding: 36px 24px 40px;
+  text-align: center;
+}
+.eyebrow { font-family: var(--display); color: var(--crt); letter-spacing: .3em; font-size: .85rem; }
+.today-title {
+  font-family: var(--display);
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  color: var(--marquee);
+  margin: 14px 0 6px;
+  text-shadow: 0 4px 0 rgba(0,0,0,.35);
+}
+.today-genre { display: inline-block; background: var(--coin); color: var(--ink); font-weight: 700; font-size: .8rem; padding: 3px 12px; border-radius: 999px; }
+.today-desc { margin: 18px auto 26px; max-width: 34em; line-height: 1.9; opacity: .92; }
+
+.play-btn {
+  display: inline-block; font-family: var(--display); font-size: 1.3rem;
+  background: var(--marquee); color: var(--ink); text-decoration: none;
+  padding: 14px 44px; border-radius: 12px; border: 0;
+  box-shadow: 0 6px 0 #b8912a; cursor: pointer;
+}
+.play-btn:hover { transform: translateY(2px); box-shadow: 0 4px 0 #b8912a; }
+.play-btn::before { content: '▶ '; animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .play-btn::before { animation: none; } }
+
+.date-label { margin-top: 18px; font-size: .8rem; opacity: .6; }
+
+/* --- 過去ゲーム一覧 --- */
+h1.page { font-family: var(--display); color: var(--marquee); font-size: 1.6rem; margin-bottom: 20px; }
+.game-list { list-style: none; display: grid; gap: 14px; }
+.game-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  background: rgba(255,253,245,.06); border: 2px solid rgba(255,210,63,.35);
+  border-radius: 12px; padding: 16px 18px; text-decoration: none; color: var(--paper);
+}
+.game-card:hover, .game-card:focus-visible { border-color: var(--marquee); background: rgba(255,253,245,.1); }
+.game-card .t { font-family: var(--display); font-size: 1.1rem; color: var(--marquee); }
+.game-card .d { font-size: .85rem; opacity: .75; margin-top: 4px; }
+.game-card .g { flex-shrink: 0; background: var(--coin); color: var(--ink); font-weight: 700; font-size: .75rem; padding: 3px 10px; border-radius: 999px; }
+
+.empty { opacity: .7; text-align: center; padding: 40px 0; }
+footer.site { margin-top: 48px; text-align: center; font-size: .75rem; opacity: .5; }

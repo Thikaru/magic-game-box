@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAILY GAMES — 過去のゲーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="logo" href="index.html">DAILY<span>GAMES</span></a>
+    <nav><a href="index.html">本日のゲームへ</a></nav>
+  </header>
+
+  <h1 class="page">過去のゲーム</h1>
+  <ul class="game-list" id="list"><li class="empty">読み込み中…</li></ul>
+
+  <footer class="site">気に入ったゲームは何度でも遊べます。</footer>
+</div>
+
+<script>
+fetch('games.json?' + Date.now())
+  .then(r => r.json())
+  .then(data => {
+    const list = document.getElementById('list');
+    if (!data.games || data.games.length === 0) {
+      list.innerHTML = '<li class="empty">まだゲームがありません。</li>';
+      return;
+    }
+    list.innerHTML = '';
+    for (const g of data.games) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.className = 'game-card';
+      a.href = g.path;
+      const left = document.createElement('div');
+      const t = document.createElement('div'); t.className = 't'; t.textContent = g.title;
+      const d = document.createElement('div'); d.className = 'd'; d.textContent = g.date + ' — ' + g.description;
+      left.append(t, d);
+      const tag = document.createElement('span'); tag.className = 'g'; tag.textContent = g.genre;
+      a.append(left, tag);
+      li.append(a);
+      list.append(li);
+    }
+  })
+  .catch(() => {
+    document.getElementById('list').innerHTML =
+      '<li class="empty">games.json を読み込めませんでした。</li>';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "games": [
+    {
+      "id": "2026-07-07-block-breaker",
+      "title": "ブロックくずし",
+      "genre": "アクション",
+      "date": "2026-07-07",
+      "description": "パドルでボールを打ち返して、ブロックを全部壊そう。",
+      "path": "games/2026-07-07-block-breaker/"
+    }
+  ]
+}

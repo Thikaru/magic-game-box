@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ブロックくずし — DAILY GAMES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { --carpet:#1a2470; --marquee:#ffd23f; --coin:#ff5da2; --crt:#4dd8e6; --paper:#fffdf5; --ink:#1c1c28; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'M PLUS Rounded 1c',system-ui,sans-serif; background:linear-gradient(180deg,#1a2470,#121a55); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:560px; margin:0 auto; padding:16px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--coin); }
+  h1 { font-family:'DotGothic16',monospace; color:var(--marquee); font-size:1.3rem; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; border:4px solid var(--marquee); border-radius:12px; background:#0d1340; touch-action:none; }
+  .overlay { position:absolute; inset:4px; border-radius:8px; background:rgba(13,19,64,.92);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; }
+  .overlay h2 { font-family:'DotGothic16',monospace; color:var(--marquee); font-size:1.6rem; margin-bottom:14px; }
+  .overlay p { line-height:1.9; font-size:.95rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:18px; font-family:'DotGothic16',monospace; font-size:1.1rem; background:var(--marquee);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .overlay .btn:hover { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; font-family:'DotGothic16',monospace; color:var(--crt); margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ブロックくずし</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="480" height="600"></canvas>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>パドルでボールを打ち返して<br>ブロックを全部こわそう。</p>
+      <p>🖱 マウス / 👆 タッチ / ⌨ ←→キー でパドル移動</p>
+      <p>ボールを落とすと残機が1へる。残機は3つ。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud"><span id="scoreLabel">SCORE 0</span><span id="livesLabel">♥♥♥</span></div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
