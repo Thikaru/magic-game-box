@@ -24,7 +24,8 @@
     color:var(--ink); border:0; border-radius:10px; padding:12px 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
   .overlay .btn:hover { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
   .hidden { display:none; }
-  .hud { display:flex; justify-content:space-between; font-family:'DotGothic16',monospace; color:var(--crt); margin-top:10px; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-family:'DotGothic16',monospace; color:var(--crt); margin-top:10px; }
+  .effects { font-size:.8rem; opacity:.9; letter-spacing:.05em; }
 </style>
 </head>
 <body>
@@ -43,6 +44,9 @@
       <p>パドルでボールを打ち返して<br>ブロックを全部こわそう。</p>
       <p>🖱 マウス / 👆 タッチ / ⌨ ←→キー でパドル移動</p>
       <p>ボールを落とすと残機が1へる。残機は3つ。</p>
+      <p>ブロックを壊すと、たまにアイテムが降ってくる。<br>
+        パドルで受け止めよう。<br>
+        <b>W</b>=パドル拡大 / <b>M</b>=マルチボール / <b>S</b>=スローボール</p>
       <button class="btn" id="startBtn">スタート</button>
     </div>
 
@@ -54,7 +58,11 @@
     </div>
   </div>
 
-  <div class="hud"><span id="scoreLabel">SCORE 0</span><span id="livesLabel">♥♥♥</span></div>
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span class="effects" id="effectsLabel"></span>
+    <span id="livesLabel">♥♥♥</span>
+  </div>
 </div>
 
 <script src="game.js"></script>
