@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>まよなかの駄菓子屋 — DAILY GAMES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { --carpet:#1a2470; --marquee:#ffd23f; --coin:#ff5da2; --crt:#4dd8e6; --paper:#fffdf5; --ink:#1c1c28; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'M PLUS Rounded 1c',system-ui,sans-serif; background:linear-gradient(180deg,#1a2470,#121a55); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:560px; margin:0 auto; padding:16px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--coin); }
+  h1 { font-family:'DotGothic16',monospace; color:var(--marquee); font-size:1.3rem; }
+
+  .stage {
+    position:relative; border:4px solid var(--marquee); border-radius:12px;
+    overflow:hidden; height:520px; display:flex; flex-direction:column;
+    user-select:none; -webkit-user-select:none; cursor:pointer;
+  }
+
+  /* 背景はシーンに合わせてクラスで切り替える */
+  .scene-bg { position:absolute; inset:0; transition:background 1s; }
+  .bg-night   { background:linear-gradient(180deg,#0a0d33 0%,#141a55 60%,#2a2350 100%); }
+  .bg-shop    { background:linear-gradient(180deg,#3d2a14 0%,#5c3f1e 55%,#7a5526 100%); }
+  .bg-morning { background:linear-gradient(180deg,#7fc4e8 0%,#bfe3f2 60%,#ffe9b8 100%); }
+  .stars { position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,.9) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 70% 12%, rgba(255,255,255,.7) 0 1px, transparent 2px),
+      radial-gradient(circle at 40% 30%, rgba(255,255,255,.8) 0 1px, transparent 2px),
+      radial-gradient(circle at 88% 35%, rgba(255,255,255,.6) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 55% 8%,  rgba(255,255,255,.8) 0 1px, transparent 2px);
+    transition:opacity 1s; }
+  .lantern { position:absolute; top:28px; right:36px; font-size:2rem; filter:drop-shadow(0 0 14px rgba(255,180,60,.9)); transition:opacity 1s; }
+
+  .sprite {
+    position:relative; flex:1; display:flex; align-items:flex-end; justify-content:center;
+    font-size:clamp(4.5rem, 22vw, 7.5rem); padding-bottom:6px;
+    text-shadow:0 6px 20px rgba(0,0,0,.45); transition:opacity .4s;
+  }
+
+  /* メッセージウィンドウ */
+  .msgbox {
+    position:relative; margin:8px; padding:14px 16px 26px; min-height:132px;
+    background:rgba(13,19,64,.92); border:3px solid var(--marquee); border-radius:10px;
+  }
+  .speaker {
+    position:absolute; top:-14px; left:12px; font-family:'DotGothic16',monospace;
+    background:var(--coin); color:var(--ink); font-size:.85rem; font-weight:700;
+    padding:2px 14px; border-radius:999px;
+  }
+  .speaker.hidden { display:none; }
+  .text { line-height:1.9; font-size:.98rem; min-height:3.8em; white-space:pre-wrap; }
+  .next-mark { position:absolute; right:14px; bottom:8px; color:var(--crt); font-size:.8rem; animation:bob 1s infinite; }
+  @keyframes bob { 50% { transform:translateY(3px); } }
+  @media (prefers-reduced-motion: reduce) { .next-mark { animation:none; } }
+
+  /* 選択肢 */
+  .choices { position:absolute; left:0; right:0; bottom:170px; display:flex; flex-direction:column; gap:12px; align-items:center; padding:0 20px; }
+  .choices button {
+    font-family:'M PLUS Rounded 1c',system-ui,sans-serif; font-weight:700; font-size:1rem;
+    width:100%; max-width:360px; padding:13px 18px; cursor:pointer;
+    background:var(--paper); color:var(--ink); border:3px solid var(--coin); border-radius:12px;
+    box-shadow:0 4px 0 rgba(0,0,0,.35);
+  }
+  .choices button:hover, .choices button:focus-visible { background:var(--marquee); transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.35); }
+
+  /* オーバーレイ(説明・エンディング) */
+  .overlay { position:absolute; inset:0; z-index:5; background:rgba(13,19,64,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; cursor:default; }
+  .overlay h2 { font-family:'DotGothic16',monospace; color:var(--marquee); font-size:1.6rem; margin-bottom:14px; }
+  .overlay p { line-height:1.9; font-size:.92rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:18px; font-family:'DotGothic16',monospace; font-size:1.1rem; background:var(--marquee);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .overlay .btn:hover { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .end-type { font-family:'DotGothic16',monospace; font-size:2rem; letter-spacing:.1em; margin-bottom:6px; }
+  .end-type.happy { color:var(--marquee); text-shadow:0 0 18px rgba(255,210,63,.6); }
+  .end-type.bad { color:var(--crt); text-shadow:0 0 18px rgba(77,216,230,.5); }
+  .end-count { margin-top:14px; font-size:.85rem; color:var(--crt); font-family:'DotGothic16',monospace; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>まよなかの駄菓子屋</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="scene-bg bg-night" id="sceneBg"></div>
+    <div class="stars" id="stars"></div>
+    <div class="lantern" id="lantern">🏮</div>
+    <div class="sprite" id="sprite"></div>
+
+    <div class="choices hidden" id="choices"></div>
+
+    <div class="msgbox">
+      <span class="speaker hidden" id="speaker"></span>
+      <p class="text" id="text"></p>
+      <span class="next-mark hidden" id="nextMark">▼</span>
+    </div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>まよなかの駄菓子屋</h2>
+      <p>夜の路地に、見たことのない駄菓子屋が…?<br>短いノベルゲームです。数分で読めます。</p>
+      <p>🖱 クリック / 👆 タップ / ⌨ Enter・Space で文章を進める<br>選択肢はボタンをタップ(⌨ 1・2キーでも選べる)</p>
+      <p>エンディングは全部で4つ。<br>ヒントは物語の中にかくれている。よく読めば、<br>HAPPY END にたどりつけるはず。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- エンディング画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <div class="end-type" id="endType"></div>
+      <h2 id="endTitle"></h2>
+      <p id="endText"></p>
+      <p class="end-count" id="endCount"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>

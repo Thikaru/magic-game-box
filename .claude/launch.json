@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "static-site",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["/private/tmp/claude-501/-Users-pikainfo-Desktop-workspace-AI-magic-game-box/8fbee834-b699-4f01-85b1-07ce3922d5fd/scratchpad/serve.mjs"],
+      "port": 8642
+    }
+  ]
+}
