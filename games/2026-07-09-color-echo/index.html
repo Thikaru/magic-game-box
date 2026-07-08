@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>カラーエコー — DAILY GAMES</title>
+<style>
+  :root { --carpet:#1a2470; --carpet-deep:#121a55; --marquee:#ffd23f; --coin:#ff5da2; --crt:#4dd8e6; --paper:#fffdf5; --ink:#1c1c28; --echo:#b98bff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { overflow-x:hidden; }
+  body {
+    font-family:system-ui,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--carpet),var(--carpet-deep));
+    color:var(--paper); min-height:100vh;
+  }
+  .wrap { max-width:420px; margin:0 auto; padding:16px 14px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--coin); }
+  h1 { font-size:1.25rem; letter-spacing:.04em; color:var(--marquee); }
+
+  .stage { position:relative; }
+
+  .board {
+    display:grid; grid-template-columns:1fr 1fr; gap:12px;
+    border:4px solid var(--marquee); border-radius:16px; background:#0d1340;
+    padding:12px; transition:background .25s, border-color .25s;
+  }
+  .board.reverse { background:#25123f; border-color:var(--echo); }
+
+  .pad {
+    aspect-ratio:1/1; border-radius:14px; border:0; cursor:pointer;
+    font-size:1rem; font-weight:700; color:rgba(0,0,0,.55);
+    filter:brightness(.72); transition:filter .08s, transform .08s;
+    touch-action:manipulation;
+  }
+  .pad:active { transform:scale(.96); }
+  .pad.lit { filter:brightness(1.35) saturate(1.2); }
+  .pad[data-color="red"] { background:#ff5d5d; }
+  .pad[data-color="blue"] { background:var(--crt); }
+  .pad[data-color="green"] { background:#8bff8b; }
+  .pad[data-color="yellow"] { background:var(--marquee); }
+
+  .overlay {
+    position:absolute; inset:4px; border-radius:12px; background:rgba(13,19,64,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:22px;
+  }
+  .overlay h2 { color:var(--marquee); font-size:1.5rem; margin-bottom:12px; }
+  .overlay p { line-height:1.85; font-size:.92rem; margin-bottom:8px; }
+  .overlay .btn {
+    margin-top:16px; font-size:1.05rem; background:var(--marquee); color:var(--ink);
+    border:0; border-radius:10px; padding:13px 38px; min-height:44px;
+    box-shadow:0 5px 0 #b8912a; cursor:pointer;
+  }
+  .overlay .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:12px; font-size:.9rem; }
+  .hud .badge { background:rgba(255,253,245,.1); border:1px solid rgba(255,210,63,.4); border-radius:999px; padding:4px 12px; }
+  .status { text-align:center; margin-top:10px; min-height:1.4em; font-size:.9rem; opacity:.9; }
+  .status.reverse-note { color:var(--echo); font-weight:700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>カラーエコー</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board" id="board">
+      <button class="pad" data-color="red" data-idx="0"></button>
+      <button class="pad" data-color="blue" data-idx="1"></button>
+      <button class="pad" data-color="green" data-idx="2"></button>
+      <button class="pad" data-color="yellow" data-idx="3"></button>
+    </div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>光る順番を覚えて、同じ順にパッドをタップしよう。<br>1問正解するたびに順番が1つ長くなる。</p>
+      <p>👆 タップ / 🖱 クリック / ⌨ 1・2・3・4キー でも操作できる。</p>
+      <p><b style="color:#b98bff">盤面がむらさき色</b>になったら「さかさまラウンド」。<br>覚えた順を<b>逆から</b>タップしよう。</p>
+      <p>まちがえたら終了。何ラウンド続けられるか挑戦しよう。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span class="badge" id="roundLabel">ラウンド 0</span>
+    <span class="badge" id="bestLabel">ベスト 0</span>
+  </div>
+  <div class="status" id="statusLabel"></div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
