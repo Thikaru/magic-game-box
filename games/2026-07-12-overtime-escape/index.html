@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>残業脱出 — DAILY GAMES</title>
+<style>
+  :root { --bg1:#1b1420; --bg2:#0f0a12; --paper:#f5ecd8; --amber:#f4b93f; --danger:#ff5d5d; --safe:#5be07a; --ink:#1c1420; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body { overflow-x:hidden; }
+  body { font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN',system-ui,sans-serif; background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--amber); }
+  h1 { color:var(--amber); font-size:1.25rem; letter-spacing:.02em; }
+  .stage { position:relative; border:3px solid var(--amber); border-radius:14px; background:#241a2c; padding:12px; min-height:520px; }
+
+  .status { text-align:center; font-size:.95rem; font-weight:bold; padding:8px 6px; border-radius:10px; margin-bottom:10px; background:#33263c; transition:background .2s,color .2s; }
+  .status.warn { background:#4a3a12; color:var(--amber); }
+  .status.danger { background:#4a1414; color:var(--danger); animation:shake .25s infinite; }
+
+  .timerbar-outer { background:#000; border-radius:8px; overflow:hidden; height:14px; margin-bottom:10px; border:1px solid #4a3a55; }
+  .timerbar-inner { height:100%; background:linear-gradient(90deg,var(--safe),var(--amber)); width:100%; transition:width .1s linear, background .3s; }
+
+  .objects { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .obj { min-height:78px; border-radius:12px; border:2px solid #5a4766; background:#2e2338; color:var(--paper); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:1.6rem; cursor:pointer; }
+  .obj .lbl { font-size:.62rem; opacity:.85; }
+  .obj .digit { font-size:1rem; font-weight:bold; color:var(--amber); }
+  .obj.resolved { opacity:.55; border-color:#3a3044; cursor:default; }
+  .obj.found { border-color:var(--safe); }
+  .obj:active:not(.resolved) { transform:scale(.96); }
+
+  .clueList { text-align:center; font-size:.85rem; min-height:1.2em; margin-bottom:8px; color:#d9c9e8; }
+
+  .safe { display:none; text-align:center; background:#241a2c; border:2px dashed var(--amber); border-radius:12px; padding:10px; margin-top:6px; }
+  .safe.show { display:block; }
+  .safe p { font-size:.8rem; margin-bottom:8px; }
+  .safeDigits { display:flex; justify-content:center; gap:10px; }
+  .safeDigits button { width:52px; height:52px; border-radius:10px; border:2px solid var(--amber); background:#3a2c46; color:var(--paper); font-size:1.3rem; font-weight:bold; }
+  .safeDigits button.used { opacity:.35; border-color:#5a4766; }
+
+  .msg { text-align:center; font-size:.8rem; min-height:1.4em; margin-top:8px; color:var(--amber); }
+
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-3px);} 75%{transform:translateX(3px);} }
+
+  .overlay { position:absolute; inset:6px; border-radius:10px; background:rgba(15,10,18,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:22px; }
+  .overlay h2 { color:var(--amber); font-size:1.5rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.9rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--amber); color:var(--ink); border:0; border-radius:10px; padding:14px 36px; min-height:48px; box-shadow:0 5px 0 #b6862a; cursor:pointer; font-weight:bold; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b6862a; }
+  .hidden { display:none; }
+
+  .hud { display:flex; justify-content:space-between; font-size:.85rem; margin-top:10px; opacity:.85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>残業脱出</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="status" id="status">🕵️ 捜査中…</div>
+    <div class="timerbar-outer"><div class="timerbar-inner" id="timerbar"></div></div>
+
+    <div class="objects" id="objects"></div>
+
+    <div class="clueList" id="clueList"></div>
+
+    <div class="safe" id="safe">
+      <p>🔓 金庫を解錠せよ!数字を「小さい順」にタップ</p>
+      <div class="safeDigits" id="safeDigits"></div>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <div class="hud">
+      <span id="timeLabel">残り 60秒</span>
+      <span id="foundLabel">手がかり 0/3</span>
+    </div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>制限時間内にオフィスを脱出せよ!<br>物をタップして金庫の数字(3つ)を探そう。</p>
+      <p>⚠️「上司が来ます」の警告が出たら、<br>物にはさわらないこと!<br>捜査中にタップすると見つかって<b>時間ロス</b>。</p>
+      <p>数字が3つ揃ったら、金庫パネルで<br><b>小さい順</b>にタップして解錠しよう。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
