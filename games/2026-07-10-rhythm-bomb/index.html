@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>よけてタップ!リズムボム — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#160821; --bg2:#2a0f3d; --lane:#241236; --laneline:#4a2a66;
+    --note:#4de3ff; --bomb:#ff4d6d; --hit:#ffe14d; --paper:#fdf6ff; --ink:#160821;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'M PLUS Rounded 1c',system-ui,-apple-system,'Hiragino Sans',sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.82rem; border-bottom:2px dotted var(--bomb); }
+  h1 { font-size:1.15rem; letter-spacing:.02em; color:var(--hit); }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; aspect-ratio:360/560; border:3px solid var(--laneline);
+    border-radius:14px; background:var(--lane); touch-action:none; }
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(22,8,33,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; }
+  .overlay h2 { color:var(--hit); font-size:1.4rem; margin-bottom:12px; }
+  .overlay p { line-height:1.85; font-size:.9rem; margin-bottom:6px; }
+  .overlay .note-ex, .overlay .bomb-ex { display:inline-block; width:14px; height:14px; border-radius:50%; vertical-align:middle; margin:0 3px; }
+  .overlay .note-ex { background:var(--note); }
+  .overlay .bomb-ex { background:var(--bomb); }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; font-weight:700; background:var(--hit);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b89a1f; cursor:pointer; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b89a1f; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; font-size:.92rem; margin-top:10px; color:var(--note); }
+  .hud b { color:var(--hit); }
+  .lanes-buttons { display:flex; gap:8px; margin-top:10px; }
+  .lane-btn { flex:1; min-height:56px; border-radius:10px; border:2px solid var(--laneline);
+    background:rgba(77,227,255,.12); color:var(--paper); font-size:1.05rem; font-weight:700;
+    display:flex; align-items:center; justify-content:center; user-select:none; -webkit-user-select:none; }
+  .lane-btn.active { background:rgba(255,225,77,.35); border-color:var(--hit); }
+  .hint { font-size:.78rem; opacity:.7; text-align:center; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>よけてタップ!リズムボム</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="560"></canvas>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>上から降ってくる <span class="note-ex"></span>ブルーの玉 が<br>ラインに重なった瞬間にタップ!</p>
+      <p><span class="bomb-ex"></span>赤い爆弾には<b>触れないで</b>スルーしよう。<br>誤タップするとコンボが切れて減点。</p>
+      <p>⌨ D・F・J・K キー / 👆 したのボタンをタップ</p>
+      <p>60秒間でハイスコア&ハイコンボを狙え!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span>SCORE <b id="scoreLabel">0</b></span>
+    <span>COMBO <b id="comboLabel">0</b></span>
+    <span>残り<b id="timeLabel">60</b>秒</span>
+  </div>
+
+  <div class="lanes-buttons">
+    <button class="lane-btn" data-lane="0">D</button>
+    <button class="lane-btn" data-lane="1">F</button>
+    <button class="lane-btn" data-lane="2">J</button>
+    <button class="lane-btn" data-lane="3">K</button>
+  </div>
+  <p class="hint">青はタップ、赤はスルー!</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
