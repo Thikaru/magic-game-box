@@ -13,9 +13,12 @@
   body { font-family:'M PLUS Rounded 1c',system-ui,-apple-system,'Hiragino Sans',sans-serif;
     background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
   .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
-  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
+  header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:6px; margin-bottom:12px; }
   header a { color:var(--paper); text-decoration:none; font-size:.82rem; border-bottom:2px dotted var(--bomb); }
   h1 { font-size:1.15rem; letter-spacing:.02em; color:var(--hit); }
+  .header-right { display:flex; align-items:center; gap:10px; }
+  .mute-btn { min-width:44px; min-height:36px; border-radius:8px; border:2px solid var(--laneline);
+    background:rgba(255,255,255,.08); color:var(--paper); font-size:1.05rem; cursor:pointer; }
   .stage { position:relative; }
   canvas { display:block; width:100%; height:auto; aspect-ratio:360/560; border:3px solid var(--laneline);
     border-radius:14px; background:var(--lane); touch-action:none; }
@@ -44,7 +47,10 @@
 <div class="wrap">
   <header>
     <h1>よけてタップ!リズムボム</h1>
-    <a href="../../index.html">← トップへ</a>
+    <div class="header-right">
+      <button class="mute-btn" id="muteBtn" aria-label="音のオン/オフ">🔊</button>
+      <a href="../../index.html">← トップへ</a>
+    </div>
   </header>
 
   <div class="stage">

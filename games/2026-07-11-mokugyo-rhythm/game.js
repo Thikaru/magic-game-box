@@ -26,6 +26,53 @@
   var livesLabel = document.getElementById('livesLabel');
   var timeLabel = document.getElementById('timeLabel');
   var pads = [document.getElementById('pad0'), document.getElementById('pad1'), document.getElementById('pad2')];
+  var muteBtn = document.getElementById('muteBtn');
+
+  // --- サウンド: Web Audio API での自前生成音(外部ファイル不使用、著作権フリー) ---
+  var audioCtx = null;
+  var muted = false;
+  function ensureAudio() {
+    if (!audioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function playTone(freq, duration, type, vol) {
+    if (muted || !audioCtx) return;
+    var t0 = audioCtx.currentTime;
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(vol == null ? 0.2 : vol, t0 + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+  function playNoiseBurst(duration, vol) {
+    if (muted || !audioCtx) return;
+    var t0 = audioCtx.currentTime;
+    var bufferSize = Math.floor(audioCtx.sampleRate * duration);
+    var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    var noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    var gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(vol == null ? 0.2 : vol, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+    noise.connect(gain).connect(audioCtx.destination);
+    noise.start(t0);
+  }
+  if (muteBtn) {
+    muteBtn.addEventListener('click', function () {
+      muted = !muted;
+      muteBtn.textContent = muted ? '🔇' : '🔊';
+    });
+  }
 
   var state = 'intro';
   var notes, floats, score, combo, maxCombo, lives, elapsed, spawnTimer;
@@ -77,6 +124,7 @@
     if (!best) {
       combo = 0;
       addFloat('MISS', lane, '#ff8a8a');
+      playTone(150, 0.12, 'sawtooth', 0.1);
       updateHud();
       return;
     }
@@ -87,9 +135,11 @@
       if (bestDist <= PERFECT_WINDOW) {
         score += 100 * mult;
         addFloat('PERFECT', lane, '#ffd76a');
+        playTone(720, 0.09, 'triangle', 0.22);
       } else {
         score += 50 * mult;
         addFloat('GOOD', lane, '#7fe0a0');
+        playTone(520, 0.09, 'triangle', 0.18);
       }
       combo++;
       maxCombo = Math.max(maxCombo, combo);
@@ -97,6 +147,8 @@
       lives--;
       combo = 0;
       addFloat('ダメ!', lane, '#ff6b6b');
+      playNoiseBurst(0.15, 0.2);
+      playTone(110, 0.15, 'sawtooth', 0.12);
       if (lives <= 0) {
         updateHud();
         triggerGameOver();
@@ -169,6 +221,7 @@
           lives--;
           combo = 0;
           addFloat('MISS', n.lane, '#ff8a8a');
+          playTone(150, 0.12, 'sawtooth', 0.1);
           if (lives <= 0) {
             updateHud();
             triggerGameOver();
@@ -179,6 +232,7 @@
           maxCombo = Math.max(maxCombo, combo);
           score += 30 * (1 + combo * 0.03);
           addFloat('OK', n.lane, '#9fd8ff');
+          playTone(950, 0.06, 'sine', 0.1);
         }
       }
     }
@@ -234,6 +288,7 @@
   }
 
   function start() {
+    ensureAudio();
     reset();
     state = 'playing';
     lastTs = null;
