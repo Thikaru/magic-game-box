@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>夜行ハイウェイ — DAILY GAMES</title>
+<style>
+  :root { --road:#1b1f2e; --line:#ffd23f; --neon:#4dd8ff; --coin:#ffcb3d; --nitro:#ff5da2; --paper:#f3f6ff; --ink:#12131c; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,'Hiragino Sans','Yu Gothic',sans-serif; background:radial-gradient(circle at 50% -10%,#2a2f55,#0c0e1a 70%); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:16px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--nitro); }
+  h1 { color:var(--line); font-size:1.25rem; letter-spacing:.02em; text-shadow:0 0 10px rgba(255,210,63,.5); }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; border:4px solid var(--line); border-radius:12px; background:var(--road); touch-action:none; }
+  .overlay { position:absolute; inset:4px; border-radius:8px; background:rgba(10,12,26,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; overflow-y:auto; }
+  .overlay h2 { color:var(--line); font-size:1.4rem; margin-bottom:14px; }
+  .overlay p { line-height:1.85; font-size:.9rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; font-weight:700; background:var(--line);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; color:var(--neon); margin-top:10px; font-size:.95rem; }
+  .hud b { color:var(--paper); }
+  .controller { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:12px; }
+  .padBtns { display:flex; gap:10px; }
+  .padBtn { width:64px; height:56px; border-radius:12px; border:2px solid var(--neon); background:rgba(77,216,255,.12);
+    color:var(--neon); font-size:1.5rem; touch-action:none; }
+  .padBtn:active { background:rgba(77,216,255,.35); }
+  #toggleBtn { min-height:44px; padding:8px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.06); color:var(--paper); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚗 夜行ハイウェイ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="600"></canvas>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>夜の3車線ハイウェイをひたすら爆走!<br>対向車をよけながら、少しでも遠くまで走ろう。</p>
+      <p>⌨ ←→ / A・D キー　👆 スワイプ　🎮 画面の←→ボタン<br>のいずれかで車線変更</p>
+      <p>🪙 コインでスコアUP　⚡ ニトロで少しの間<b>無敵&2倍スコア</b></p>
+      <p>他の車にぶつかるとライフが1減る。ライフは3つ。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span>SCORE <b id="scoreLabel">0</b></span>
+    <span>BEST <b id="bestLabel">0</b></span>
+    <span id="livesLabel">♥♥♥</span>
+  </div>
+
+  <div class="controller" id="controller">
+    <span style="font-size:.8rem;opacity:.8;">車線変更</span>
+    <div class="padBtns">
+      <button class="padBtn" id="leftBtn">◀</button>
+      <button class="padBtn" id="rightBtn">▶</button>
+    </div>
+    <button id="toggleBtn">🎮 コントローラ</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
