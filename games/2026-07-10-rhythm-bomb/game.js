@@ -22,6 +22,53 @@
   const comboLabel = document.getElementById('comboLabel');
   const timeLabel = document.getElementById('timeLabel');
   const laneBtns = Array.from(document.querySelectorAll('.lane-btn'));
+  const muteBtn = document.getElementById('muteBtn');
+
+  // --- サウンド: Web Audio API での自前生成音(外部ファイル不使用、著作権フリー) ---
+  let audioCtx = null;
+  let muted = false;
+  function ensureAudio() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function playTone(freq, duration, type, vol) {
+    if (muted || !audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(vol == null ? 0.2 : vol, t0 + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+  function playNoiseBurst(duration, vol) {
+    if (muted || !audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(vol == null ? 0.2 : vol, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+    noise.connect(gain).connect(audioCtx.destination);
+    noise.start(t0);
+  }
+  if (muteBtn) {
+    muteBtn.addEventListener('click', () => {
+      muted = !muted;
+      muteBtn.textContent = muted ? '🔇' : '🔊';
+    });
+  }
 
   let state = 'intro'; // intro | playing | ending | result
   let rafId = null;
@@ -121,18 +168,23 @@
       combo = 0;
       addPopup(lane, 'あぶない!', '#ff4d6d');
       flashLane(lane, 'rgba(255,77,109,.55)');
+      playNoiseBurst(0.18, 0.22);
+      playTone(90, 0.18, 'sawtooth', 0.14);
     } else {
       if (bestDist <= 0.14) {
         score += 100;
         combo++;
         addPopup(lane, 'PERFECT', '#ffe14d');
+        playTone(880, 0.12, 'sine', 0.22);
       } else if (bestDist <= 0.32) {
         score += 50;
         combo++;
         addPopup(lane, 'GOOD', '#4de3ff');
+        playTone(600, 0.1, 'sine', 0.18);
       } else {
         combo = 0;
         addPopup(lane, 'MISS', '#9a8aa8');
+        playTone(180, 0.12, 'triangle', 0.12);
       }
       flashLane(lane, 'rgba(77,227,255,.45)');
     }
@@ -165,6 +217,7 @@
         if (n.type === 'normal') {
           combo = 0;
           addPopup(n.lane, 'MISS', '#9a8aa8');
+          playTone(160, 0.1, 'triangle', 0.08);
         }
         // bomb passed safely = no penalty, no popup needed
       }
@@ -259,6 +312,7 @@
   }
 
   function startGame() {
+    ensureAudio();
     resetState();
     introEl.classList.add('hidden');
     resultEl.classList.add('hidden');
