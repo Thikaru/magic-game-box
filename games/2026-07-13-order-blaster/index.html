@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ナンバーメテオ迎撃 — DAILY GAMES</title>
+<style>
+  :root { --bg1:#0a1330; --bg2:#050815; --panel:#101c3f; --line:#2c4a8a; --cyan:#5fe6ff; --amber:#ffcf4d; --danger:#ff5d5d; --safe:#5be07a; --ink:#08101f; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { overflow-x:hidden; }
+  body { font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN',system-ui,sans-serif; background:radial-gradient(circle at 50% 0%,var(--bg1),var(--bg2)); color:#eaf2ff; min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
+  header a { color:#eaf2ff; text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--cyan); }
+  h1 { color:var(--cyan); font-size:1.2rem; letter-spacing:.02em; }
+
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:10px; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; margin-bottom:8px; gap:6px; }
+  .hud .lives { color:var(--danger); letter-spacing:2px; }
+  .hud .score { color:var(--amber); font-weight:bold; }
+  .targetBadge { text-align:center; margin-bottom:8px; }
+  .targetBadge span { display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#ffe9a8,var(--amber)); color:var(--ink); font-size:1.7rem; font-weight:bold; box-shadow:0 0 0 4px rgba(255,207,77,.25); }
+  .targetBadge small { display:block; font-size:.68rem; opacity:.75; margin-top:4px; }
+
+  canvas { display:block; width:100%; aspect-ratio: 3 / 4; background:linear-gradient(180deg,#0d1840,#060a1a 85%); border-radius:10px; border:1px solid #22336a; touch-action:none; }
+
+  .overlay { position:absolute; inset:6px; border-radius:10px; background:rgba(5,8,21,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:22px; }
+  .overlay h2 { color:var(--cyan); font-size:1.4rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.88rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--cyan); color:var(--ink); border:0; border-radius:10px; padding:14px 36px; min-height:48px; box-shadow:0 5px 0 #2c9fb8; cursor:pointer; font-weight:bold; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #2c9fb8; }
+  .hidden { display:none; }
+
+  .footNote { text-align:center; font-size:.72rem; opacity:.6; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ナンバーメテオ迎撃</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="hud">
+      <span class="lives" id="lives">♥♥♥</span>
+      <span class="score" id="scoreLabel">SCORE 0</span>
+    </div>
+    <div class="targetBadge">
+      <span id="targetNum">1</span>
+      <small>この数字の隕石を撃て</small>
+    </div>
+
+    <canvas id="game" width="360" height="480"></canvas>
+
+    <div class="footNote">タップ / クリック、またはキーボードの数字キー(1〜9)</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>数字の書かれた隕石が降ってくる。<br>画面上の「めざす数字」と同じ隕石だけを<br><b>タップ</b>(またはキーボードの数字キー)で撃ち落とそう。</p>
+      <p>ちがう数字を撃つと<b>コンボが途切れる</b>。<br>めざす数字の隕石を下まで逃すと<b>ライフが1減る</b>。</p>
+      <p>1〜9をひとめぐりするたびに、隕石はどんどん速くなる!<br>ライフがなくなったらゲームオーバー。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲームオーバー</h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
