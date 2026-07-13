@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>スライムそだてタイピング — DAILY GAMES</title>
+<style>
+  :root { --carpet:#1a2470; --marquee:#ffd23f; --coin:#ff5da2; --crt:#4dd8e6; --paper:#fffdf5; --ink:#1c1c28; --slime:#57e389; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:'Hiragino Maru Gothic ProN','M PLUS Rounded 1c',system-ui,sans-serif; background:linear-gradient(180deg,#1a2470,#121a55); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--coin); white-space:nowrap; }
+  h1 { font-family:monospace; color:var(--marquee); font-size:1.15rem; letter-spacing:.02em; }
+  .stage { position:relative; border:4px solid var(--marquee); border-radius:14px; background:#0d1340; padding:14px; min-height:420px; }
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(13,19,64,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:22px 18px; z-index:5; }
+  .overlay h2 { font-family:monospace; color:var(--marquee); font-size:1.4rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.92rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-family:monospace; font-size:1.1rem; background:var(--marquee);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .hud { display:flex; justify-content:space-between; font-family:monospace; color:var(--crt); font-size:.95rem; margin-bottom:6px; }
+  .hud b { color:var(--marquee); }
+  .stagebox { display:flex; flex-direction:column; align-items:center; gap:8px; min-height:150px; justify-content:center; }
+  #slime { font-size:3.2rem; transition:transform .25s ease; display:inline-block; }
+  #slime.miss { animation:shake .3s; }
+  @keyframes shake { 0%,100%{ transform:translateX(0) } 25%{ transform:translateX(-6px) } 75%{ transform:translateX(6px) } }
+  .word-kana { font-size:1.1rem; opacity:.85; margin-top:4px; min-height:1.4em; }
+  .word-romaji { font-family:monospace; font-size:1.6rem; letter-spacing:.06em; margin-top:6px; min-height:2em; }
+  .word-romaji span { opacity:.4; }
+  .word-romaji span.typed { color:var(--slime); opacity:1; }
+  .word-romaji span.current { color:var(--marquee); opacity:1; text-decoration:underline; }
+  .bonus-tag { color:var(--coin); font-weight:bold; }
+  .vkb-toggle { display:block; margin:10px auto 4px; font-family:monospace; font-size:.85rem; background:rgba(255,255,255,.1);
+    color:var(--paper); border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:8px 14px; min-height:44px; cursor:pointer; }
+  .vkb { margin-top:6px; }
+  .vkb-row { display:flex; gap:4px; margin-bottom:4px; }
+  .vkb-row button { flex:1; min-width:0; min-height:44px; font-family:monospace; font-size:1rem; background:rgba(255,255,255,.12);
+    color:var(--paper); border:1px solid rgba(255,255,255,.25); border-radius:6px; cursor:pointer; }
+  .vkb-row button:active { background:var(--marquee); color:var(--ink); }
+  .result-score { font-family:monospace; color:var(--marquee); font-size:2rem; margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>スライムそだてタイピング</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="hud">
+      <span>⏱ <b id="timeLabel">60</b></span>
+      <span>SCORE <b id="scoreLabel">0</b></span>
+      <span>コンボ <b id="comboLabel">0</b></span>
+    </div>
+
+    <div class="stagebox">
+      <div id="slime">🟢</div>
+      <div class="word-kana" id="wordKana"></div>
+      <div class="word-romaji" id="wordRomaji"></div>
+    </div>
+
+    <button class="vkb-toggle" id="vkbToggle">🎮 コントローラ</button>
+    <div class="vkb hidden" id="vkb">
+      <div class="vkb-row" data-row="qwertyuiop"></div>
+      <div class="vkb-row" data-row="asdfghjkl"></div>
+      <div class="vkb-row" data-row="zxcvbnm"></div>
+    </div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>出てきた単語のローマ字を60秒以内にどんどん入力しよう。<br>
+        正解するたびスライムが育つ!ミスタイプすると少し縮んでしまう。</p>
+      <p>⌨ キーボード入力、またはスマホは<br>「🎮 コントローラ」のボタンでタップ入力できる。</p>
+      <p>コンボを5つなげると<span class="bonus-tag">✨ボーナス単語</span>が出現、<br>
+        一気に大きく育てられるチャンス!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2>タイムアップ!</h2>
+      <p>スライムLv <b id="finalLevel"></b></p>
+      <div class="result-score" id="finalScore"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var NORMAL_WORDS = [
+    {kana:"りんご", romaji:"ringo"},
+    {kana:"めろん", romaji:"meron"},
+    {kana:"すいか", romaji:"suika"},
+    {kana:"ぶどう", romaji:"budou"},
+    {kana:"みかん", romaji:"mikan"},
+    {kana:"いちご", romaji:"ichigo"},
+    {kana:"ばなな", romaji:"banana"},
+    {kana:"もも", romaji:"momo"},
+    {kana:"なし", romaji:"nashi"},
+    {kana:"かき", romaji:"kaki"},
+    {kana:"くり", romaji:"kuri"},
+    {kana:"うめ", romaji:"ume"}
+  ];
+  var BONUS_WORDS = [
+    {kana:"すいかわり", romaji:"suikawari"},
+    {kana:"ぶどうしゅ", romaji:"budoushu"},
+    {kana:"ごちそうさま", romaji:"gochisousama"},
+    {kana:"ぱいなっぷる", romaji:"painappuru"},
+    {kana:"おおもりごはん", romaji:"oomorigohan"}
+  ];
+  var COMBO_MILESTONE = 5;
+  var GAME_SECONDS = 60;
+
+  var timeLeft, score, growth, combo, currentWord, typedIndex, timerId, running;
+
+  var slimeEl = document.getElementById('slime');
+  var wordKanaEl = document.getElementById('wordKana');
+  var wordRomajiEl = document.getElementById('wordRomaji');
+  var timeLabel = document.getElementById('timeLabel');
+  var scoreLabel = document.getElementById('scoreLabel');
+  var comboLabel = document.getElementById('comboLabel');
+  var introEl = document.getElementById('intro');
+  var resultEl = document.getElementById('result');
+  var finalLevelEl = document.getElementById('finalLevel');
+  var finalScoreEl = document.getElementById('finalScore');
+  var vkb = document.getElementById('vkb');
+  var vkbToggle = document.getElementById('vkbToggle');
+
+  function buildKeyboard(){
+    var rows = vkb.querySelectorAll('.vkb-row');
+    rows.forEach(function(row){
+      var letters = row.getAttribute('data-row').split('');
+      letters.forEach(function(ch){
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = ch;
+        btn.addEventListener('click', function(){ handleChar(ch); });
+        row.appendChild(btn);
+      });
+    });
+  }
+  buildKeyboard();
+
+  if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+    vkb.classList.remove('hidden');
+  }
+  vkbToggle.addEventListener('click', function(){ vkb.classList.toggle('hidden'); });
+
+  function updateHud(){
+    timeLabel.textContent = timeLeft;
+    scoreLabel.textContent = score;
+    comboLabel.textContent = combo;
+  }
+
+  function updateSlime(){
+    var level = Math.floor(growth / 20);
+    var scale = Math.min(1 + level * 0.18, 4.2);
+    slimeEl.style.transform = 'scale(' + scale + ')';
+  }
+
+  function slimeLevel(){ return Math.floor(growth / 20) + 1; }
+
+  function renderWord(){
+    wordKanaEl.innerHTML = currentWord.bonus
+      ? currentWord.kana + ' <span class="bonus-tag">✨ボーナス</span>'
+      : currentWord.kana;
+    wordRomajiEl.innerHTML = '';
+    for (var i = 0; i < currentWord.romaji.length; i++) {
+      var span = document.createElement('span');
+      span.textContent = currentWord.romaji[i];
+      if (i < typedIndex) span.className = 'typed';
+      else if (i === typedIndex) span.className = 'current';
+      wordRomajiEl.appendChild(span);
+    }
+  }
+
+  function pickWord(bonus){
+    var bank = bonus ? BONUS_WORDS : NORMAL_WORDS;
+    var w;
+    do {
+      w = bank[Math.floor(Math.random() * bank.length)];
+    } while (bank.length > 1 && currentWord && w.kana === currentWord.kana);
+    currentWord = { kana: w.kana, romaji: w.romaji, bonus: !!bonus };
+    typedIndex = 0;
+    renderWord();
+  }
+
+  function nextWord(){
+    var bonus = combo > 0 && combo % COMBO_MILESTONE === 0;
+    pickWord(bonus);
+  }
+
+  function onWordComplete(){
+    var len = currentWord.romaji.length;
+    if (currentWord.bonus) {
+      score += len * 30;
+      growth += len * 2;
+    } else {
+      score += len * 10;
+      growth += len;
+    }
+    combo++;
+    updateHud();
+    updateSlime();
+    nextWord();
+  }
+
+  function onMiss(){
+    growth = Math.max(0, growth - 3);
+    combo = 0;
+    updateHud();
+    updateSlime();
+    slimeEl.classList.remove('miss');
+    void slimeEl.offsetWidth;
+    slimeEl.classList.add('miss');
+  }
+
+  function handleChar(ch){
+    if (!running || !currentWord) return;
+    ch = ch.toLowerCase();
+    var expected = currentWord.romaji[typedIndex];
+    if (ch === expected) {
+      typedIndex++;
+      renderWord();
+      if (typedIndex >= currentWord.romaji.length) onWordComplete();
+    } else {
+      onMiss();
+    }
+  }
+
+  window.addEventListener('keydown', function(e){
+    if (!running) return;
+    if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) handleChar(e.key);
+  });
+
+  function tick(){
+    timeLeft--;
+    updateHud();
+    if (timeLeft <= 0) endGame();
+  }
+
+  function startGame(){
+    score = 0;
+    growth = 0;
+    combo = 0;
+    timeLeft = GAME_SECONDS;
+    running = true;
+    currentWord = null;
+    introEl.classList.add('hidden');
+    resultEl.classList.add('hidden');
+    updateHud();
+    updateSlime();
+    nextWord();
+    if (timerId) clearInterval(timerId);
+    timerId = setInterval(tick, 1000);
+  }
+
+  function endGame(){
+    running = false;
+    clearInterval(timerId);
+    finalLevelEl.textContent = slimeLevel();
+    finalScoreEl.textContent = score + ' 点';
+    resultEl.classList.remove('hidden');
+  }
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+
+  updateHud();
+})();
+</script>
+</body>
+</html>
