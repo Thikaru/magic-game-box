@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>とび出せ!PKストッパー — DAILY GAMES</title>
+<style>
+  :root { --bg1:#0b3d2e; --bg2:#062018; --panel:#0f4a37; --line:#1f8c63; --gold:#ffd166; --danger:#ff6584; --safe:#6be6b0; --ink:#08150f; --paper:#f3fff5; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { overflow-x:hidden; }
+  body { font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN',system-ui,sans-serif; background:radial-gradient(circle at 50% 0%,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { color:var(--gold); font-size:1.1rem; letter-spacing:.02em; }
+
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:10px; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; margin-bottom:8px; gap:6px; }
+  .hud .lives { color:var(--danger); letter-spacing:2px; }
+  .hud .score { color:var(--gold); font-weight:bold; }
+  .hud .level { color:var(--safe); font-weight:bold; }
+
+  canvas { display:block; width:100%; border-radius:10px; background:#0a2f22; touch-action:none; }
+
+  .flashMsg { text-align:center; min-height:1.4em; font-weight:bold; font-size:1rem; margin-top:6px; }
+  .flashMsg.ok { color:var(--safe); }
+  .flashMsg.bad { color:var(--danger); }
+
+  .controls { display:flex; gap:8px; margin-top:10px; }
+  .cbtn { flex:1; min-height:52px; border-radius:10px; border:0; font-size:1.05rem; font-weight:bold; color:var(--ink);
+    background:linear-gradient(160deg,#d6ffe8,var(--safe)); box-shadow:0 4px 0 #2f9d70; cursor:pointer; }
+  .cbtn:active { transform:translateY(3px); box-shadow:0 1px 0 #2f9d70; }
+
+  .overlay { position:absolute; inset:6px; border-radius:10px; background:rgba(6,32,24,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; }
+  .overlay h2 { color:var(--gold); font-size:1.35rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.87rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--gold); color:var(--ink); border:0; border-radius:10px; padding:14px 36px; min-height:48px; box-shadow:0 5px 0 #b8912a; cursor:pointer; font-weight:bold; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .footNote { text-align:center; font-size:.72rem; opacity:.65; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>とび出せ!PKストッパー</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="hud">
+      <span class="lives" id="lives">♥♥♥</span>
+      <span class="level" id="levelLabel">Lv.1</span>
+      <span class="score" id="scoreLabel">SCORE 0</span>
+    </div>
+
+    <canvas id="game" width="380" height="420"></canvas>
+
+    <div class="flashMsg" id="flashMsg"></div>
+
+    <div class="controls">
+      <button class="cbtn" id="leftBtn">⬅ 左</button>
+      <button class="cbtn" id="centerBtn">⏺ 中央</button>
+      <button class="cbtn" id="rightBtn">➡ 右</button>
+    </div>
+
+    <div class="footNote">⌨ ←(左) / ↓・Space(中央) / →(右) キーでもダイブ可能</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>キッカーが蹴る直前、ボールの上に<b>コース矢印</b>が一瞬光る。<br>
+        よく見て覚えよう!</p>
+      <p>矢印が消えたらシュート本番。<b>覚えたコースへダイブ</b>して止めろ。<br>
+        何もしなければキーパーは中央に構えたまま。</p>
+      <p>止めるほどコンボが伸びてボーナス得点アップ。<br>
+        たまに現れる<b>金色のスペシャルシュート</b>は超高速だが2倍点!</p>
+      <p>失点すると残機が1減る。残機は3つ、なくなったら終了。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲーム終了</h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
