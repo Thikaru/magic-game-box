@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ぴったりナンバーパズル — DAILY GAMES</title>
+<style>
+  :root { --bg1:#1b0b2e; --bg2:#0a0512; --panel:#241442; --line:#5b3a99; --violet:#b98eff; --amber:#ffd166; --danger:#ff6584; --safe:#6be6b0; --neg:#5fc9ff; --ink:#0d0620; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { overflow-x:hidden; }
+  body { font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN',system-ui,sans-serif; background:radial-gradient(circle at 50% 0%,var(--bg1),var(--bg2)); color:#f3ecff; min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
+  header a { color:#f3ecff; text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--violet); }
+  h1 { color:var(--violet); font-size:1.15rem; letter-spacing:.02em; }
+
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:12px; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; margin-bottom:8px; gap:6px; }
+  .hud .lives { color:var(--danger); letter-spacing:2px; }
+  .hud .score { color:var(--amber); font-weight:bold; }
+  .hud .time { color:var(--safe); font-weight:bold; }
+
+  .targetRow { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:10px; }
+  .targetBadge { display:flex; flex-direction:column; align-items:center; }
+  .targetBadge span { display:inline-flex; align-items:center; justify-content:center; width:58px; height:58px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#ffe9a8,var(--amber)); color:var(--ink); font-size:1.6rem; font-weight:bold; box-shadow:0 0 0 4px rgba(255,209,102,.25); }
+  .targetBadge small { font-size:.68rem; opacity:.8; margin-top:4px; }
+  .totalBadge { display:flex; flex-direction:column; align-items:center; }
+  .totalBadge span { display:inline-flex; align-items:center; justify-content:center; width:58px; height:58px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#e6d6ff,var(--violet)); color:var(--ink); font-size:1.6rem; font-weight:bold; box-shadow:0 0 0 4px rgba(185,142,255,.25); transition:transform .12s; }
+  .totalBadge small { font-size:.68rem; opacity:.8; margin-top:4px; }
+
+  .flashMsg { text-align:center; min-height:1.4em; font-weight:bold; font-size:.95rem; margin-bottom:6px; }
+  .flashMsg.ok { color:var(--safe); }
+  .flashMsg.bad { color:var(--danger); }
+
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:6px; }
+  .tile { aspect-ratio:1/1; min-height:44px; border-radius:10px; border:0; font-size:1.15rem; font-weight:bold; color:var(--ink);
+    background:linear-gradient(160deg,#e6d6ff,var(--violet)); box-shadow:0 4px 0 #6f47b8; cursor:pointer; }
+  .tile:active { transform:translateY(3px); box-shadow:0 1px 0 #6f47b8; }
+  .tile.neg { background:linear-gradient(160deg,#d3f1ff,var(--neg)); box-shadow:0 4px 0 #2b8ec7; }
+  .tile.neg:active { box-shadow:0 1px 0 #2b8ec7; }
+  .tile.used { opacity:.28; pointer-events:none; box-shadow:none; transform:translateY(4px); }
+
+  .combo { text-align:center; font-size:.75rem; opacity:.75; margin-bottom:4px; }
+
+  .overlay { position:absolute; inset:6px; border-radius:10px; background:rgba(10,5,18,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:22px; }
+  .overlay h2 { color:var(--violet); font-size:1.4rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.87rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--violet); color:var(--ink); border:0; border-radius:10px; padding:14px 36px; min-height:48px; box-shadow:0 5px 0 #6f47b8; cursor:pointer; font-weight:bold; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #6f47b8; }
+  .hidden { display:none; }
+
+  .footNote { text-align:center; font-size:.72rem; opacity:.6; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ぴったりナンバーパズル</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="hud">
+      <span class="lives" id="lives">♥♥♥</span>
+      <span class="time" id="timeLabel">60秒</span>
+      <span class="score" id="scoreLabel">SCORE 0</span>
+    </div>
+
+    <div class="targetRow">
+      <div class="targetBadge">
+        <span id="targetNum">0</span>
+        <small>めざす数</small>
+      </div>
+      <div class="totalBadge">
+        <span id="totalNum">0</span>
+        <small>ごうけい</small>
+      </div>
+    </div>
+
+    <div class="flashMsg" id="flashMsg"></div>
+    <div class="combo" id="comboLabel"></div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="footNote">数字タイルをタップして「めざす数」にぴったり合わせよう</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>数字タイルをタップして合計を「めざす数」に<b>ぴったり</b>合わせよう。</p>
+      <p>合計が<b>めざす数を超えたらバースト!</b><br>ライフが1減って盤面がリセットされる。</p>
+      <p>青いタイルは<b>マイナス数字</b>。超えそうな時の調整に使おう。<br>連続成功でコンボボーナスもアップ!</p>
+      <p>制限時間60秒、ライフは3つ。なくなったら終了。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲーム終了</h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
