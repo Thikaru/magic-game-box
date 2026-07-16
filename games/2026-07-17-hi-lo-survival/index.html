@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ハイ&ローサバイバル — DAILY GAMES</title>
+<style>
+  :root { --bg1:#0b3d24; --bg2:#03130b; --panel:#0f5132; --line:#d4af37; --gold:#ffd700; --red:#ff5c72; --safe:#6be6b0; --danger:#ff6584; --ink:#0d0620; --card:#fdf6e3; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { overflow-x:hidden; }
+  body { font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN',system-ui,sans-serif; background:radial-gradient(circle at 50% 0%,var(--bg1),var(--bg2)); color:#f3ecff; min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
+  header a { color:#f3ecff; text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { color:var(--gold); font-size:1.1rem; letter-spacing:.02em; }
+
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:14px; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; margin-bottom:10px; gap:6px; }
+  .hud .lives { color:var(--danger); letter-spacing:2px; font-size:1rem; }
+  .hud .combo { color:#cdfacfff; opacity:.9; }
+  .hud .score { color:var(--gold); font-weight:bold; }
+
+  .goldenBanner { text-align:center; font-size:.78rem; font-weight:bold; color:var(--ink); background:linear-gradient(160deg,#fff3b0,var(--gold)); border-radius:8px; padding:6px 8px; margin-bottom:10px; box-shadow:0 0 12px rgba(255,215,0,.6); }
+
+  .cardArea { display:flex; flex-direction:column; align-items:center; margin-bottom:10px; }
+  .cardBox { width:120px; height:168px; border-radius:12px; background:var(--card); border:3px solid #6f47b8; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 6px 0 rgba(0,0,0,.35); transition:box-shadow .15s; }
+  .cardBox.golden { border-color:var(--gold); box-shadow:0 0 18px 4px rgba(255,215,0,.75); }
+  .cardBox .rank { font-size:2.6rem; font-weight:bold; line-height:1; }
+  .cardBox .suit { font-size:2rem; margin-top:4px; }
+  .cardBox .rank.red, .cardBox .suit.red { color:#c0293a; }
+  .cardBox .rank.black, .cardBox .suit.black { color:#1c1c2e; }
+  .cardCaption { font-size:.72rem; opacity:.75; margin-top:6px; }
+
+  .oddsRow { margin-bottom:10px; }
+  .oddsBar { display:flex; height:10px; border-radius:6px; overflow:hidden; background:#04150c; margin-bottom:4px; }
+  .oddsBar .seg { height:100%; }
+  .oddsBar .seg.high { background:#5fc9ff; }
+  .oddsBar .seg.same { background:#9a7bd6; }
+  .oddsBar .seg.low { background:#ff8a65; }
+  .oddsLabels { display:flex; justify-content:space-between; font-size:.68rem; opacity:.85; }
+  .oddsLabels .hi { color:#5fc9ff; }
+  .oddsLabels .sm { color:#c9b3ff; }
+  .oddsLabels .lo { color:#ff8a65; }
+
+  .flashMsg { text-align:center; min-height:1.4em; font-weight:bold; font-size:.95rem; margin-bottom:8px; }
+  .flashMsg.ok { color:var(--safe); }
+  .flashMsg.bad { color:var(--danger); }
+
+  .btnRow { display:flex; gap:8px; margin-bottom:10px; }
+  .guessBtn { flex:1; min-height:56px; border-radius:10px; border:0; font-size:.85rem; font-weight:bold; color:var(--ink); line-height:1.5; cursor:pointer; }
+  .guessBtn.low { background:linear-gradient(160deg,#ffd8c2,#ff8a65); box-shadow:0 4px 0 #c65a3d; }
+  .guessBtn.same { background:linear-gradient(160deg,#e6d6ff,#9a7bd6); box-shadow:0 4px 0 #5f4290; }
+  .guessBtn.high { background:linear-gradient(160deg,#d3f1ff,#5fc9ff); box-shadow:0 4px 0 #2b8ec7; }
+  .guessBtn:active { transform:translateY(3px); box-shadow:none; }
+  .guessBtn:disabled { opacity:.5; }
+
+  .footNote { text-align:center; font-size:.72rem; opacity:.6; }
+
+  .overlay { position:absolute; inset:6px; border-radius:10px; background:rgba(3,19,11,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:22px; }
+  .overlay h2 { color:var(--gold); font-size:1.4rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.87rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--gold); color:var(--ink); border:0; border-radius:10px; padding:14px 36px; min-height:48px; box-shadow:0 5px 0 #a9820a; cursor:pointer; font-weight:bold; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #a9820a; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ハイ&ローサバイバル</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="hud">
+      <span class="lives" id="lives">♥♥♥</span>
+      <span class="combo" id="comboLabel">コンボ 0</span>
+      <span class="score" id="scoreLabel">SCORE 0</span>
+    </div>
+
+    <div class="goldenBanner hidden" id="goldenBanner">✨ ゴールデンラウンド ✨ 正解でスコア3倍!失敗でライフ-2!</div>
+
+    <div class="cardArea">
+      <div class="cardBox" id="cardBox">
+        <span class="rank" id="cardRank">A</span>
+        <span class="suit" id="cardSuit">♠</span>
+      </div>
+      <div class="cardCaption">いまのカード</div>
+    </div>
+
+    <div class="oddsRow">
+      <div class="oddsBar">
+        <div class="seg high" id="segHigh"></div>
+        <div class="seg same" id="segSame"></div>
+        <div class="seg low" id="segLow"></div>
+      </div>
+      <div class="oddsLabels">
+        <span class="hi">高い残り <b id="highCount">0</b></span>
+        <span class="sm">同じ残り <b id="sameCount">0</b></span>
+        <span class="lo">低い残り <b id="lowCount">0</b></span>
+      </div>
+    </div>
+
+    <div class="flashMsg" id="flashMsg"></div>
+
+    <div class="btnRow">
+      <button class="guessBtn low" id="lowBtn">▼<br>ひくい</button>
+      <button class="guessBtn same" id="sameBtn">=<br>おなじ</button>
+      <button class="guessBtn high" id="highBtn">▲<br>たかい</button>
+    </div>
+
+    <div class="footNote">キーボード: ↑たかい / ↓ひくい / Space おなじ</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>いまのカードを見て、<b>次に出るカードが「高い」「低い」「同じ」</b>かを予想してタップ!</p>
+      <p>数字は A(1)〜K(13)。当てるほどコンボが伸びてスコア倍率アップ。</p>
+      <p>4コンボごとに<b>ゴールデンラウンド</b>が発生!正解ならスコア3倍、失敗するとライフが2つ減る。</p>
+      <p>下のバーで残りカードの傾向もチェックしよう。ライフは3つ、なくなったら終了。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲーム終了</h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
