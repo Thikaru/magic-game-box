@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ルールチェンジ判定クイズ — DAILY GAMES</title>
+<style>
+  :root { --bg1:#071b2e; --bg2:#030a14; --panel:#0f2740; --line:#2f6fa8; --accent:#5fc9ff; --amber:#ffd166; --danger:#ff6584; --safe:#6be6b0; --violet:#c9a3ff; --ink:#04101c; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { overflow-x:hidden; }
+  body { font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN',system-ui,sans-serif; background:radial-gradient(circle at 50% 0%,var(--bg1),var(--bg2)); color:#eef6ff; min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
+  header a { color:#eef6ff; text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { color:var(--accent); font-size:1.1rem; letter-spacing:.02em; }
+
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:14px 12px; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; margin-bottom:10px; gap:6px; }
+  .hud .lives { color:var(--danger); letter-spacing:2px; }
+  .hud .score { color:var(--amber); font-weight:bold; }
+  .hud .time { color:var(--safe); font-weight:bold; }
+
+  .badgeRow { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px; min-height:30px; }
+  .ruleBadge { display:inline-block; padding:6px 16px; border-radius:999px; font-size:.85rem; font-weight:bold; color:var(--ink); background:var(--accent); }
+  .ruleBadge.badge-calc { background:var(--accent); }
+  .ruleBadge.badge-prime { background:var(--safe); }
+  .ruleBadge.badge-compare { background:var(--amber); }
+  .ruleBadge.badge-multiple { background:var(--violet); }
+  .rushBadge { display:inline-block; padding:6px 12px; border-radius:999px; font-size:.78rem; font-weight:bold; color:#fff; background:var(--danger); animation:pulse 0.6s infinite alternate; }
+  .rushBadge.hidden { display:none; }
+  @keyframes pulse { from{ transform:scale(1); } to{ transform:scale(1.08); } }
+
+  .questionBox { display:flex; align-items:center; justify-content:center; min-height:110px; text-align:center; margin-bottom:8px; padding:10px; border-radius:10px; background:rgba(255,255,255,.04); }
+  .questionText { font-size:1.5rem; font-weight:bold; line-height:1.5; word-break:keep-all; }
+
+  .flashMsg { text-align:center; min-height:1.4em; font-weight:bold; font-size:.95rem; margin-bottom:4px; }
+  .flashMsg.ok { color:var(--safe); }
+  .flashMsg.bad { color:var(--danger); }
+
+  .combo { text-align:center; font-size:.75rem; opacity:.8; margin-bottom:10px; min-height:1.2em; }
+
+  .answerRow { display:flex; gap:10px; margin-bottom:8px; }
+  .ansBtn { flex:1; min-height:58px; border-radius:12px; border:0; font-size:1.05rem; font-weight:bold; color:var(--ink); cursor:pointer; }
+  .ansBtn.ok { background:linear-gradient(160deg,#d6fff0,var(--safe)); box-shadow:0 4px 0 #2f9d76; }
+  .ansBtn.ok:active { transform:translateY(3px); box-shadow:0 1px 0 #2f9d76; }
+  .ansBtn.ng { background:linear-gradient(160deg,#ffe0e6,var(--danger)); box-shadow:0 4px 0 #b83f57; }
+  .ansBtn.ng:active { transform:translateY(3px); box-shadow:0 1px 0 #b83f57; }
+
+  .footNote { text-align:center; font-size:.72rem; opacity:.6; margin-top:6px; }
+
+  .overlay { position:absolute; inset:6px; border-radius:10px; background:rgba(3,10,20,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:22px; }
+  .overlay h2 { color:var(--accent); font-size:1.4rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.87rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--accent); color:var(--ink); border:0; border-radius:10px; padding:14px 36px; min-height:48px; box-shadow:0 5px 0 #2b8ec7; cursor:pointer; font-weight:bold; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #2b8ec7; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ルールチェンジ判定クイズ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="hud">
+      <span class="lives" id="lives">♥♥♥</span>
+      <span class="time" id="timeLabel">45.0秒</span>
+      <span class="score" id="scoreLabel">SCORE 0</span>
+    </div>
+
+    <div class="badgeRow">
+      <span class="ruleBadge badge-calc" id="ruleBadge">けいさん</span>
+      <span class="rushBadge hidden" id="rushBadge">🔥 ラッシュ!</span>
+    </div>
+
+    <div class="questionBox">
+      <p class="questionText" id="questionText">?</p>
+    </div>
+
+    <div class="flashMsg" id="flashMsg"></div>
+    <div class="combo" id="comboLabel"></div>
+
+    <div class="answerRow">
+      <button class="ansBtn ok" id="trueBtn" type="button">⭕ ただしい</button>
+      <button class="ansBtn ng" id="falseBtn" type="button">❌ ちがう</button>
+    </div>
+
+    <div class="footNote">出題ルールが毎回変わる!よく読んで直感で判定しよう</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>画面に出る文章が<b>正しいか・まちがっているか</b>を判定するクイズです。</p>
+      <p>「けいさん」「素数」「大小」「倍数」など<b>出題ルールが毎回切りかわる</b>ので、
+      色ラベルと文章をよく読もう。</p>
+      <p>⭕/❌ボタン(キーボードは←/→キーでもOK)で回答。まちがえるとライフと
+      残り時間が減る。正解が続くと「ラッシュタイム」で高得点チャンス!</p>
+      <p>制限時間45秒、ライフは3つ。なくなったら終了。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲーム終了</h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
