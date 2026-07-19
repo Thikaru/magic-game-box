@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>まよいの地下迷宮 — DAILY GAMES</title>
+<style>
+  :root { --bg1:#1b1430; --bg2:#0a0714; --panel:#221a3d; --line:#5b3fb8; --torch:#ffb84d; --gold:#ffd166; --hp:#ff5d7a; --safe:#6be6b0; --danger:#ff5d5d; --ink:#0a0714; --paper:#f1e9ff; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { overflow-x:hidden; }
+  body { font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN',system-ui,sans-serif; background:radial-gradient(circle at 50% 0%,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; flex-wrap:wrap; gap:6px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--torch); }
+  h1 { color:var(--torch); font-size:1.05rem; letter-spacing:.02em; }
+
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:10px; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; font-size:.8rem; margin-bottom:8px; gap:6px; flex-wrap:wrap; }
+  .hud .hp { color:var(--hp); font-weight:bold; }
+  .hud .floor { color:var(--safe); font-weight:bold; }
+  .hud .gold { color:var(--gold); font-weight:bold; }
+
+  canvas { display:block; width:100%; height:auto; aspect-ratio:1/1; border-radius:10px; background:#0d0920; touch-action:none; }
+
+  .flashMsg { text-align:center; min-height:1.4em; font-weight:bold; font-size:.92rem; margin-top:8px; }
+  .flashMsg.ok { color:var(--safe); }
+  .flashMsg.bonus { color:var(--gold); }
+  .flashMsg.bad { color:var(--danger); }
+
+  .footNote { text-align:center; font-size:.72rem; opacity:.65; margin-top:6px; }
+
+  .padWrap { display:flex; justify-content:center; margin-top:10px; }
+  .padToggle { display:block; margin:8px auto 0; background:transparent; color:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 14px; font-size:.78rem; cursor:pointer; }
+  .dpad { display:grid; grid-template-columns:repeat(3, 52px); grid-template-rows:repeat(3, 52px); gap:6px; }
+  .dpad button { font-size:1.2rem; background:var(--line); color:var(--paper); border:0; border-radius:10px; min-height:44px; min-width:44px; cursor:pointer; }
+  .dpad button:active { background:var(--torch); color:var(--ink); }
+  .dpad .up { grid-column:2; grid-row:1; }
+  .dpad .left { grid-column:1; grid-row:2; }
+  .dpad .center { grid-column:2; grid-row:2; visibility:hidden; }
+  .dpad .right { grid-column:3; grid-row:2; }
+  .dpad .down { grid-column:2; grid-row:3; }
+  .dpad.hidden { display:none; }
+
+  .overlay { position:absolute; inset:6px; border-radius:10px; background:rgba(10,7,20,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; overflow-y:auto; }
+  .overlay h2 { color:var(--torch); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--torch); color:var(--ink); border:0; border-radius:10px; padding:14px 36px; min-height:48px; box-shadow:0 5px 0 #b5762a; cursor:pointer; font-weight:bold; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b5762a; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>まよいの地下迷宮</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="hud">
+      <span class="hp" id="hpLabel">HP 20/20</span>
+      <span class="floor" id="floorLabel">B1F</span>
+      <span class="gold" id="goldLabel">💰 0</span>
+    </div>
+
+    <canvas id="game" width="352" height="352"></canvas>
+
+    <div class="flashMsg" id="flashMsg"></div>
+
+    <div class="footNote">タップ移動先へ / スワイプ / ⌨ 矢印・WASD キー</div>
+
+    <div class="padWrap">
+      <div class="dpad hidden" id="dpad">
+        <button class="up" data-dir="up">▲</button>
+        <button class="left" data-dir="left">◀</button>
+        <div class="center"></div>
+        <button class="right" data-dir="right">▶</button>
+        <button class="down" data-dir="down">▼</button>
+      </div>
+    </div>
+    <button class="padToggle" id="padToggle">🎮 コントローラ</button>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>霧につつまれた地下迷宮を1歩ずつ探索するローグライク。<br>
+        隣のマスへ<b>タップ</b>・<b>スワイプ</b>・<b>矢印/WASDキー</b>で移動しよう。</p>
+      <p><span style="color:#ff5d5d">👹モンスター</span>にぶつかると自動で戦闘。
+        倒せば先へ進めるが、負けるとダメージを受けて足止めされる。</p>
+      <p><span style="color:#ffd166">🎁宝箱</span>は開けるまで中身が分からない。
+        ちからの薬・強化・呪いのワナ…運だめし!</p>
+      <p><span style="color:#6be6b0">🔻階段</span>を見つけて潜るほど、
+        モンスターは増えて強くなる。HPが0になったら終了。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">力尽きた…</h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
