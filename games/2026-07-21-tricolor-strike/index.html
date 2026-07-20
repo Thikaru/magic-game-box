@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>トライカラー・ストライク — DAILY GAMES</title>
+<style>
+  :root { --bg1:#0b1020; --bg2:#141c3a; --paper:#f5f7ff; --ink:#12162a;
+    --red:#ff5d6c; --blue:#4da6ff; --yellow:#ffd23f; --accent:#7dffb3; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.15rem; letter-spacing:.03em; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; border:3px solid var(--accent); border-radius:12px; background:#080b18; touch-action:none; }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(8,11,24,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; }
+  .overlay h2 { color:var(--accent); font-size:1.4rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.9rem; margin-bottom:6px; }
+  .overlay .swatches { display:flex; gap:10px; margin:8px 0; }
+  .overlay .swatches span { width:22px; height:22px; border-radius:50%; display:inline-block; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #4bbf83; cursor:pointer; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #4bbf83; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:10px; font-size:.9rem; }
+  .combo { opacity:.85; }
+  .colorbar { display:flex; gap:10px; margin-top:12px; }
+  .colorbtn { flex:1; height:48px; border-radius:10px; border:3px solid transparent; cursor:pointer;
+    font-size:.85rem; font-weight:bold; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .colorbtn.active { border-color:#fff; transform:translateY(-2px); }
+  .colorbtn.red { background:var(--red); }
+  .colorbtn.blue { background:var(--blue); }
+  .colorbtn.yellow { background:var(--yellow); color:#4a3800; text-shadow:none; }
+  .hint { text-align:center; font-size:.78rem; opacity:.7; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚀 トライカラー・ストライク</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="560"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>自機は3色(赤・青・黄)に変身できる縦シューティング。<br>
+        弾は自動で発射される。狙いは<b>色あわせ</b>!</p>
+      <div class="swatches"><span style="background:#ff5d6c"></span><span style="background:#4da6ff"></span><span style="background:#ffd23f"></span></div>
+      <p><b>自機と同じ色</b>の敵は1発で撃破、高得点でコンボ継続。<br>
+        <b>ちがう色</b>の敵は2発必要で得点も低く、コンボが切れる。</p>
+      <p>敵が画面下まで来る、または色ちがいの敵にぶつかるとライフが減る。<br>
+        同じ色の敵とぶつかっても大丈夫。★の敵はどの色でも1発で高得点!</p>
+      <p>👆 ドラッグ / ⌨ ←→・A,D で移動 &nbsp; 👇 下のボタンか 1,2,3 キーで色変更</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span class="combo" id="comboLabel">COMBO 0</span>
+    <span id="livesLabel">♥♥♥</span>
+  </div>
+
+  <div class="colorbar">
+    <button class="colorbtn red" id="btnRed">赤</button>
+    <button class="colorbtn blue" id="btnBlue">青</button>
+    <button class="colorbtn yellow" id="btnYellow">黄</button>
+  </div>
+  <p class="hint">色ボタン / 1,2,3キーで自機の色を切り替え</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
