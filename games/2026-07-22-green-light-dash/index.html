@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>グリーンライト・ダッシュ — DAILY GAMES</title>
+<style>
+  :root { --bg1:#0a1f1a; --bg2:#123028; --paper:#f5fff7; --ink:#0c1712;
+    --green:#3ee06b; --red:#ff4d5e; --orange:#ffa73b; --accent:#ffd23f; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.1rem; letter-spacing:.02em; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; border:3px solid var(--accent); border-radius:12px; background:#081410; touch-action:none; }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(8,20,16,.95);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px; overflow-y:auto; }
+  .overlay h2 { color:var(--accent); font-size:1.35rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.87rem; margin-bottom:6px; }
+  .overlay .lights { display:flex; gap:10px; margin:8px 0; align-items:center; justify-content:center; }
+  .overlay .lights span { width:20px; height:20px; border-radius:50%; display:inline-block; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; font-size:.9rem; }
+  .combo { opacity:.85; }
+  .progwrap { margin-top:8px; height:14px; border-radius:7px; background:rgba(255,255,255,.12); overflow:hidden; }
+  .progbar { height:100%; width:0%; background:linear-gradient(90deg,var(--green),var(--accent)); transition:width .12s linear; }
+  .holdbtn { margin-top:14px; width:100%; height:76px; font-size:1.15rem; font-weight:bold; color:var(--ink);
+    background:var(--green); border:0; border-radius:14px; box-shadow:0 6px 0 #1f8c46; cursor:pointer; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .holdbtn.active { transform:translateY(4px); box-shadow:0 2px 0 #1f8c46; background:#5ef08a; }
+  .hint { text-align:center; font-size:.78rem; opacity:.7; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚦 グリーンライト・ダッシュ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="480"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>ボタンを<b>おさえている間だけ</b>前進する反射神経レース。<br>
+        ゴール(900m)を目指そう!</p>
+      <div class="lights"><span style="background:#3ee06b"></span>進んでOK<span style="background:#ff4d5e"></span>すぐ離せ!</div>
+      <p>時々ライトが光る。<b style="color:#ff4d5e">赤</b>が光ったら光っている間に
+        指を離さないと動いたまま捕まってライフが減る。<br>
+        <b style="color:#ffa73b">オレンジ</b>はダミー。動じずおさえ続けよう(離しても減点はないが時間をロスする)。</p>
+      <p>連続で正しく反応するとコンボが伸びる。ライフは3つ、0になったら終了。</p>
+      <p>👆 ボタンをおさえる/離す &nbsp; ⌨ スペース or ↑ キーでもOK</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span id="livesLabel">♥♥♥</span>
+    <span class="combo" id="comboLabel">COMBO 0</span>
+    <span id="scoreLabel">SCORE 0</span>
+  </div>
+  <div class="progwrap"><div class="progbar" id="progBar"></div></div>
+
+  <button class="holdbtn" id="holdBtn">▶ おさえて走る</button>
+  <p class="hint">赤信号が消える前に離す・オレンジは無視して走り続けろ</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
