@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ペアハント・ラッシュ — DAILY GAMES</title>
+<style>
+  :root { --bg1:#201233; --bg2:#2c1b4d; --paper:#faf5ff; --ink:#1c1428;
+    --accent:#ffd23f; --back:#4a2f78; --front:#ff8fb1; --star:#ffd23f; --wrong:#ff4d5e; --good:#3ee06b; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.1rem; letter-spacing:.02em; }
+  .stage { position:relative; border:3px solid var(--accent); border-radius:12px; background:#160c26; padding:10px; min-height:420px; }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(16,9,28,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px; overflow-y:auto; z-index:5; }
+  .overlay h2 { color:var(--accent); font-size:1.35rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.87rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; font-size:.88rem; }
+  .hud b { color:var(--accent); }
+  .timewrap { height:12px; border-radius:6px; background:rgba(255,255,255,.12); overflow:hidden; margin-bottom:10px; }
+  .timebar { height:100%; width:100%; background:linear-gradient(90deg,var(--good),var(--accent),var(--wrong)); transition:width .1s linear; }
+  .grid { display:grid; gap:6px; }
+  .card { perspective:600px; background:none; border:0; padding:0; aspect-ratio:1/1; cursor:pointer; outline-offset:3px; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .28s; transform-style:preserve-3d; }
+  .card.flipped .card-inner, .card.matched .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; inset:0; backface-visibility:hidden; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; font-size:clamp(1.2rem,6.5vw,1.9rem); }
+  .card-back { background:var(--back); color:var(--accent); }
+  .card-front { background:var(--front); transform:rotateY(180deg); }
+  .card.wrong .card-front { background:var(--wrong); }
+  .card.matched .card-front { background:var(--good); }
+  .card.star .card-front { background:radial-gradient(circle,#fff2b0,var(--star)); }
+  .card.matched { opacity:.45; }
+  .toast { position:absolute; top:8px; left:0; right:0; text-align:center; font-weight:bold; color:var(--accent);
+    font-size:1.1rem; pointer-events:none; opacity:0; transition:opacity .2s, transform .2s; transform:translateY(-8px); z-index:6; }
+  .toast.show { opacity:1; transform:translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🃏 ペアハント・ラッシュ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span>LV <b id="levelLabel">1</b></span>
+    <span>COMBO <b id="comboLabel">×1</b></span>
+    <span>SCORE <b id="scoreLabel">0</b></span>
+  </div>
+  <div class="timewrap"><div class="timebar" id="timeBar"></div></div>
+
+  <div class="stage">
+    <div class="toast" id="toast"></div>
+    <div class="grid" id="grid"></div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>カードを2枚めくって、同じ絵柄のペアを探そう。<br>
+        全部のペアを見つけたら次のレベルへ進み、盤面が広がる!</p>
+      <p>制限時間がなくなったら終了。ペアに成功すると時間はへらないが、
+        <b>はずれると3秒へる</b>ので慎重に!連続成功で<b>コンボ</b>が伸びてスコア倍率アップ。</p>
+      <p>レベル2から、まれに <b style="color:#ffd23f">★の激レアペア</b> が混ざる。
+        見つけると得点大幅アップ+時間も少し回復する。</p>
+      <p>👆 タップ/クリックでめくる &nbsp; ⌨ 矢印キーで移動 + Enter/Space でめくる</p>
+      <p id="bestLine"></p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var FRUITS = ['🍎','🍌','🍇','🍉','🍒','🍑','🥝','🍋','🍓','🍍'];
+  var STAR = '⭐';
+  var BEST_KEY = 'pairHuntRush_best';
+
+  var gridEl = document.getElementById('grid');
+  var introEl = document.getElementById('intro');
+  var resultEl = document.getElementById('result');
+  var startBtn = document.getElementById('startBtn');
+  var retryBtn = document.getElementById('retryBtn');
+  var levelLabel = document.getElementById('levelLabel');
+  var comboLabel = document.getElementById('comboLabel');
+  var scoreLabel = document.getElementById('scoreLabel');
+  var timeBar = document.getElementById('timeBar');
+  var toastEl = document.getElementById('toast');
+  var resultTitle = document.getElementById('resultTitle');
+  var resultText = document.getElementById('resultText');
+  var bestLine = document.getElementById('bestLine');
+
+  var level, deck, cards, openIdx, busy, combo, score, timeLeft, timeMax, matchesRemaining;
+  var timerId = null;
+  var toastTimer = null;
+
+  function getBest(){
+    try { return parseInt(localStorage.getItem(BEST_KEY), 10) || 0; } catch(e){ return 0; }
+  }
+  function setBest(v){
+    try { localStorage.setItem(BEST_KEY, String(v)); } catch(e){}
+  }
+
+  function levelConfig(lv){
+    if (lv === 1) return { cols:4, rows:3, pairs:6, star:false, bonus:15, startTime:40 };
+    if (lv === 2) return { cols:4, rows:4, pairs:8, star:true, bonus:15 };
+    return { cols:5, rows:4, pairs:10, star:true, bonus:12 };
+  }
+
+  function shuffle(arr){
+    for (var i = arr.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  function buildDeck(cfg){
+    var pool = shuffle(FRUITS.slice());
+    var fruitPairs = cfg.star ? cfg.pairs - 1 : cfg.pairs;
+    var symbols = [];
+    for (var i = 0; i < fruitPairs; i++){
+      symbols.push(pool[i], pool[i]);
+    }
+    if (cfg.star){
+      symbols.push(STAR, STAR);
+    }
+    return shuffle(symbols);
+  }
+
+  function render(cfg){
+    gridEl.innerHTML = '';
+    gridEl.style.gridTemplateColumns = 'repeat(' + cfg.cols + ', 1fr)';
+    cards = deck.map(function(symbol, idx){
+      var btn = document.createElement('button');
+      btn.className = 'card';
+      btn.setAttribute('tabindex', '0');
+      btn.setAttribute('aria-label', 'カード');
+      btn.dataset.idx = idx;
+      var inner = document.createElement('div');
+      inner.className = 'card-inner';
+      var back = document.createElement('div');
+      back.className = 'card-face card-back';
+      back.textContent = '❓';
+      var front = document.createElement('div');
+      front.className = 'card-face card-front';
+      front.textContent = symbol;
+      inner.appendChild(back);
+      inner.appendChild(front);
+      btn.appendChild(inner);
+      btn.addEventListener('click', function(){ flipCard(idx); });
+      btn.addEventListener('keydown', function(ev){ handleCardKey(ev, idx, cfg.cols); });
+      gridEl.appendChild(btn);
+      return { symbol: symbol, matched: false, el: btn };
+    });
+  }
+
+  function handleCardKey(ev, idx, cols){
+    var key = ev.key;
+    var target = -1;
+    if (key === 'ArrowRight') target = idx + 1;
+    else if (key === 'ArrowLeft') target = idx - 1;
+    else if (key === 'ArrowDown') target = idx + cols;
+    else if (key === 'ArrowUp') target = idx - cols;
+    else return;
+    ev.preventDefault();
+    if (target >= 0 && target < cards.length) cards[target].el.focus();
+  }
+
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 900);
+  }
+
+  function updateHud(){
+    levelLabel.textContent = level;
+    comboLabel.textContent = '×' + combo;
+    scoreLabel.textContent = score;
+    var pct = Math.max(0, Math.min(100, (timeLeft / timeMax) * 100));
+    timeBar.style.width = pct + '%';
+  }
+
+  function startLevel(lv){
+    level = lv;
+    var cfg = levelConfig(lv);
+    deck = buildDeck(cfg);
+    matchesRemaining = cfg.pairs;
+    openIdx = [];
+    busy = false;
+    render(cfg);
+    updateHud();
+  }
+
+  function flipCard(idx){
+    if (busy) return;
+    var c = cards[idx];
+    if (!c || c.matched || c.el.classList.contains('flipped')) return;
+    if (openIdx.indexOf(idx) !== -1) return;
+    c.el.classList.add('flipped');
+    openIdx.push(idx);
+    if (openIdx.length === 2){
+      busy = true;
+      setTimeout(evaluate, 260);
+    }
+  }
+
+  function evaluate(){
+    var a = openIdx[0], b = openIdx[1];
+    var cardA = cards[a], cardB = cards[b];
+    if (cardA.symbol === cardB.symbol){
+      var isStar = cardA.symbol === STAR;
+      cardA.matched = true; cardB.matched = true;
+      cardA.el.classList.add('matched'); cardB.el.classList.add('matched');
+      if (isStar){ cardA.el.classList.add('star'); cardB.el.classList.add('star'); }
+      combo += 1;
+      var gain = (isStar ? 30 : 10) * combo;
+      score += gain;
+      if (isStar){
+        timeLeft = Math.min(timeMax, timeLeft + 5);
+        showToast('★ ボーナス! +' + gain);
+      }
+      matchesRemaining -= 1;
+      openIdx = [];
+      busy = false;
+      updateHud();
+      if (matchesRemaining <= 0){
+        levelClear();
+      }
+    } else {
+      combo = 1;
+      cardA.el.classList.add('wrong'); cardB.el.classList.add('wrong');
+      timeLeft = Math.max(0, timeLeft - 3);
+      updateHud();
+      setTimeout(function(){
+        cardA.el.classList.remove('flipped', 'wrong');
+        cardB.el.classList.remove('flipped', 'wrong');
+        openIdx = [];
+        busy = false;
+      }, 650);
+    }
+  }
+
+  function levelClear(){
+    busy = true;
+    var cfg = levelConfig(level);
+    timeLeft = Math.min(timeMax + cfg.bonus, timeLeft + cfg.bonus);
+    timeMax = Math.max(timeMax, timeLeft);
+    showToast('LEVEL CLEAR! +' + cfg.bonus + '秒');
+    updateHud();
+    setTimeout(function(){
+      startLevel(level + 1);
+    }, 900);
+  }
+
+  function tick(){
+    timeLeft -= 0.1;
+    if (timeLeft <= 0){
+      timeLeft = 0;
+      updateHud();
+      gameOver();
+      return;
+    }
+    updateHud();
+  }
+
+  function gameOver(){
+    clearInterval(timerId);
+    timerId = null;
+    var best = getBest();
+    var isNewBest = score > best;
+    if (isNewBest) setBest(score);
+    resultTitle.textContent = 'タイムアップ!';
+    resultText.textContent = 'スコア ' + score + ' ・ レベル ' + level +
+      (isNewBest ? '  🎉 ベスト更新!' : '  (ベスト ' + Math.max(best, score) + ')');
+    resultEl.classList.remove('hidden');
+  }
+
+  function resetState(){
+    level = 1;
+    combo = 1;
+    score = 0;
+    timeMax = levelConfig(1).startTime;
+    timeLeft = timeMax;
+    if (timerId) clearInterval(timerId);
+    timerId = setInterval(tick, 100);
+    startLevel(1);
+  }
+
+  function begin(){
+    introEl.classList.add('hidden');
+    resultEl.classList.add('hidden');
+    resetState();
+  }
+
+  startBtn.addEventListener('click', begin);
+  retryBtn.addEventListener('click', begin);
+
+  bestLine.textContent = 'ベストスコア: ' + getBest();
+})();
+</script>
+</body>
+</html>
