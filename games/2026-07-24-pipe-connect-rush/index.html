@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>パイプコネクト・ラッシュ — DAILY GAMES</title>
+<style>
+  :root { --bg1:#0b2032; --bg2:#082a3d; --pipe:#1c4a63; --flow:#33e0b0; --star:#ffd23f; --ink:#eaf6f7; --accent:#ff6b6b; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'M PLUS Rounded 1c',system-ui,-apple-system,sans-serif; background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:560px; margin:0 auto; padding:16px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--flow); }
+  h1 { font-size:1.25rem; letter-spacing:.02em; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; border:4px solid var(--pipe); border-radius:12px; background:#06202f; touch-action:none; }
+  .overlay { position:absolute; inset:4px; border-radius:8px; background:rgba(6,32,47,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; overflow-y:auto; }
+  .overlay h2 { color:var(--star); font-size:1.5rem; margin-bottom:14px; }
+  .overlay p { line-height:1.8; font-size:.9rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--flow);
+    color:#06202f; font-weight:700; border:0; border-radius:10px; padding:12px 36px; box-shadow:0 5px 0 #1a8f6e; cursor:pointer; }
+  .overlay .btn:hover { transform:translateY(2px); box-shadow:0 3px 0 #1a8f6e; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.9rem; color:var(--ink); margin-top:10px; flex-wrap:wrap; }
+  .hud .lives { color:var(--accent); }
+  .timerBarWrap { margin-top:8px; height:12px; border-radius:6px; background:#04141f; border:2px solid var(--pipe); overflow:hidden; }
+  .timerBar { height:100%; background:linear-gradient(90deg,var(--flow),#7cf0d0); width:100%; transition:width .1s linear; }
+  .hint { font-size:.78rem; opacity:.85; margin-top:8px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>パイプコネクト・ラッシュ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="480" height="480"></canvas>
+
+    <!-- 説明画面: 必須要件1 -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>タップ/クリックでパイプを90°回して、左の <b>IN</b> から右の <b>OUT</b> まで水路をつなごう。</p>
+      <p>⌨ 矢印キーでカーソル移動、<b>スペース/Enter</b>で回転もできるよ。</p>
+      <p>制限時間内につながらないとライフが1減る。ライフは3つ。</p>
+      <p>まれに現れる <span style="color:var(--star)">★ボーナスパイプ</span> まで一緒に繋げると得点3倍!</p>
+      <p>レベルが進むほど盤面が広がり、時間も短くなる一発勝負。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 必須要件2 -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="timerBarWrap"><div class="timerBar" id="timerBar"></div></div>
+
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span id="levelLabel">LEVEL 1</span>
+    <span class="lives" id="livesLabel">♥♥♥</span>
+  </div>
+  <div class="hint">タップでパイプ回転 / 矢印キー+スペースでも操作可</div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
