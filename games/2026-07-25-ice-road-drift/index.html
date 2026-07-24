@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>アイスロード・ドリフト — DAILY GAMES</title>
+<style>
+  :root { --snow:#eaf6ff; --ice:#8fd4e8; --line:#ffd23f; --neon:#4dd8ff; --fire:#ff8a3d; --paper:#f3f6ff; --ink:#12131c; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:system-ui,'Hiragino Sans','Yu Gothic',sans-serif; background:radial-gradient(circle at 50% -10%,#274066,#0c0e1a 70%); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:16px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--fire); }
+  h1 { color:var(--line); font-size:1.2rem; letter-spacing:.02em; text-shadow:0 0 10px rgba(255,210,63,.5); }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; border:4px solid var(--line); border-radius:12px; background:#274066; touch-action:none; }
+  .overlay { position:absolute; inset:4px; border-radius:8px; background:rgba(10,12,26,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; overflow-y:auto; }
+  .overlay h2 { color:var(--line); font-size:1.4rem; margin-bottom:14px; }
+  .overlay p { line-height:1.85; font-size:.9rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; font-weight:700; background:var(--line);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; color:var(--neon); margin-top:10px; font-size:.95rem; flex-wrap:wrap; }
+  .hud b { color:var(--paper); }
+  .grip-tag { color:var(--fire); }
+  .controller { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:12px; }
+  .padBtns { display:flex; gap:10px; }
+  .padBtn { width:72px; height:56px; border-radius:12px; border:2px solid var(--neon); background:rgba(77,216,255,.12);
+    color:var(--neon); font-size:1.6rem; touch-action:none; }
+  .padBtn:active { background:rgba(77,216,255,.35); }
+  #toggleBtn { min-height:44px; padding:8px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.06); color:var(--paper); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🛷 アイスロード・ドリフト</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="600"></canvas>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>凍った一本道をそりで爆走!ブレーキは効かず、ツルツル滑る慣性操作で<br>道からはみ出さないように左右へ舵を切ろう。</p>
+      <p>⌨ ←→ / A・D キー長押し　👆 画面タッチ長押し　🎮 画面の←→ボタン<br>のいずれかで加速。離すと滑って進む。</p>
+      <p>🔥 焚き火ゾーンを通ると数秒だけ滑りにくくなる<b>グリップ状態</b>に!<br>連続で通るとコンボで高得点。</p>
+      <p>道からはみ出すとクラッシュしてライフが1減る。ライフは3つ。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span>SCORE <b id="scoreLabel">0</b></span>
+    <span>BEST <b id="bestLabel">0</b></span>
+    <span id="livesLabel">♥♥♥</span>
+    <span>コンボ <b id="comboLabel">0</b></span>
+    <span id="gripLabel" class="grip-tag hidden">🔥グリップ中</span>
+  </div>
+
+  <div class="controller" id="controller">
+    <span style="font-size:.8rem;opacity:.8;">舵きり</span>
+    <div class="padBtns">
+      <button class="padBtn" id="leftBtn">◀</button>
+      <button class="padBtn" id="rightBtn">▶</button>
+    </div>
+    <button id="toggleBtn">🎮 コントローラ</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
