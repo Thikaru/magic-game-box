@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ライトスイッチ脱出 — DAILY GAMES</title>
+<style>
+  :root {
+    --bg-light1:#3a3560; --bg-light2:#4d4680;
+    --bg-dark1:#0a0a16; --bg-dark2:#12112a;
+    --wall:#2a2450; --marquee:#ffd23f; --coin:#ff5da2; --crt:#4dd8e6;
+    --ink:#fffdf5; --accent:#ff6b6b; --ok:#6be08a;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'M PLUS Rounded 1c',system-ui,-apple-system,sans-serif; background:linear-gradient(180deg,#1a1638,#0d0b20); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:16px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--coin); }
+  h1 { font-size:1.2rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .room {
+    position:relative; border:4px solid var(--wall); border-radius:14px;
+    padding:16px; min-height:400px;
+    background:linear-gradient(180deg,var(--bg-light1),var(--bg-light2));
+    transition:background .3s ease;
+  }
+  .room.dark { background:linear-gradient(180deg,var(--bg-dark1),var(--bg-dark2)); }
+
+  .notebook {
+    display:flex; justify-content:center; gap:14px; font-size:1.1rem;
+    background:rgba(0,0,0,.25); border-radius:10px; padding:8px; margin-bottom:14px;
+  }
+  .notebook span { min-width:1.6em; text-align:center; }
+  .notebook .filled { color:var(--marquee); font-weight:700; }
+
+  .hotspots { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
+  .hotspot {
+    position:relative; height:76px; border-radius:12px; border:2px solid rgba(255,253,245,.25);
+    background:rgba(255,253,245,.06); color:var(--ink); font-size:1.8rem;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:transform .1s, border-color .15s, background .15s;
+  }
+  .hotspot:active { transform:scale(.94); }
+  .hotspot.found { border-color:var(--ok); background:rgba(107,224,138,.15); }
+  .hotspot .badge {
+    position:absolute; top:2px; left:4px; font-size:.7rem; font-weight:700;
+    color:var(--marquee); background:rgba(0,0,0,.4); border-radius:6px; padding:0 4px;
+  }
+  .hotspot .tag {
+    position:absolute; bottom:2px; right:4px; font-size:.85rem; font-weight:700; color:var(--ok);
+  }
+  .flash { animation:flash .5s ease; }
+  @keyframes flash { 0%,100%{ box-shadow:none; } 50%{ box-shadow:0 0 0 3px var(--crt); } }
+  .toast {
+    position:absolute; left:50%; bottom:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--ink); font-size:.78rem; padding:6px 12px;
+    border-radius:8px; opacity:0; pointer-events:none; transition:opacity .2s; text-align:center; max-width:90%;
+  }
+  .toast.show { opacity:1; }
+
+  .switchRow { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .switchBtn {
+    flex-shrink:0; font-size:1rem; font-weight:700; background:var(--crt); color:#0d0b20;
+    border:0; border-radius:10px; padding:12px 18px; min-height:44px; box-shadow:0 4px 0 #2a8c96; cursor:pointer;
+  }
+  .switchBtn:active { transform:translateY(2px); box-shadow:0 2px 0 #2a8c96; }
+  .switchBtn:disabled { opacity:.4; cursor:default; }
+  .charges { font-size:.85rem; opacity:.85; }
+  .flickerBar { flex:1; height:10px; border-radius:5px; background:#04041a; border:2px solid var(--wall); overflow:hidden; }
+  .flickerFill { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),#ffb37a); transition:width .1s linear; }
+
+  .keypadWrap { margin-top:6px; }
+  .inputDisplay {
+    text-align:center; font-size:1.3rem; letter-spacing:.4em; background:rgba(0,0,0,.25);
+    border-radius:8px; padding:8px; margin-bottom:8px; min-height:2.2em;
+  }
+  .keypad { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+  .keypad button {
+    min-height:44px; border-radius:8px; border:0; background:rgba(255,253,245,.12); color:var(--ink);
+    font-size:1.05rem; cursor:pointer;
+  }
+  .keypad button:active { background:rgba(255,253,245,.25); }
+  .keyRow2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+  .keyRow2 .clearBtn { background:rgba(255,107,107,.3); }
+  .keyRow2 .okBtn { background:var(--ok); color:#0d0b20; font-weight:700; }
+  .keyRow2 button { min-height:44px; border-radius:8px; border:0; font-size:1rem; cursor:pointer; }
+
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(13,11,32,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; overflow-y:auto; }
+  .overlay h2 { color:var(--marquee); font-size:1.5rem; margin-bottom:14px; }
+  .overlay p { line-height:1.8; font-size:.9rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--marquee);
+    color:#2a2450; font-weight:700; border:0; border-radius:10px; padding:12px 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.9rem; margin-top:12px; flex-wrap:wrap; }
+  .timerBarWrap { margin-top:8px; height:12px; border-radius:6px; background:#04041a; border:2px solid var(--wall); overflow:hidden; }
+  .timerBar { height:100%; background:linear-gradient(90deg,var(--coin),#ff9ecb); width:100%; transition:width .1s linear; }
+  .hint { font-size:.78rem; opacity:.8; margin-top:8px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ライトスイッチ脱出</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="room" id="room">
+      <div class="notebook" id="notebook">
+        <span>①<span id="slot1">_</span></span>
+        <span>②<span id="slot2">_</span></span>
+        <span>③<span id="slot3">_</span></span>
+      </div>
+
+      <div class="hotspots" id="hotspots"></div>
+
+      <div class="switchRow">
+        <button class="switchBtn" id="switchBtn">💡 スイッチ</button>
+        <div class="flickerBar"><div class="flickerFill" id="flickerFill"></div></div>
+        <span class="charges" id="chargesLabel">残り5</span>
+      </div>
+
+      <div class="keypadWrap">
+        <div class="inputDisplay" id="inputDisplay">＿ ＿ ＿</div>
+        <div class="keypad" id="keypad"></div>
+        <div class="keyRow2">
+          <button class="clearBtn" id="clearBtn">けす</button>
+          <button class="okBtn" id="okBtn">かいじょ!</button>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>閉じ込められた部屋から、3桁の暗証番号を見つけて脱出しよう。</p>
+        <p>家具をタップすると手がかりを調べられる。ただし手がかりの中には
+          <b>「あかり」の状態でしか見えないもの</b>と<b>「くらやみ」でしか見えないもの</b>がある。</p>
+        <p>💡スイッチを押すと数秒だけ部屋が暗くなる(バッテリー残量に限りあり)。
+          暗いうちに手がかりをタップしよう。</p>
+        <p>3つの数字(①②③)が全部わかったら、テンキーで入力して「かいじょ!」を押そう。</p>
+        <p>⌨ 数字キー/Enter/BackSpace、<b>L</b>キーでスイッチも操作できる。</p>
+        <p>制限時間内に脱出できないとタイムオーバー。まちがえると時間が減るので慎重に!</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+
+    <div class="timerBarWrap"><div class="timerBar" id="timerBar"></div></div>
+    <div class="hud">
+      <span id="timeLabel">TIME 90</span>
+      <span id="scoreLabel">SCORE 0</span>
+    </div>
+    <div class="hint">タップで家具を調査 / 💡でくらやみに切り替え / 数字キーで暗証番号入力</div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
