@@ -4,5 +4,14 @@
   "genre": "レース",
   "date": "2026-07-25",
   "description": "凍った一本道を自動で滑走するアイスレース。ブレーキが効かずツルツル滑る慣性操作で道からはみ出さずに進もう。焚き火ゾーンを通ると一時的に滑りにくくなるグリップボーナス発生、連続で通過するとコンボで高得点。",
-  "path": "games/2026-07-25-ice-road-drift/"
+  "path": "games/2026-07-25-ice-road-drift/",
+  "music": {
+    "files": [
+      "assets/music/pop.mp3",
+      "assets/music/speed.mp3",
+      "assets/music/dark.mp3",
+      "assets/music/limit.mp3"
+    ],
+    "license": "AI生成音源（権利者本人が生成・提供。第三者の著作権なし）。トップページ（index.html）の「⚠️ 注意事項」にも明記。"
+  }
 }

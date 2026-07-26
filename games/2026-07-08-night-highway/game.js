@@ -248,3 +248,75 @@
   resetGame();
   requestAnimationFrame(loop);
 })();
+
+(() => {
+  const MUSIC_TRACKS = ['pop', 'speed', 'dark', 'limit'];
+  const musicSelect = document.getElementById('musicSelect');
+  const musicToggle = document.getElementById('musicToggle');
+  const bgm = new Audio();
+  bgm.loop = true;
+  bgm.volume = 0.5;
+  let bgmStarted = false;
+  let musicOn = true;
+
+  function playTrack(key) {
+    bgm.src = `../../assets/music/${key}.mp3`;
+    bgm.currentTime = 0;
+    bgm.play().catch(() => {});
+  }
+
+  musicSelect.addEventListener('change', () => playTrack(musicSelect.value));
+
+  musicToggle.addEventListener('click', () => {
+    musicOn = !musicOn;
+    bgm.muted = !musicOn;
+    musicToggle.textContent = musicOn ? '🔊 BGM ON' : '🔇 BGM OFF';
+    if (musicOn && bgmStarted && bgm.paused) bgm.play().catch(() => {});
+  });
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    if (bgmStarted) return;
+    bgmStarted = true;
+    const randomKey = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
+    musicSelect.value = randomKey;
+    playTrack(randomKey);
+  }, { once: true });
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const vpadWrap = document.getElementById('vpadWrap');
+  const vpadToggle = document.getElementById('vpadToggle');
+  const vpadR = document.getElementById('vpadR');
+
+  function setVpadVisible(v) {
+    vpadWrap.classList.toggle('hidden', !v);
+  }
+  let vpadVisible = false;
+  setVpadVisible(vpadVisible);
+  vpadToggle.addEventListener('click', () => {
+    vpadVisible = !vpadVisible;
+    setVpadVisible(vpadVisible);
+  });
+
+  function dispatchKey(type, key) {
+    const target = (document.activeElement && document.activeElement !== document.body)
+      ? document.activeElement : window;
+    target.dispatchEvent(new KeyboardEvent(type, { key, code: key, bubbles: true, cancelable: true }));
+  }
+
+  document.querySelectorAll('.vpadBtn').forEach((btn) => {
+    const key = btn.dataset.key;
+    const press = (e) => { e.preventDefault(); dispatchKey('keydown', key); };
+    const release = (e) => { e.preventDefault(); dispatchKey('keyup', key); };
+    btn.addEventListener('pointerdown', press);
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('pointerleave', release);
+  });
+
+  vpadR.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    dispatchKey('keydown', 'Enter');
+    dispatchKey('keyup', 'Enter');
+  });
+});

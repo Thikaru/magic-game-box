@@ -42,6 +42,27 @@
     color:var(--paper); border:1px solid rgba(255,255,255,.25); border-radius:6px; cursor:pointer; }
   .vkb-row button:active { background:var(--marquee); color:var(--ink); }
   .result-score { font-family:monospace; color:var(--marquee); font-size:2rem; margin:6px 0; }
+  .musicBar { display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:.85rem; flex-wrap:wrap; }
+  .musicBar select { font-family:inherit; font-size:.9rem; min-height:44px; border-radius:8px; border:1px solid #ffd23f; background:#fffdf5; color:#1c1c28; padding:0 8px; }
+  .musicToggle { font-family:inherit; font-size:.85rem; color:#fffdf5; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.45); border-radius:8px; padding:0 12px; min-height:44px; cursor:pointer; }
+  .vpadArea { max-width:560px; margin:14px auto 0; padding:0 12px; display:flex;
+    flex-direction:column; align-items:center; gap:10px; }
+  .vpadToggle { font-family:inherit; font-size:.85rem; color:#fff; background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:0 14px; min-height:40px; cursor:pointer; }
+  .vpadPanel { display:flex; align-items:center; justify-content:center; gap:28px; width:100%;
+    background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.25); border-radius:16px; padding:16px; }
+  .vpadPanel.hidden { display:none; }
+  .vpad { position:relative; width:132px; height:132px; flex-shrink:0; }
+  .vpadBtn { position:absolute; width:44px; height:44px; border-radius:10px; border:1px solid rgba(255,255,255,.5);
+    background:rgba(255,255,255,.12); color:#fff; font-size:1.1rem; display:flex; align-items:center; justify-content:center;
+    touch-action:none; user-select:none; -webkit-user-select:none; }
+  .vpadUp    { left:44px; top:0; }
+  .vpadLeft  { left:0;    top:44px; }
+  .vpadRight { left:88px; top:44px; }
+  .vpadDown  { left:44px; top:88px; }
+  .vpadR { width:60px; height:60px; flex-shrink:0; border-radius:50%; border:1px solid rgba(255,255,255,.5);
+    background:rgba(255,210,63,.9); color:#1c1c28; font-weight:700; font-size:1.1rem; touch-action:none;
+    user-select:none; -webkit-user-select:none; }
 </style>
 </head>
 <body>
@@ -50,6 +71,17 @@
     <h1>スライムそだてタイピング</h1>
     <a href="../../index.html">← トップへ</a>
   </header>
+
+  <div class="musicBar">
+    <button type="button" class="musicToggle" id="musicToggle">🔊 BGM ON</button>
+    <label for="musicSelect">🎵 BGM</label>
+    <select id="musicSelect">
+      <option value="pop">ポップ</option>
+      <option value="speed">スピード</option>
+      <option value="dark">ダーク</option>
+      <option value="limit">リミット</option>
+    </select>
+  </div>
 
   <div class="stage" id="stage">
     <div class="hud">
@@ -89,6 +121,19 @@
       <div class="result-score" id="finalScore"></div>
       <button class="btn" id="retryBtn">もういちど</button>
     </div>
+  </div>
+</div>
+
+<div class="vpadArea">
+  <button type="button" class="vpadToggle" id="vpadToggle">🎮 コントローラ 表示/非表示</button>
+  <div class="vpadPanel hidden" id="vpadWrap">
+    <div class="vpad">
+      <button type="button" class="vpadBtn vpadUp" data-key="ArrowUp">▲</button>
+      <button type="button" class="vpadBtn vpadLeft" data-key="ArrowLeft">◀</button>
+      <button type="button" class="vpadBtn vpadRight" data-key="ArrowRight">▶</button>
+      <button type="button" class="vpadBtn vpadDown" data-key="ArrowDown">▼</button>
+    </div>
+    <button type="button" class="vpadR" id="vpadR">R</button>
   </div>
 </div>
 
@@ -275,6 +320,80 @@
 
   updateHud();
 })();
+</script>
+<script>
+(() => {
+  const MUSIC_TRACKS = ['pop', 'speed', 'dark', 'limit'];
+  const musicSelect = document.getElementById('musicSelect');
+  const musicToggle = document.getElementById('musicToggle');
+  const bgm = new Audio();
+  bgm.loop = true;
+  bgm.volume = 0.5;
+  let bgmStarted = false;
+  let musicOn = true;
+
+  function playTrack(key) {
+    bgm.src = `../../assets/music/${key}.mp3`;
+    bgm.currentTime = 0;
+    bgm.play().catch(() => {});
+  }
+
+  musicSelect.addEventListener('change', () => playTrack(musicSelect.value));
+
+  musicToggle.addEventListener('click', () => {
+    musicOn = !musicOn;
+    bgm.muted = !musicOn;
+    musicToggle.textContent = musicOn ? '🔊 BGM ON' : '🔇 BGM OFF';
+    if (musicOn && bgmStarted && bgm.paused) bgm.play().catch(() => {});
+  });
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    if (bgmStarted) return;
+    bgmStarted = true;
+    const randomKey = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
+    musicSelect.value = randomKey;
+    playTrack(randomKey);
+  }, { once: true });
+})();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const vpadWrap = document.getElementById('vpadWrap');
+  const vpadToggle = document.getElementById('vpadToggle');
+  const vpadR = document.getElementById('vpadR');
+
+  function setVpadVisible(v) {
+    vpadWrap.classList.toggle('hidden', !v);
+  }
+  let vpadVisible = false;
+  setVpadVisible(vpadVisible);
+  vpadToggle.addEventListener('click', () => {
+    vpadVisible = !vpadVisible;
+    setVpadVisible(vpadVisible);
+  });
+
+  function dispatchKey(type, key) {
+    const target = (document.activeElement && document.activeElement !== document.body)
+      ? document.activeElement : window;
+    target.dispatchEvent(new KeyboardEvent(type, { key, code: key, bubbles: true, cancelable: true }));
+  }
+
+  document.querySelectorAll('.vpadBtn').forEach((btn) => {
+    const key = btn.dataset.key;
+    const press = (e) => { e.preventDefault(); dispatchKey('keydown', key); };
+    const release = (e) => { e.preventDefault(); dispatchKey('keyup', key); };
+    btn.addEventListener('pointerdown', press);
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('pointerleave', release);
+  });
+
+  vpadR.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    dispatchKey('keydown', 'Enter');
+    dispatchKey('keyup', 'Enter');
+  });
+});
 </script>
 </body>
 </html>

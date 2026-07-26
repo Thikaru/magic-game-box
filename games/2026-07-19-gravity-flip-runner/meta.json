@@ -4,5 +4,14 @@
   "genre": "アクション",
   "date": "2026-07-19",
   "description": "タップで重力を反転させて、床と天井を切りかえながらトゲを避けて走り抜けろ!黄金のジェムを連続で集めるとコンボボーナス発生。",
-  "path": "games/2026-07-19-gravity-flip-runner/"
+  "path": "games/2026-07-19-gravity-flip-runner/",
+  "music": {
+    "files": [
+      "assets/music/pop.mp3",
+      "assets/music/speed.mp3",
+      "assets/music/dark.mp3",
+      "assets/music/limit.mp3"
+    ],
+    "license": "AI生成音源（権利者本人が生成・提供。第三者の著作権なし）。トップページ（index.html）の「⚠️ 注意事項」にも明記。"
+  }
 }

@@ -4,5 +4,14 @@
   "genre": "ローグライク",
   "date": "2026-07-20",
   "description": "霧に包まれた地下迷宮を1歩ずつ探索するローグライク。モンスターにぶつかると自動戦闘、宝箱は開けるまで中身が分からず強化か呪いかは運しだい。階段を潜るほど敵は強くなる一発勝負、HPが尽きたら最初から。",
-  "path": "games/2026-07-20-fog-dungeon/"
+  "path": "games/2026-07-20-fog-dungeon/",
+  "music": {
+    "files": [
+      "assets/music/pop.mp3",
+      "assets/music/speed.mp3",
+      "assets/music/dark.mp3",
+      "assets/music/limit.mp3"
+    ],
+    "license": "AI生成音源（権利者本人が生成・提供。第三者の著作権なし）。トップページ（index.html）の「⚠️ 注意事項」にも明記。"
+  }
 }

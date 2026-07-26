@@ -59,6 +59,27 @@
   .hud .badge { background:rgba(255,253,245,.1); border:1px solid rgba(255,210,63,.4); border-radius:999px; padding:4px 12px; }
   .status { text-align:center; margin-top:10px; min-height:1.4em; font-size:.9rem; opacity:.9; }
   .status.reverse-note { color:var(--echo); font-weight:700; }
+  .musicBar { display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:.85rem; flex-wrap:wrap; }
+  .musicBar select { font-family:inherit; font-size:.9rem; min-height:44px; border-radius:8px; border:1px solid #ffd23f; background:#fffdf5; color:#1c1c28; padding:0 8px; }
+  .musicToggle { font-family:inherit; font-size:.85rem; color:#fffdf5; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.45); border-radius:8px; padding:0 12px; min-height:44px; cursor:pointer; }
+  .vpadArea { max-width:560px; margin:14px auto 0; padding:0 12px; display:flex;
+    flex-direction:column; align-items:center; gap:10px; }
+  .vpadToggle { font-family:inherit; font-size:.85rem; color:#fff; background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:0 14px; min-height:40px; cursor:pointer; }
+  .vpadPanel { display:flex; align-items:center; justify-content:center; gap:28px; width:100%;
+    background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.25); border-radius:16px; padding:16px; }
+  .vpadPanel.hidden { display:none; }
+  .vpad { position:relative; width:132px; height:132px; flex-shrink:0; }
+  .vpadBtn { position:absolute; width:44px; height:44px; border-radius:10px; border:1px solid rgba(255,255,255,.5);
+    background:rgba(255,255,255,.12); color:#fff; font-size:1.1rem; display:flex; align-items:center; justify-content:center;
+    touch-action:none; user-select:none; -webkit-user-select:none; }
+  .vpadUp    { left:44px; top:0; }
+  .vpadLeft  { left:0;    top:44px; }
+  .vpadRight { left:88px; top:44px; }
+  .vpadDown  { left:44px; top:88px; }
+  .vpadR { width:60px; height:60px; flex-shrink:0; border-radius:50%; border:1px solid rgba(255,255,255,.5);
+    background:rgba(255,210,63,.9); color:#1c1c28; font-weight:700; font-size:1.1rem; touch-action:none;
+    user-select:none; -webkit-user-select:none; }
 </style>
 </head>
 <body>
@@ -67,6 +88,17 @@
     <h1>カラーエコー</h1>
     <a href="../../index.html">← トップへ</a>
   </header>
+
+  <div class="musicBar">
+    <button type="button" class="musicToggle" id="musicToggle">🔊 BGM ON</button>
+    <label for="musicSelect">🎵 BGM</label>
+    <select id="musicSelect">
+      <option value="pop">ポップ</option>
+      <option value="speed">スピード</option>
+      <option value="dark">ダーク</option>
+      <option value="limit">リミット</option>
+    </select>
+  </div>
 
   <div class="stage">
     <div class="board" id="board">
@@ -99,6 +131,19 @@
     <span class="badge" id="bestLabel">ベスト 0</span>
   </div>
   <div class="status" id="statusLabel"></div>
+</div>
+
+<div class="vpadArea">
+  <button type="button" class="vpadToggle" id="vpadToggle">🎮 コントローラ 表示/非表示</button>
+  <div class="vpadPanel hidden" id="vpadWrap">
+    <div class="vpad">
+      <button type="button" class="vpadBtn vpadUp" data-key="ArrowUp">▲</button>
+      <button type="button" class="vpadBtn vpadLeft" data-key="ArrowLeft">◀</button>
+      <button type="button" class="vpadBtn vpadRight" data-key="ArrowRight">▶</button>
+      <button type="button" class="vpadBtn vpadDown" data-key="ArrowDown">▼</button>
+    </div>
+    <button type="button" class="vpadR" id="vpadR">R</button>
+  </div>
 </div>
 
 <script src="game.js"></script>

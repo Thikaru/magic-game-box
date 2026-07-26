@@ -4,5 +4,14 @@
   "genre": "タイピング×育成",
   "date": "2026-07-14",
   "description": "制限時間60秒でローマ字タイピング。正解するとスライムが育ち、ミスタイプすると少し縮んでしまう。コンボを5つなぐと出現するボーナス単語で一気に成長させよう。",
-  "path": "games/2026-07-14-slime-typing/"
+  "path": "games/2026-07-14-slime-typing/",
+  "music": {
+    "files": [
+      "assets/music/pop.mp3",
+      "assets/music/speed.mp3",
+      "assets/music/dark.mp3",
+      "assets/music/limit.mp3"
+    ],
+    "license": "AI生成音源（権利者本人が生成・提供。第三者の著作権なし）。トップページ（index.html）の「⚠️ 注意事項」にも明記。"
+  }
 }

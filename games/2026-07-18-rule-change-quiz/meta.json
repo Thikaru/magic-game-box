@@ -4,5 +4,14 @@
   "genre": "クイズ",
   "date": "2026-07-18",
   "description": "「けいさん」「素数」「大小」「倍数」…出題ルールが毎回切りかわる⭕❌判定クイズ。よく読んで直感で答えよう。正解が続くと高得点の「ラッシュタイム」に突入!",
-  "path": "games/2026-07-18-rule-change-quiz/"
+  "path": "games/2026-07-18-rule-change-quiz/",
+  "music": {
+    "files": [
+      "assets/music/pop.mp3",
+      "assets/music/speed.mp3",
+      "assets/music/dark.mp3",
+      "assets/music/limit.mp3"
+    ],
+    "license": "AI生成音源（権利者本人が生成・提供。第三者の著作権なし）。トップページ（index.html）の「⚠️ 注意事項」にも明記。"
+  }
 }

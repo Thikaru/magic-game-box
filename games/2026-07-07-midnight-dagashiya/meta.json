@@ -4,5 +4,14 @@
   "genre": "ノベル",
   "date": "2026-07-07",
   "description": "おばあちゃんの形見を持って歩く夜道に、不思議な駄菓子屋が現れた。物語にかくれたヒントに気づけばハッピーエンドへ。エンディングは4つ。",
-  "path": "games/2026-07-07-midnight-dagashiya/"
+  "path": "games/2026-07-07-midnight-dagashiya/",
+  "music": {
+    "files": [
+      "assets/music/pop.mp3",
+      "assets/music/speed.mp3",
+      "assets/music/dark.mp3",
+      "assets/music/limit.mp3"
+    ],
+    "license": "AI生成音源（権利者本人が生成・提供。第三者の著作権なし）。トップページ（index.html）の「⚠️ 注意事項」にも明記。"
+  }
 }

@@ -4,5 +4,14 @@
   "genre": "反射神経",
   "date": "2026-07-22",
   "description": "ボタンをおさえている間だけ前進する反射神経レース。赤信号が光ったら消える前に指を離さないと動いたまま捕まってライフが減る。オレンジはダミー信号で、動じずおさえ続けるのが正解。正しく反応し続けるとコンボが伸び、ゴール900mまでのタイムとコンボでハイスコアを狙う一発勝負。",
-  "path": "games/2026-07-22-green-light-dash/"
+  "path": "games/2026-07-22-green-light-dash/",
+  "music": {
+    "files": [
+      "assets/music/pop.mp3",
+      "assets/music/speed.mp3",
+      "assets/music/dark.mp3",
+      "assets/music/limit.mp3"
+    ],
+    "license": "AI生成音源（権利者本人が生成・提供。第三者の著作権なし）。トップページ（index.html）の「⚠️ 注意事項」にも明記。"
+  }
 }

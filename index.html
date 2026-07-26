@@ -7,13 +7,34 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
+<style>
+  .notice-btn { font-family:'M PLUS Rounded 1c',sans-serif; font-size:.85rem; color:var(--paper);
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.4); border-radius:8px;
+    padding:6px 12px; min-height:36px; cursor:pointer; }
+  dialog#noticeDialog { border:0; border-radius:12px; padding:22px; max-width:340px; width:88%;
+    background:var(--paper); color:var(--ink); font-family:var(--body); }
+  dialog#noticeDialog::backdrop { background:rgba(0,0,0,.6); }
+  dialog#noticeDialog h2 { font-family:var(--display); color:var(--carpet); font-size:1.2rem; margin-bottom:12px; }
+  dialog#noticeDialog p { line-height:1.8; font-size:.9rem; margin-bottom:18px; }
+  dialog#noticeDialog button { font-family:var(--display); font-size:1rem; background:var(--marquee);
+    color:var(--ink); border:0; border-radius:10px; padding:10px 28px; min-height:44px; cursor:pointer; }
+</style>
 </head>
 <body>
 <div class="wrap">
   <header class="site">
     <a class="logo" href="index.html">DAILY<span>GAMES</span></a>
-    <nav><a href="archive.html">過去のゲームで遊ぶ</a></nav>
+    <nav>
+      <button type="button" class="notice-btn" id="noticeBtn">⚠️ 注意事項</button>
+      <a href="archive.html">過去のゲームで遊ぶ</a>
+    </nav>
   </header>
+
+  <dialog id="noticeDialog">
+    <h2>注意事項</h2>
+    <p>このサイトのゲームは Claude Code によって自動生成されています。ゲーム内で使用しているBGM(音楽)についても、AIによって生成されたものです。</p>
+    <button type="button" id="noticeCloseBtn">閉じる</button>
+  </dialog>
 
   <main class="marquee">
     <div class="marquee-inner" id="today">
@@ -25,6 +46,13 @@
 </div>
 
 <script>
+document.getElementById('noticeBtn').addEventListener('click', () => {
+  document.getElementById('noticeDialog').showModal();
+});
+document.getElementById('noticeCloseBtn').addEventListener('click', () => {
+  document.getElementById('noticeDialog').close();
+});
+
 fetch('games.json?' + Date.now())
   .then(r => r.json())
   .then(data => {

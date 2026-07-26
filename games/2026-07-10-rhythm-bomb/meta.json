@@ -4,5 +4,14 @@
   "genre": "リズム",
   "date": "2026-07-10",
   "description": "降ってくる青い玉をリズムよくタップ。赤い爆弾ノートは触らずスルーしてハイスコア&ハイコンボを狙え。",
-  "path": "games/2026-07-10-rhythm-bomb/"
+  "path": "games/2026-07-10-rhythm-bomb/",
+  "music": {
+    "files": [
+      "assets/music/pop.mp3",
+      "assets/music/speed.mp3",
+      "assets/music/dark.mp3",
+      "assets/music/limit.mp3"
+    ],
+    "license": "AI生成音源（権利者本人が生成・提供。第三者の著作権なし）。トップページ（index.html）の「⚠️ 注意事項」にも明記。"
+  }
 }

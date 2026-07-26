@@ -30,25 +30,74 @@
   let running = false;
   let rafId = 0;
 
-  function freshBall() {
-    return { x: W / 2, y: H - 70, r: 8, vx: 4 * (Math.random() < .5 ? 1 : -1), vy: -5 };
+  // ---- BGM(assets/music/ 配下のAI生成音源。著作権フリー) ----
+  const MUSIC_TRACKS = ['pop', 'speed', 'dark', 'limit'];
+  const musicSelect = document.getElementById('musicSelect');
+  const musicToggle = document.getElementById('musicToggle');
+  const bgm = new Audio();
+  bgm.loop = true;
+  bgm.volume = 0.5;
+  let bgmStarted = false;
+  let musicOn = true;
+
+  function playTrack(key) {
+    bgm.src = `../../assets/music/${key}.mp3`;
+    bgm.currentTime = 0;
+    bgm.play().catch(() => {});
   }
 
-  // ---- 初期状態を作る(リトライはこれを呼び直すだけ) ----
-  function newState() {
-    const rows = 5, cols = 8, bw = 52, bh = 20, gapX = 6, gapY = 8;
+  musicSelect.addEventListener('change', () => playTrack(musicSelect.value));
+
+  musicToggle.addEventListener('click', () => {
+    musicOn = !musicOn;
+    bgm.muted = !musicOn;
+    musicToggle.textContent = musicOn ? '🔊 BGM ON' : '🔇 BGM OFF';
+    if (musicOn && bgmStarted && bgm.paused) bgm.play().catch(() => {});
+  });
+
+  // ---- 難易度カーブ: レベルが上がるほどボールが速く、ブロックの段数が増える ----
+  function speedMultiplier(level) {
+    return Math.min(1 + (level - 1) * 0.15, 2.4);
+  }
+
+  function freshBall(level) {
+    const m = speedMultiplier(level);
+    return { x: W / 2, y: H - 70, r: 8, vx: 4 * m * (Math.random() < .5 ? 1 : -1), vy: -5 * m };
+  }
+
+  function buildBricks(level) {
+    const rows = Math.min(5 + Math.floor((level - 1) / 2), 8), cols = 8, bw = 52, bh = 20, gapX = 6, gapY = 8;
     const offsetX = (W - cols * bw - (cols - 1) * gapX) / 2;
     const bricks = [];
     for (let r = 0; r < rows; r++)
       for (let c = 0; c < cols; c++)
-        bricks.push({ x: offsetX + c * (bw + gapX), y: 60 + r * (bh + gapY), w: bw, h: bh, color: COLORS[r], alive: true });
+        bricks.push({ x: offsetX + c * (bw + gapX), y: 60 + r * (bh + gapY), w: bw, h: bh, color: COLORS[r % COLORS.length], alive: true });
+    return bricks;
+  }
+
+  // ---- 初期状態を作る(リトライはこれを呼び直すだけ) ----
+  function newState() {
+    const level = 1;
     return {
       paddle: { x: W / 2 - PADDLE_BASE_W / 2, y: H - 40, w: PADDLE_BASE_W, h: 14 },
-      balls: [freshBall()],
+      balls: [freshBall(level)],
       powerups: [],
       effects: { wideUntil: 0, slowUntil: 0 },
-      bricks, score: 0, lives: 3, keys: {}
+      bricks: buildBricks(level), score: 0, lives: 3, level, levelUpUntil: 0, keys: {}
     };
+  }
+
+  // ---- 全ブロックを壊したら次のレベルへ(スコア・残機は引き継ぎ、どんどん速くなる) ----
+  function nextLevel() {
+    const s = state;
+    s.level++;
+    s.bricks = buildBricks(s.level);
+    s.balls = [freshBall(s.level)];
+    s.powerups = [];
+    s.paddle.w = PADDLE_BASE_W;
+    s.paddle.x = W / 2 - s.paddle.w / 2;
+    s.effects = { wideUntil: 0, slowUntil: 0 };
+    s.levelUpUntil = Date.now() + 1400;
   }
 
   // ---- 入力 ----
@@ -130,8 +179,8 @@
     s.balls = s.balls.filter(b => b.y <= H + b.r);
     if (s.balls.length === 0) {
       s.lives--;
-      if (s.lives <= 0) return endGame(false);
-      s.balls.push(freshBall());
+      if (s.lives <= 0) return endGame();
+      s.balls.push(freshBall(s.level));
     }
 
     // 降ってくるパワーアップアイテム
@@ -145,14 +194,18 @@
       return true;
     });
 
-    if (s.bricks.every(br => !br.alive)) return endGame(true);
+    if (s.bricks.every(br => !br.alive)) { nextLevel(); updateHud(); return; }
     updateHud();
   }
 
   function updateHud() {
-    scoreLabel.textContent = 'SCORE ' + state.score;
+    scoreLabel.textContent = 'SCORE ' + state.score + '  LV.' + state.level;
     livesLabel.textContent = '♥'.repeat(state.lives) || '-';
     const now = Date.now();
+    if (now < state.levelUpUntil) {
+      effectsLabel.textContent = 'LEVEL UP! ボールが速くなった';
+      return;
+    }
     const tags = [];
     if (now < state.effects.wideUntil) tags.push('WIDE ' + Math.ceil((state.effects.wideUntil - now) / 1000) + 's');
     if (now < state.effects.slowUntil) tags.push('SLOW ' + Math.ceil((state.effects.slowUntil - now) / 1000) + 's');
@@ -203,18 +256,62 @@
     intro.classList.add('hidden');
     result.classList.add('hidden');
     running = true;
+    if (!bgmStarted) {
+      bgmStarted = true;
+      const randomKey = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
+      musicSelect.value = randomKey;
+      playTrack(randomKey);
+    }
     cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(loop);
   }
 
-  function endGame(cleared) {
+  function endGame() {
     running = false;
     draw();
-    resultTitle.textContent = cleared ? 'クリア！' : 'ゲームオーバー';
-    resultText.textContent = 'スコア: ' + state.score;
+    resultTitle.textContent = 'ゲームオーバー';
+    resultText.textContent = 'スコア: ' + state.score + '(到達レベル ' + state.level + ')';
     result.classList.remove('hidden');
   }
 
   document.getElementById('startBtn').addEventListener('click', startGame);
   document.getElementById('retryBtn').addEventListener('click', startGame);
 })();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const vpadWrap = document.getElementById('vpadWrap');
+  const vpadToggle = document.getElementById('vpadToggle');
+  const vpadR = document.getElementById('vpadR');
+
+  function setVpadVisible(v) {
+    vpadWrap.classList.toggle('hidden', !v);
+  }
+  let vpadVisible = false;
+  setVpadVisible(vpadVisible);
+  vpadToggle.addEventListener('click', () => {
+    vpadVisible = !vpadVisible;
+    setVpadVisible(vpadVisible);
+  });
+
+  function dispatchKey(type, key) {
+    const target = (document.activeElement && document.activeElement !== document.body)
+      ? document.activeElement : window;
+    target.dispatchEvent(new KeyboardEvent(type, { key, code: key, bubbles: true, cancelable: true }));
+  }
+
+  document.querySelectorAll('.vpadBtn').forEach((btn) => {
+    const key = btn.dataset.key;
+    const press = (e) => { e.preventDefault(); dispatchKey('keydown', key); };
+    const release = (e) => { e.preventDefault(); dispatchKey('keyup', key); };
+    btn.addEventListener('pointerdown', press);
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('pointerleave', release);
+  });
+
+  vpadR.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    dispatchKey('keydown', 'Enter');
+    dispatchKey('keyup', 'Enter');
+  });
+});
