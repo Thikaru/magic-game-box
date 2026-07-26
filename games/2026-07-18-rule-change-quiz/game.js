@@ -57,16 +57,22 @@
     return true;
   }
 
+  // 連続正解数(correctTotal)が増えるほど数字の桁・範囲を大きくして難しくする
+  function difficultyLevel() {
+    return state ? Math.min(8, Math.floor(state.correctTotal / 6)) : 0;
+  }
+
   function genCalc() {
+    var lvl = difficultyLevel();
     var ops = ['+', '-', '×'];
     var op = ops[randInt(0, 2)];
     var a, b, correct;
     if (op === '+') {
-      a = randInt(2, 30); b = randInt(2, 30); correct = a + b;
+      a = randInt(2, 30 + lvl * 12); b = randInt(2, 30 + lvl * 12); correct = a + b;
     } else if (op === '-') {
-      a = randInt(5, 40); b = randInt(1, a); correct = a - b;
+      a = randInt(5, 40 + lvl * 12); b = randInt(1, a); correct = a - b;
     } else {
-      a = randInt(2, 9); b = randInt(2, 9); correct = a * b;
+      a = randInt(2, 9 + Math.min(lvl, 6)); b = randInt(2, 9 + Math.min(lvl, 6)); correct = a * b;
     }
     var showTrue = Math.random() < 0.5;
     var shown = correct;
@@ -79,7 +85,8 @@
   }
 
   function genPrime() {
-    var n = randInt(2, 60);
+    var lvl = difficultyLevel();
+    var n = randInt(2, 60 + lvl * 15);
     var actual = isPrime(n);
     var claimPrime = Math.random() < 0.5;
     var text = claimPrime ? (n + ' は素数') : (n + ' は素数ではない');
@@ -88,8 +95,10 @@
   }
 
   function genCompare() {
-    var a = randInt(1, 99), b = randInt(1, 99);
-    while (b === a) b = randInt(1, 99);
+    var lvl = difficultyLevel();
+    var hi = 99 + lvl * 40;
+    var a = randInt(1, hi), b = randInt(1, hi);
+    while (b === a) b = randInt(1, hi);
     var wantGreater = Math.random() < 0.5;
     var text = wantGreater ? (a + ' は ' + b + ' より大きい') : (a + ' は ' + b + ' より小さい');
     var answer = wantGreater ? (a > b) : (a < b);
@@ -97,14 +106,16 @@
   }
 
   function genMultiple() {
-    var multiples = [2, 3, 4, 5, 6];
+    var lvl = difficultyLevel();
+    var multiples = lvl >= 3 ? [3, 4, 6, 7, 8, 9, 11, 12] : [2, 3, 4, 5, 6];
     var m = multiples[randInt(0, multiples.length - 1)];
+    var maxN = 99 + lvl * 30;
     var forceMultiple = Math.random() < 0.5;
     var n;
     if (forceMultiple) {
-      n = m * randInt(2, 20);
+      n = m * randInt(2, Math.floor(maxN / m));
     } else {
-      do { n = randInt(2, 99); } while (n % m === 0);
+      do { n = randInt(2, maxN); } while (n % m === 0);
     }
     return { text: n + ' は ' + m + ' の倍数', answer: (n % m === 0) };
   }
@@ -158,6 +169,7 @@
 
     if (correct) {
       var rushActive = state.rushLeft > 0;
+      state.correctTotal++;
       state.combo++;
       if (state.combo > state.bestCombo) state.bestCombo = state.combo;
       state.multiplier = 1 + Math.min(state.combo, 5) * 0.2;
@@ -229,6 +241,7 @@
       multiplier: 1,
       bestCombo: 0,
       rushLeft: 0,
+      correctTotal: 0,
       current: null,
       awaitingNext: false
     };

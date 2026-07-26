@@ -17,6 +17,8 @@
   const sameCountEl = document.getElementById('sameCount');
   const lowCountEl = document.getElementById('lowCount');
   const flashMsg = document.getElementById('flashMsg');
+  const oddsRow = document.querySelector('.oddsRow');
+  const HIDE_ODDS_COMBO = 6;
   const lowBtn = document.getElementById('lowBtn');
   const sameBtn = document.getElementById('sameBtn');
   const highBtn = document.getElementById('highBtn');
@@ -82,6 +84,8 @@
     highCountEl.textContent = highC;
     sameCountEl.textContent = sameC;
     lowCountEl.textContent = lowC;
+    // コンボが伸びるほど残り枚数の目安を隠して難しくする
+    oddsRow.style.visibility = combo >= HIDE_ODDS_COMBO ? 'hidden' : 'visible';
   }
 
   function updateGoldenUI() {

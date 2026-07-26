@@ -14,10 +14,6 @@
   const scoreLabel = document.getElementById('scoreLabel');
   const bestLabel = document.getElementById('bestLabel');
   const livesLabel = document.getElementById('livesLabel');
-  const controllerEl = document.getElementById('controller');
-  const leftBtn = document.getElementById('leftBtn');
-  const rightBtn = document.getElementById('rightBtn');
-  const toggleBtn = document.getElementById('toggleBtn');
 
   const BEST_KEY = 'nightHighwayBest';
   let best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
@@ -68,26 +64,6 @@
     if (Math.abs(dx) > 28) moveLane(dx > 0 ? 1 : -1);
     touchStartX = null;
   }, { passive: true });
-
-  // --- 入力: 仮想コントローラ ---
-  function bindPad(btn, dir) {
-    const fire = (e) => { e.preventDefault(); moveLane(dir); };
-    btn.addEventListener('pointerdown', fire);
-  }
-  bindPad(leftBtn, -1);
-  bindPad(rightBtn, 1);
-
-  function applyControllerVisibility() {
-    const coarse = window.matchMedia('(pointer: coarse)').matches;
-    controllerVisible = coarse;
-    controllerEl.querySelector('.padBtns').style.display = controllerVisible ? 'flex' : 'none';
-  }
-  let controllerVisible = true;
-  applyControllerVisibility();
-  toggleBtn.addEventListener('click', () => {
-    controllerVisible = !controllerVisible;
-    controllerEl.querySelector('.padBtns').style.display = controllerVisible ? 'flex' : 'none';
-  });
 
   function spawnObstacle() {
     const roll = Math.random();

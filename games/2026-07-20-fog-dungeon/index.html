@@ -30,17 +30,6 @@
 
   .footNote { text-align:center; font-size:.72rem; opacity:.65; margin-top:6px; }
 
-  .padWrap { display:flex; justify-content:center; margin-top:10px; }
-  .padToggle { display:block; margin:8px auto 0; background:transparent; color:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 14px; font-size:.78rem; cursor:pointer; }
-  .dpad { display:grid; grid-template-columns:repeat(3, 52px); grid-template-rows:repeat(3, 52px); gap:6px; }
-  .dpad button { font-size:1.2rem; background:var(--line); color:var(--paper); border:0; border-radius:10px; min-height:44px; min-width:44px; cursor:pointer; }
-  .dpad button:active { background:var(--torch); color:var(--ink); }
-  .dpad .up { grid-column:2; grid-row:1; }
-  .dpad .left { grid-column:1; grid-row:2; }
-  .dpad .center { grid-column:2; grid-row:2; visibility:hidden; }
-  .dpad .right { grid-column:3; grid-row:2; }
-  .dpad .down { grid-column:2; grid-row:3; }
-  .dpad.hidden { display:none; }
 
   .overlay { position:absolute; inset:6px; border-radius:10px; background:rgba(10,7,20,.96);
     display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; overflow-y:auto; }
@@ -101,18 +90,7 @@
 
     <div class="flashMsg" id="flashMsg"></div>
 
-    <div class="footNote">タップ移動先へ / スワイプ / ⌨ 矢印・WASD キー</div>
-
-    <div class="padWrap">
-      <div class="dpad hidden" id="dpad">
-        <button class="up" data-dir="up">▲</button>
-        <button class="left" data-dir="left">◀</button>
-        <div class="center"></div>
-        <button class="right" data-dir="right">▶</button>
-        <button class="down" data-dir="down">▼</button>
-      </div>
-    </div>
-    <button class="padToggle" id="padToggle">🎮 コントローラ</button>
+    <div class="footNote">タップ移動先へ / スワイプ / ⌨ 矢印・WASD キー / 画面下のコントローラ</div>
 
     <!-- 説明画面: ここから開始する(必須要件1) -->
     <div class="overlay" id="intro">

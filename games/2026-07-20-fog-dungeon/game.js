@@ -13,8 +13,6 @@
   const floorLabelEl = document.getElementById('floorLabel');
   const goldLabelEl = document.getElementById('goldLabel');
   const flashMsgEl = document.getElementById('flashMsg');
-  const dpadEl = document.getElementById('dpad');
-  const padToggleBtn = document.getElementById('padToggle');
 
   const GRID = 11;
   const CELL = 32;
@@ -279,31 +277,6 @@
     else if (k === 'ArrowDown' || k === 's' || k === 'S') { e.preventDefault(); tryMove(0, 1); }
     else if (k === 'ArrowLeft' || k === 'a' || k === 'A') { e.preventDefault(); tryMove(-1, 0); }
     else if (k === 'ArrowRight' || k === 'd' || k === 'D') { e.preventDefault(); tryMove(1, 0); }
-  });
-
-  // ---- input: dpad ----
-  dpadEl.querySelectorAll('button[data-dir]').forEach((btn) => {
-    btn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      const dir = btn.getAttribute('data-dir');
-      if (dir === 'up') tryMove(0, -1);
-      else if (dir === 'down') tryMove(0, 1);
-      else if (dir === 'left') tryMove(-1, 0);
-      else if (dir === 'right') tryMove(1, 0);
-    });
-  });
-
-  function coarsePointer() {
-    return window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-  }
-  let padVisible = coarsePointer();
-  function applyPadVisibility() {
-    dpadEl.classList.toggle('hidden', !padVisible);
-  }
-  applyPadVisibility();
-  padToggleBtn.addEventListener('click', () => {
-    padVisible = !padVisible;
-    applyPadVisibility();
   });
 
   // ---- input: tap / swipe on canvas ----

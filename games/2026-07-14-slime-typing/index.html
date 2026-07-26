@@ -96,7 +96,7 @@
       <div class="word-romaji" id="wordRomaji"></div>
     </div>
 
-    <button class="vkb-toggle" id="vkbToggle">🎮 コントローラ</button>
+    <button class="vkb-toggle" id="vkbToggle">⌨️ キーボード 表示/非表示</button>
     <div class="vkb hidden" id="vkb">
       <div class="vkb-row" data-row="qwertyuiop"></div>
       <div class="vkb-row" data-row="asdfghjkl"></div>
@@ -108,9 +108,9 @@
       <h2>あそびかた</h2>
       <p>出てきた単語のローマ字を60秒以内にどんどん入力しよう。<br>
         正解するたびスライムが育つ!ミスタイプすると少し縮んでしまう。</p>
-      <p>⌨ キーボード入力、またはスマホは<br>「🎮 コントローラ」のボタンでタップ入力できる。</p>
-      <p>コンボを5つなげると<span class="bonus-tag">✨ボーナス単語</span>が出現、<br>
-        一気に大きく育てられるチャンス!</p>
+      <p>⌨ キーボード入力、またはスマホは<br>「⌨️ キーボード 表示/非表示」のボタンでタップ入力できる。</p>
+      <p>コンボがつながるほど<span class="bonus-tag">✨ボーナス単語</span>が出やすくなる。<br>
+        終盤は長い単語が増えるので、集中力を切らさずに一気に育てよう!</p>
       <button class="btn" id="startBtn">スタート</button>
     </div>
 
@@ -163,7 +163,7 @@
   var COMBO_MILESTONE = 5;
   var GAME_SECONDS = 60;
 
-  var timeLeft, score, growth, combo, currentWord, typedIndex, timerId, running;
+  var timeLeft, score, growth, combo, currentWord, typedIndex, timerId, running, elapsed;
 
   var slimeEl = document.getElementById('slime');
   var wordKanaEl = document.getElementById('wordKana');
@@ -237,8 +237,13 @@
     renderWord();
   }
 
+  function bonusMilestone(){
+    // 終盤になるほどボーナス(長い)単語が出やすくなる
+    return Math.max(2, COMBO_MILESTONE - Math.floor(elapsed / 20));
+  }
+
   function nextWord(){
-    var bonus = combo > 0 && combo % COMBO_MILESTONE === 0;
+    var bonus = combo > 0 && combo % bonusMilestone() === 0;
     pickWord(bonus);
   }
 
@@ -287,6 +292,7 @@
 
   function tick(){
     timeLeft--;
+    elapsed++;
     updateHud();
     if (timeLeft <= 0) endGame();
   }
@@ -296,6 +302,7 @@
     growth = 0;
     combo = 0;
     timeLeft = GAME_SECONDS;
+    elapsed = 0;
     running = true;
     currentWord = null;
     introEl.classList.add('hidden');

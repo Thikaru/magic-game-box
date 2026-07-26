@@ -54,10 +54,18 @@
     return a + Math.random() * (b - a);
   }
 
+  // 残り時間が減るほど上司の巡回間隔が短くなる(終盤ほど緊張感が増す)
+  function nextIdleDuration() {
+    var progress = Math.min(1, Math.max(0, (GAME_TIME - timeLeft) / GAME_TIME));
+    var min = IDLE_MIN - progress * (IDLE_MIN - 2.5);
+    var max = IDLE_MAX - progress * (IDLE_MAX - 4.5);
+    return randRange(min, max);
+  }
+
   function setup() {
     timeLeft = GAME_TIME;
     phase = 'idle';
-    phaseTimer = randRange(IDLE_MIN, IDLE_MAX);
+    phaseTimer = nextIdleDuration();
     clueOrder = [];
     running = true;
     safeProgress = 0;
@@ -203,7 +211,7 @@
       elStatus.textContent = '🧑‍💼 上司が巡回中!さわるな!';
     } else {
       phase = 'idle';
-      phaseTimer = randRange(IDLE_MIN, IDLE_MAX);
+      phaseTimer = nextIdleDuration();
       elStatus.className = 'status';
       elStatus.textContent = '🕵️ 捜査中…';
     }

@@ -44,20 +44,20 @@
     osc.stop(audioCtx.currentTime + dur);
   }
 
-  function makeTile() {
-    if (Math.random() < NEG_CHANCE) {
+  function makeTile(negChance) {
+    if (Math.random() < negChance) {
       return { value: -randInt(1, 3), used: false };
     }
     return { value: randInt(1, 9), used: false };
   }
 
-  function generateGrid() {
+  function generateGrid(negChance) {
     var tiles = [];
-    for (var i = 0; i < GRID_SIZE; i++) tiles.push(makeTile());
+    for (var i = 0; i < GRID_SIZE; i++) tiles.push(makeTile(negChance));
     return tiles;
   }
 
-  function pickTarget(tiles) {
+  function pickTarget(tiles, maxCount) {
     var positives = [];
     for (var i = 0; i < tiles.length; i++) {
       if (tiles[i].value > 0) positives.push(i);
@@ -69,17 +69,21 @@
       var k = randInt(0, j);
       var tmp = pool[j]; pool[j] = pool[k]; pool[k] = tmp;
     }
-    var count = randInt(2, Math.min(4, pool.length));
+    var count = randInt(2, Math.min(maxCount, pool.length));
     var sum = 0;
     for (var c = 0; c < count; c++) sum += tiles[pool[c]].value;
     return sum;
   }
 
   function newRound() {
+    state.round = (state.round || 0) + 1;
+    // ラウンドを重ねるほどマイナスタイルが増え、合計に使うタイル数も増えていく
+    var negChance = Math.min(0.35, NEG_CHANCE + state.round * 0.012);
+    var maxCount = Math.min(6, 4 + Math.floor(state.round / 4));
     var tiles = null, target = null, tries = 0;
     do {
-      tiles = generateGrid();
-      target = pickTarget(tiles);
+      tiles = generateGrid(negChance);
+      target = pickTarget(tiles, maxCount);
       tries++;
     } while (target === null && tries < 10);
     if (target === null) target = randInt(4, 12);
@@ -191,6 +195,7 @@
       combo: 0,
       multiplier: 1,
       bestCombo: 0,
+      round: 0,
       tiles: [],
       target: 0,
       total: 0
