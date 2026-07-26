@@ -1,0 +1,12 @@
+{
+  "id": "2026-07-27-weather-seed-grow",
+  "title": "お天気タネそだて",
+  "genre": "育成",
+  "date": "2026-07-27",
+  "description": "天気アイコンに合わせて日光浴・水やり・風よけ・防寒を正しくタップし、タネを満開まで育てよう。まれに出る虹ボーナスは連打で大量成長、5連続成功で確定出現。",
+  "path": "games/2026-07-27-weather-seed-grow/",
+  "music": {
+    "files": ["assets/music/pop.mp3", "assets/music/speed.mp3", "assets/music/dark.mp3", "assets/music/limit.mp3"],
+    "license": "AI生成音源(権利者本人が生成・提供。第三者の著作権なし)。トップページ(index.html)の「⚠️ 注意事項」にも明記。"
+  }
+}

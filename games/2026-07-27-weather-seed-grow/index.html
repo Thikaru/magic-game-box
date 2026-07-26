@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>お天気タネそだて — DAILY GAMES</title>
+<style>
+  :root {
+    --sky1:#1e3a5f; --sky2:#2d5a8c; --leaf:#6be08a; --soil:#3a2d20;
+    --marquee:#ffd23f; --coin:#ff5da2; --crt:#4dd8e6; --ink:#fffdf5; --bad:#ff6b6b;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'M PLUS Rounded 1c',system-ui,-apple-system,sans-serif; background:linear-gradient(180deg,var(--sky1),#12203a); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:16px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; flex-wrap:wrap; row-gap:6px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--coin); }
+  h1 { font-size:1.2rem; letter-spacing:.02em; }
+
+  .musicBar { display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:.85rem; flex-wrap:wrap; }
+  .musicBar select { font-family:inherit; font-size:.9rem; min-height:44px; border-radius:8px; border:1px solid #ffd23f; background:#fffdf5; color:#1c1c28; padding:0 8px; }
+  .musicToggle { font-family:inherit; font-size:.85rem; color:#fffdf5; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.45); border-radius:8px; padding:0 12px; min-height:44px; cursor:pointer; }
+
+  .stage { position:relative; }
+  .field {
+    position:relative; border:4px solid var(--soil); border-radius:14px; padding:18px 14px;
+    min-height:420px; background:linear-gradient(180deg,var(--sky1),var(--sky2));
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+  }
+
+  .growthBarWrap { width:100%; height:16px; border-radius:8px; background:rgba(0,0,0,.35); border:2px solid var(--soil); overflow:hidden; }
+  .growthBarFill { height:100%; width:15%; background:linear-gradient(90deg,var(--leaf),#3fc76a); transition:width .25s ease; }
+  .stageLabel { font-size:.85rem; opacity:.9; }
+
+  .plantArt { font-size:4.2rem; line-height:1; height:80px; display:flex; align-items:center; justify-content:center; transition:transform .15s; }
+  .plantArt.shake { animation:shake .3s; }
+  @keyframes shake { 0%,100%{ transform:translateX(0);} 25%{ transform:translateX(-8px);} 75%{ transform:translateX(8px);} }
+  .plantArt.grow { animation:pop .3s; }
+  @keyframes pop { 0%{ transform:scale(1);} 50%{ transform:scale(1.25);} 100%{ transform:scale(1);} }
+
+  .weatherBox { display:flex; flex-direction:column; align-items:center; gap:8px; background:rgba(0,0,0,.25); border-radius:12px; padding:12px; width:100%; }
+  .weatherIcon { font-size:3rem; }
+  .roundBarWrap { width:100%; height:10px; border-radius:5px; background:rgba(0,0,0,.4); overflow:hidden; }
+  .roundBarFill { height:100%; width:100%; background:linear-gradient(90deg,var(--marquee),#ffb37a); }
+  .rainbowText { color:var(--marquee); font-weight:700; font-size:.9rem; }
+
+  .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; }
+  .actionBtn {
+    min-height:64px; border-radius:12px; border:2px solid rgba(255,253,245,.3); background:rgba(255,253,245,.08);
+    color:var(--ink); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    cursor:pointer; font-family:inherit;
+  }
+  .actionBtn .emoji { font-size:1.6rem; }
+  .actionBtn .label { font-size:.72rem; }
+  .actionBtn:active { transform:scale(.95); background:rgba(255,253,245,.2); }
+  .actionBtn.flashGood { background:rgba(107,224,138,.5); border-color:var(--leaf); }
+  .actionBtn.flashBad { background:rgba(255,107,107,.5); border-color:var(--bad); }
+
+  .comboLabel { font-size:.8rem; opacity:.9; }
+
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(10,16,30,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; overflow-y:auto; }
+  .overlay h2 { color:var(--marquee); font-size:1.5rem; margin-bottom:14px; }
+  .overlay p { line-height:1.8; font-size:.9rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--marquee);
+    color:#2a2450; font-weight:700; border:0; border-radius:10px; padding:12px 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.9rem; margin-top:12px; flex-wrap:wrap; }
+  .timerBarWrap { margin-top:8px; height:12px; border-radius:6px; background:#04041a; border:2px solid var(--soil); overflow:hidden; }
+  .timerBar { height:100%; background:linear-gradient(90deg,var(--coin),#ff9ecb); width:100%; transition:width .1s linear; }
+  .hint { font-size:.78rem; opacity:.8; margin-top:8px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>お天気タネそだて</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="musicBar">
+    <button type="button" class="musicToggle" id="musicToggle">🔊 BGM ON</button>
+    <label for="musicSelect">🎵 BGM</label>
+    <select id="musicSelect">
+      <option value="pop">ポップ</option>
+      <option value="speed">スピード</option>
+      <option value="dark">ダーク</option>
+      <option value="limit">リミット</option>
+    </select>
+  </div>
+
+  <div class="stage">
+    <div class="field" id="field">
+      <div class="growthBarWrap"><div class="growthBarFill" id="growthFill"></div></div>
+      <div class="stageLabel" id="stageLabel">ステージ: タネ</div>
+
+      <div class="plantArt" id="plantArt">🌰</div>
+
+      <div class="weatherBox">
+        <div class="weatherIcon" id="weatherIcon">☀️</div>
+        <div class="roundBarWrap"><div class="roundBarFill" id="roundBarFill"></div></div>
+        <div class="rainbowText hidden" id="rainbowText">🌈 ボーナス!連打で大量成長!</div>
+      </div>
+
+      <div class="actions" id="actions">
+        <button type="button" class="actionBtn" id="btnSun" data-action="sun"><span class="emoji">☀️</span><span class="label">日光浴 (1)</span></button>
+        <button type="button" class="actionBtn" id="btnRain" data-action="rain"><span class="emoji">💧</span><span class="label">水やり (2)</span></button>
+        <button type="button" class="actionBtn" id="btnStorm" data-action="storm"><span class="emoji">🛡️</span><span class="label">風よけ (3)</span></button>
+        <button type="button" class="actionBtn" id="btnCold" data-action="cold"><span class="emoji">🧣</span><span class="label">防寒 (4)</span></button>
+      </div>
+
+      <div class="comboLabel" id="comboLabel">コンボ 0</div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>タネを「満開」まで育てるお世話ゲーム。</p>
+        <p>画面に出るお天気アイコンに合わせて、正しいお世話ボタンをタップ!<br>
+          ☀️晴れ→日光浴 / 💧雨→水やり / 🌪嵐→風よけ / ❄️寒波→防寒</p>
+        <p>正解すると育成ゲージが伸びる。まちがえたり、時間切れになるとしおれてゲージが減る。</p>
+        <p>まれに出る<b>🌈虹</b>のときは、どのボタンを押してもOK!連打するほど一気に成長する
+          ボーナスタイム。5連続正解するとボーナスタイムが確定で出現!</p>
+        <p>成長するほど天気の切りかわりが速くなる。ゲージ0でしおれてゲームオーバー、
+          100で満開クリア。時間切れになったら、その時点のステージが記録に残る。</p>
+        <p>⌨ 数字キー 1・2・3・4 でもお世話できる。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+
+    <div class="timerBarWrap"><div class="timerBar" id="timerBar"></div></div>
+    <div class="hud">
+      <span id="timeLabel">TIME 75</span>
+      <span id="scoreLabel">SCORE 0</span>
+    </div>
+    <div class="hint">お天気に合ったお世話ボタンをタップ / 数字キー1〜4でも操作できます</div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
