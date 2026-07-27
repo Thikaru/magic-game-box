@@ -17,7 +17,7 @@
   .stage { position:relative; }
   canvas { display:block; width:100%; border:3px solid var(--accent); border-radius:12px; background:#080b18; touch-action:none; }
   .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(8,11,24,.94);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; }
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:20px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .overlay h2 { color:var(--accent); font-size:1.4rem; margin-bottom:12px; }
   .overlay p { line-height:1.8; font-size:.9rem; margin-bottom:6px; }
   .overlay .swatches { display:flex; gap:10px; margin:8px 0; }
@@ -39,6 +39,8 @@
   .musicBar { display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:.85rem; flex-wrap:wrap; }
   .musicBar select { font-family:inherit; font-size:.9rem; min-height:44px; border-radius:8px; border:1px solid #ffd23f; background:#fffdf5; color:#1c1c28; padding:0 8px; }
   .musicToggle { font-family:inherit; font-size:.85rem; color:#fffdf5; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.45); border-radius:8px; padding:0 12px; min-height:44px; cursor:pointer; }
+  .pauseBtn { font-family:inherit; font-size:.85rem; color:#fff; background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:0 12px; min-height:40px; cursor:pointer; margin-bottom:10px; }
   .vpadArea { max-width:560px; margin:14px auto 0; padding:0 12px; display:flex;
     flex-direction:column; align-items:center; gap:10px; }
   .vpadToggle { font-family:inherit; font-size:.85rem; color:#fff; background:rgba(255,255,255,.12);
@@ -77,6 +79,8 @@
     </select>
   </div>
 
+  <button type="button" class="pauseBtn hidden" id="pauseBtn">⏸ 一時停止</button>
+
   <div class="stage">
     <canvas id="game" width="360" height="560"></canvas>
 
@@ -97,6 +101,20 @@
       <h2 id="resultTitle"></h2>
       <p id="resultText"></p>
       <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+
+    <!-- 一時停止画面 -->
+    <div class="overlay hidden" id="pauseOverlay">
+      <h2>一時停止</h2>
+      <p>自機は3色(赤・青・黄)に変身できる縦シューティング。<br>
+        弾は自動で発射される。狙いは<b>色あわせ</b>!</p>
+      <p><b>自機と同じ色</b>の敵は1発で撃破、高得点でコンボ継続。<br>
+        <b>ちがう色</b>の敵は2発必要で得点も低く、コンボが切れる。</p>
+      <p>敵が画面下まで来る、または色ちがいの敵にぶつかるとライフが減る。<br>
+        同じ色の敵とぶつかっても大丈夫。★の敵はどの色でも1発で高得点!</p>
+      <p>👆 ドラッグ / ⌨ ←→・A,D で移動 &nbsp; 👇 下のボタンか 1,2,3 キーで色変更</p>
+      <button class="btn" id="resumeBtn">▶ 再開</button>
+      <button class="btn" id="restartBtn">⟲ さいしょから</button>
     </div>
   </div>
 

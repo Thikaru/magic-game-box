@@ -221,6 +221,7 @@
     resultTitleEl.textContent = reason === 'gameover' ? 'ライフがなくなった!' : 'タイムアップ!';
     resultTextEl.textContent = 'スコア: ' + state.score + '点 / 最高コンボ x' + state.bestCombo;
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function start() {
@@ -248,12 +249,38 @@
 
     introEl.classList.add('hidden');
     resultEl.classList.add('hidden');
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
     updateHud();
     nextQuestion();
 
     clearInterval(timerId);
     timerId = setInterval(tick, 100);
   }
+
+  var pauseBtn = document.getElementById('pauseBtn');
+  var pauseOverlayEl = document.getElementById('pauseOverlay');
+  var resumeBtn = document.getElementById('resumeBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', function () {
+    if (!state || !state.running) return;
+    state.running = false;
+    clearInterval(timerId);
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', function () {
+    if (!state || state.running) return;
+    state.running = true;
+    timerId = setInterval(tick, 100);
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', function () {
+    pauseOverlayEl.classList.add('hidden');
+    start();
+  });
 
   trueBtn.addEventListener('click', function () { answer(true); });
   falseBtn.addEventListener('click', function () { answer(false); });

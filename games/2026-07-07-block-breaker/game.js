@@ -29,6 +29,8 @@
   let state = null;
   let running = false;
   let rafId = 0;
+  let paused = false;
+  let pauseStartedAt = 0;
 
   // ---- BGM(assets/music/ 配下のAI生成音源。著作権フリー) ----
   const MUSIC_TRACKS = ['pop', 'speed', 'dark', 'limit'];
@@ -245,7 +247,7 @@
 
   function loop() {
     if (!running) return;
-    update();
+    if (!paused) update();
     if (running) { draw(); rafId = requestAnimationFrame(loop); }
   }
 
@@ -255,6 +257,9 @@
     updateHud();
     intro.classList.add('hidden');
     result.classList.add('hidden');
+    pauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+    paused = false;
     running = true;
     if (!bgmStarted) {
       bgmStarted = true;
@@ -272,7 +277,40 @@
     resultTitle.textContent = 'ゲームオーバー';
     resultText.textContent = 'スコア: ' + state.score + '(到達レベル ' + state.level + ')';
     result.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
+
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlay = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', () => {
+    if (!running || paused) return;
+    paused = true;
+    pauseStartedAt = Date.now();
+    pauseOverlay.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    const pausedMs = Date.now() - pauseStartedAt;
+    if (state) {
+      state.effects.wideUntil += pausedMs;
+      state.effects.slowUntil += pausedMs;
+      state.levelUpUntil += pausedMs;
+    }
+    paused = false;
+    pauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+
+  restartBtn.addEventListener('click', () => {
+    paused = false;
+    pauseOverlay.classList.add('hidden');
+    startGame();
+  });
 
   document.getElementById('startBtn').addEventListener('click', startGame);
   document.getElementById('retryBtn').addEventListener('click', startGame);

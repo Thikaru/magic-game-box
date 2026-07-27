@@ -75,6 +75,7 @@
   }
 
   var state = 'intro';
+  var paused = false;
   var notes, floats, score, combo, maxCombo, lives, elapsed, spawnTimer;
 
   function reset() {
@@ -107,7 +108,7 @@
   }
 
   function handleLaneHit(lane) {
-    if (state !== 'playing') return;
+    if (state !== 'playing' || paused) return;
     flashPad(lane);
 
     var best = null, bestDist = Infinity;
@@ -169,6 +170,7 @@
     resultTitleEl.textContent = 'しゅぎょう失敗…';
     resultTextEl.innerHTML = 'ハートが尽きた。<br>スコア ' + Math.floor(score) + ' / 最大コンボ ' + maxCombo + '<br>もう一度心を落ち着けて挑もう。';
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function triggerClear() {
@@ -177,10 +179,17 @@
     resultTitleEl.textContent = 'しゅぎょう達成! ランク ' + rank;
     resultTextEl.innerHTML = 'スコア ' + Math.floor(score) + '<br>最大コンボ ' + maxCombo + '<br>のこりハート ' + lives;
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   var lastTs = null;
   function loop(ts) {
+    if (state === 'playing' && paused) {
+      lastTs = null;
+      draw();
+      requestAnimationFrame(loop);
+      return;
+    }
     if (lastTs === null) lastTs = ts;
     var dt = Math.min(0.05, (ts - lastTs) / 1000);
     lastTs = ts;
@@ -291,9 +300,34 @@
     ensureAudio();
     reset();
     state = 'playing';
+    paused = false;
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
     lastTs = null;
     requestAnimationFrame(loop);
   }
+
+  var pauseBtn = document.getElementById('pauseBtn');
+  var pauseOverlayEl = document.getElementById('pauseOverlay');
+  var resumeBtn = document.getElementById('resumeBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', function () {
+    if (state !== 'playing' || paused) return;
+    paused = true;
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', function () {
+    if (!paused) return;
+    paused = false;
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', function () {
+    pauseOverlayEl.classList.add('hidden');
+    start();
+  });
 
   startBtn.addEventListener('click', function () {
     introEl.classList.add('hidden');

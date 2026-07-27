@@ -19,6 +19,8 @@
   const BASE_SPEED = 95; // units per second while holding
 
   let state = 'intro'; // intro | playing | gameover | clear
+  let paused = false;
+  let pauseStartedAt = 0;
   let distance = 0;
   let lives = 3;
   let combo = 0;
@@ -118,6 +120,7 @@
       resultTitleEl.textContent = 'つかまった…';
       resultTextEl.innerHTML = `到達距離 ${Math.round(distance)}m / 900m<br>ベストコンボ ${bestCombo}<br>スコア ${score}`;
       resultEl.classList.remove('hidden');
+      pauseBtn.classList.add('hidden');
     } else {
       penaltyUntil = now + 700;
       holding = false;
@@ -134,6 +137,7 @@
     resultTitleEl.textContent = 'ゴール!!';
     resultTextEl.innerHTML = `タイム ${totalSec.toFixed(1)}秒<br>ベストコンボ ${bestCombo}<br>スコア ${score}`;
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
     beep(660, 0.15, 'sine', 0.12);
     setTimeout(() => beep(990, 0.2, 'sine', 0.12), 120);
   }
@@ -152,8 +156,43 @@
     startTime = now;
     scheduleNextFlash(now);
     state = 'playing';
+    paused = false;
     resultEl.classList.add('hidden');
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
   }
+
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlayEl = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', () => {
+    if (state !== 'playing' || paused) return;
+    paused = true;
+    pauseStartedAt = performance.now();
+    holding = false;
+    holdBtn.classList.remove('active');
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    const pausedMs = performance.now() - pauseStartedAt;
+    flashUntil += pausedMs;
+    nextFlashAt += pausedMs;
+    penaltyUntil += pausedMs;
+    shakeUntil += pausedMs;
+    startTime += pausedMs;
+    lastTime = null;
+    paused = false;
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', () => {
+    pauseOverlayEl.classList.add('hidden');
+    resetGame();
+  });
 
   function updateHud() {
     livesLabel.textContent = '♥'.repeat(Math.max(lives, 0)) + '♡'.repeat(3 - Math.max(lives, 0));
@@ -241,7 +280,7 @@
   }
 
   function tick(now) {
-    if (state === 'playing') {
+    if (state === 'playing' && !paused) {
       const dt = lastTime ? Math.min((now - lastTime) / 1000, 0.05) : 0;
       lastTime = now;
 
@@ -267,7 +306,7 @@
   }
 
   function setHolding(v) {
-    if (state !== 'playing') return;
+    if (state !== 'playing' || paused) return;
     holding = v;
     holdBtn.classList.toggle('active', v);
   }

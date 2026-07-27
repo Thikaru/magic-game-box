@@ -32,7 +32,7 @@
 
 
   .overlay { position:absolute; inset:6px; border-radius:10px; background:rgba(10,7,20,.96);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; overflow-y:auto; }
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:20px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .overlay h2 { color:var(--torch); font-size:1.3rem; margin-bottom:12px; }
   .overlay p { line-height:1.8; font-size:.85rem; margin-bottom:8px; }
   .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--torch); color:var(--ink); border:0; border-radius:10px; padding:14px 36px; min-height:48px; box-shadow:0 5px 0 #b5762a; cursor:pointer; font-weight:bold; }
@@ -41,6 +41,8 @@
   .musicBar { display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:.85rem; flex-wrap:wrap; }
   .musicBar select { font-family:inherit; font-size:.9rem; min-height:44px; border-radius:8px; border:1px solid #ffd23f; background:#fffdf5; color:#1c1c28; padding:0 8px; }
   .musicToggle { font-family:inherit; font-size:.85rem; color:#fffdf5; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.45); border-radius:8px; padding:0 12px; min-height:44px; cursor:pointer; }
+  .pauseBtn { font-family:inherit; font-size:.85rem; color:#fff; background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:0 12px; min-height:40px; cursor:pointer; margin-bottom:10px; }
   .vpadArea { max-width:560px; margin:14px auto 0; padding:0 12px; display:flex;
     flex-direction:column; align-items:center; gap:10px; }
   .vpadToggle { font-family:inherit; font-size:.85rem; color:#fff; background:rgba(255,255,255,.12);
@@ -79,6 +81,8 @@
     </select>
   </div>
 
+  <button type="button" class="pauseBtn hidden" id="pauseBtn">⏸ 一時停止</button>
+
   <div class="stage">
     <div class="hud">
       <span class="hp" id="hpLabel">HP 20/20</span>
@@ -111,6 +115,21 @@
       <h2 id="resultTitle">力尽きた…</h2>
       <p id="resultText"></p>
       <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+
+    <!-- 一時停止画面 -->
+    <div class="overlay hidden" id="pauseOverlay">
+      <h2>一時停止</h2>
+      <p>霧につつまれた地下迷宮を1歩ずつ探索するローグライク。<br>
+        隣のマスへ<b>タップ</b>・<b>スワイプ</b>・<b>矢印/WASDキー</b>で移動しよう。</p>
+      <p><span style="color:#ff5d5d">👹モンスター</span>にぶつかると自動で戦闘。
+        倒せば先へ進めるが、負けるとダメージを受けて足止めされる。</p>
+      <p><span style="color:#ffd166">🎁宝箱</span>は開けるまで中身が分からない。
+        ちからの薬・強化・呪いのワナ…運だめし!</p>
+      <p><span style="color:#6be6b0">🔻階段</span>を見つけて潜るほど、
+        モンスターは増えて強くなる。HPが0になったら終了。</p>
+      <button class="btn" id="resumeBtn">▶ 再開</button>
+      <button class="btn" id="restartBtn">⟲ さいしょから</button>
     </div>
   </div>
 </div>

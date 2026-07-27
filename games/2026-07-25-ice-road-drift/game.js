@@ -44,6 +44,7 @@
   }
 
   let state = 'intro'; // intro | playing | gameover
+  let paused = false;
   let playerX, vx, progress, scoreFloat, lives, comboCount, gripTimer, invincibleTimer;
   let bonfires, bonfireHorizon, holdLeft, holdRight, dragSide;
 
@@ -220,7 +221,7 @@
 
   let lastTime = null;
   function loop(t) {
-    if (state === 'playing') {
+    if (state === 'playing' && !paused) {
       if (lastTime === null) lastTime = t;
       const dt = Math.min(0.05, (t - lastTime) / 1000);
       lastTime = t;
@@ -235,8 +236,11 @@
   function startGame() {
     resetGame();
     state = 'playing';
+    paused = false;
     introEl.classList.add('hidden');
     resultEl.classList.add('hidden');
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
   }
 
   function gameOver() {
@@ -250,7 +254,30 @@
     resultTitleEl.textContent = 'クラッシュ!';
     resultTextEl.innerHTML = `走行スコア <b>${finalScore}</b><br>ベストスコア <b>${best}</b>`;
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
+
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlayEl = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', () => {
+    if (state !== 'playing' || paused) return;
+    paused = true;
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    paused = false;
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', () => {
+    pauseOverlayEl.classList.add('hidden');
+    startGame();
+  });
 
   startBtn.addEventListener('click', startGame);
   retryBtn.addEventListener('click', startGame);

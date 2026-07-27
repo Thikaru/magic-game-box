@@ -92,6 +92,7 @@ let typing = null;          // タイプ中のinterval(null = 表示完了)
 let typingText = '';        // タイプ中の全文
 let typingDone = null;      // タイプ完了時のコールバック
 let started = false;
+let paused = false;
 const foundEndings = new Set();
 
 /* ===== 表示 ===== */
@@ -154,6 +155,7 @@ function showChoices(choices) {
     btn.textContent = (i + 1) + '. ' + c.label;
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (paused) return;
       showScene(c.next);
     });
     choicesEl.appendChild(btn);
@@ -169,11 +171,12 @@ function showEnding(end) {
   endText.textContent = end.text;
   endCount.textContent = 'みつけたエンディング ' + foundEndings.size + ' / ' + TOTAL_ENDINGS;
   result.classList.remove('hidden');
+  pauseBtn.classList.add('hidden');
 }
 
 /* ===== 進行 ===== */
 function advance() {
-  if (!started || !result.classList.contains('hidden')) return;
+  if (!started || paused || !result.classList.contains('hidden')) return;
   if (typing) { skipTyping(); return; }
   const sc = SCENES[currentId];
   if (sc.choices || sc.end) return; // 選択待ち・終了中は無視
@@ -182,10 +185,36 @@ function advance() {
 
 function startGame() {
   started = true;
+  paused = false;
   intro.classList.add('hidden');
   result.classList.add('hidden');
+  pauseOverlay.classList.add('hidden');
+  pauseBtn.classList.remove('hidden');
   showScene('s0');
 }
+
+/* ===== 一時停止 ===== */
+const pauseBtn = document.getElementById('pauseBtn');
+const pauseOverlay = document.getElementById('pauseOverlay');
+const resumeBtn = document.getElementById('resumeBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+pauseBtn.addEventListener('click', () => {
+  if (!started || paused || !result.classList.contains('hidden')) return;
+  paused = true;
+  pauseOverlay.classList.remove('hidden');
+  pauseBtn.classList.add('hidden');
+});
+resumeBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  paused = false;
+  pauseOverlay.classList.add('hidden');
+  pauseBtn.classList.remove('hidden');
+});
+restartBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  startGame();
+});
 
 /* ===== 入力 ===== */
 document.getElementById('startBtn').addEventListener('click', startGame);
@@ -196,12 +225,13 @@ stage.addEventListener('click', advance);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') {
     if (!started) { startGame(); e.preventDefault(); return; }
+    if (paused) { e.preventDefault(); return; }
     if (!result.classList.contains('hidden')) { startGame(); e.preventDefault(); return; }
     advance();
     e.preventDefault();
   }
   // 数字キーで選択肢を選ぶ
-  if (started && !choicesEl.classList.contains('hidden')) {
+  if (started && !paused && !choicesEl.classList.contains('hidden')) {
     const n = parseInt(e.key, 10);
     const btns = choicesEl.querySelectorAll('button');
     if (n >= 1 && n <= btns.length) btns[n - 1].click();

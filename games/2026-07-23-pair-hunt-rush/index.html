@@ -16,7 +16,7 @@
   h1 { font-size:1.1rem; letter-spacing:.02em; }
   .stage { position:relative; border:3px solid var(--accent); border-radius:12px; background:#160c26; padding:10px; min-height:420px; }
   .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(16,9,28,.96);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px; overflow-y:auto; z-index:5; }
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:5; }
   .overlay h2 { color:var(--accent); font-size:1.35rem; margin-bottom:10px; }
   .overlay p { line-height:1.75; font-size:.87rem; margin-bottom:6px; }
   .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--accent);
@@ -45,6 +45,8 @@
   .musicBar { display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:.85rem; flex-wrap:wrap; }
   .musicBar select { font-family:inherit; font-size:.9rem; min-height:44px; border-radius:8px; border:1px solid #ffd23f; background:#fffdf5; color:#1c1c28; padding:0 8px; }
   .musicToggle { font-family:inherit; font-size:.85rem; color:#fffdf5; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.45); border-radius:8px; padding:0 12px; min-height:44px; cursor:pointer; }
+  .pauseBtn { font-family:inherit; font-size:.85rem; color:#fff; background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:0 12px; min-height:40px; cursor:pointer; margin-bottom:10px; }
   .vpadArea { max-width:560px; margin:14px auto 0; padding:0 12px; display:flex;
     flex-direction:column; align-items:center; gap:10px; }
   .vpadToggle { font-family:inherit; font-size:.85rem; color:#fff; background:rgba(255,255,255,.12);
@@ -90,6 +92,8 @@
   </div>
   <div class="timewrap"><div class="timebar" id="timeBar"></div></div>
 
+  <button type="button" class="pauseBtn hidden" id="pauseBtn">⏸ 一時停止</button>
+
   <div class="stage">
     <div class="toast" id="toast"></div>
     <div class="grid" id="grid"></div>
@@ -115,6 +119,21 @@
       <h2 id="resultTitle"></h2>
       <p id="resultText"></p>
       <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+
+    <!-- 一時停止画面 -->
+    <div class="overlay hidden" id="pauseOverlay">
+      <h2>一時停止</h2>
+      <p>カードを2枚めくって、同じ絵柄のペアを探そう。<br>
+        全部のペアを見つけたら次のレベルへ進み、盤面が広がる!</p>
+      <p>制限時間がなくなったら終了。ペアに成功すると時間はへらないが、
+        <b>はずれると3秒へる</b>ので慎重に!連続成功で<b>コンボ</b>が伸びてスコア倍率アップ。</p>
+      <p>レベル2から、まれに <b style="color:#ffd23f">★の激レアペア</b> が混ざる。
+        見つけると得点大幅アップ+時間も少し回復する。</p>
+      <p>レベル3以降は盤面がどんどん広がり、クリアでもらえるボーナス時間は
+        少しずつ減っていく。時間切れにならないよう慎重に!</p>
+      <button class="btn" id="resumeBtn">▶ 再開</button>
+      <button class="btn" id="restartBtn">⟲ さいしょから</button>
     </div>
   </div>
 </div>
@@ -154,6 +173,7 @@
   var bestLine = document.getElementById('bestLine');
 
   var level, deck, cards, openIdx, busy, combo, score, timeLeft, timeMax, matchesRemaining;
+  var paused = false;
   var timerId = null;
   var toastTimer = null;
 
@@ -262,7 +282,7 @@
   }
 
   function flipCard(idx){
-    if (busy) return;
+    if (busy || paused) return;
     var c = cards[idx];
     if (!c || c.matched || c.el.classList.contains('flipped')) return;
     if (openIdx.indexOf(idx) !== -1) return;
@@ -343,6 +363,7 @@
     resultText.textContent = 'スコア ' + score + ' ・ レベル ' + level +
       (isNewBest ? '  🎉 ベスト更新!' : '  (ベスト ' + Math.max(best, score) + ')');
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function resetState(){
@@ -351,6 +372,7 @@
     score = 0;
     timeMax = levelConfig(1).startTime;
     timeLeft = timeMax;
+    paused = false;
     if (timerId) clearInterval(timerId);
     timerId = setInterval(tick, 100);
     startLevel(1);
@@ -359,8 +381,35 @@
   function begin(){
     introEl.classList.add('hidden');
     resultEl.classList.add('hidden');
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
     resetState();
   }
+
+  var pauseBtn = document.getElementById('pauseBtn');
+  var pauseOverlayEl = document.getElementById('pauseOverlay');
+  var resumeBtn = document.getElementById('resumeBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', function(){
+    if (!timerId || paused) return;
+    paused = true;
+    clearInterval(timerId);
+    timerId = null;
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', function(){
+    if (!paused) return;
+    paused = false;
+    timerId = setInterval(tick, 100);
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', function(){
+    pauseOverlayEl.classList.add('hidden');
+    begin();
+  });
 
   startBtn.addEventListener('click', begin);
   retryBtn.addEventListener('click', begin);

@@ -69,6 +69,7 @@
 
   // ---- state ----
   let state = 'intro'; // intro | playing | over
+  let paused = false;
   let player, obstacles, particles;
   let lives, score, level, obstaclesCleared, comboGem, bestComboGem;
   let invincibleTimer, spawnTimer, flashTimer;
@@ -105,7 +106,7 @@
   }
 
   function flip() {
-    if (state !== 'playing') return;
+    if (state !== 'playing' || paused) return;
     player.rail = player.rail === 0 ? 1 : 0;
     sfxFlip();
   }
@@ -184,6 +185,7 @@
       '突破したレール数 ' + obstaclesCleared + '<br>' +
       'ベストジェムコンボ ' + bestComboGem;
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   // ---- input ----
@@ -351,7 +353,7 @@
     let dt = (ts - lastTime) / 1000;
     lastTime = ts;
     if (dt > 0.05) dt = 0.05;
-    if (state === 'playing') update(dt);
+    if (state === 'playing' && !paused) update(dt);
     render();
     requestAnimationFrame(loop);
   }
@@ -361,12 +363,37 @@
     resize();
     resetGame();
     state = 'playing';
+    paused = false;
     introEl.classList.add('hidden');
     resultEl.classList.add('hidden');
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
     flashMsgEl.textContent = '';
     flashMsgEl.className = 'flashMsg';
     lastTime = 0;
   }
+
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlayEl = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', () => {
+    if (state !== 'playing' || paused) return;
+    paused = true;
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    paused = false;
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', () => {
+    pauseOverlayEl.classList.add('hidden');
+    startGame();
+  });
 
   startBtn.addEventListener('click', startGame);
   retryBtn.addEventListener('click', startGame);

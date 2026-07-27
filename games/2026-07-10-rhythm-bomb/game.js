@@ -73,6 +73,8 @@
   let state = 'intro'; // intro | playing | ending | result
   let rafId = null;
   let startTime = 0;
+  let paused = false;
+  let pauseStartedAt = 0;
   let now = 0;
   let notes = [];
   let nextSpawnAt = 0;
@@ -147,7 +149,7 @@
   }
 
   function judgeHit(lane) {
-    if (state !== 'playing') return;
+    if (state !== 'playing' || paused) return;
     // find nearest unjudged note in this lane within hittable window
     let best = null;
     let bestDist = Infinity;
@@ -194,6 +196,7 @@
 
   function loop(ts) {
     if (state === 'intro' || state === 'result') return;
+    if (paused) { rafId = requestAnimationFrame(loop); return; }
     if (!startTime) startTime = ts;
     now = ts - startTime;
 
@@ -309,6 +312,7 @@
     resultTitleEl.textContent = `ランク ${rank}`;
     resultTextEl.innerHTML = `SCORE: ${score}<br>MAX COMBO: ${maxCombo}`;
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function startGame() {
@@ -316,11 +320,39 @@
     resetState();
     introEl.classList.add('hidden');
     resultEl.classList.add('hidden');
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+    paused = false;
     state = 'playing';
     startTime = 0;
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(loop);
   }
+
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlayEl = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', () => {
+    if (state !== 'playing' && state !== 'ending') return;
+    if (paused) return;
+    paused = true;
+    pauseStartedAt = performance.now();
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    startTime += performance.now() - pauseStartedAt;
+    paused = false;
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', () => {
+    pauseOverlayEl.classList.add('hidden');
+    startGame();
+  });
 
   startBtn.addEventListener('click', startGame);
   retryBtn.addEventListener('click', startGame);

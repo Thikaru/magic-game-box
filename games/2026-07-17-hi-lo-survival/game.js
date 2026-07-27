@@ -38,6 +38,7 @@
   let goldenActive = false;
   let locked = false;
   let started = false;
+  let paused = false;
   let flashTimer = null;
 
   function newDeck() {
@@ -107,7 +108,7 @@
   }
 
   function handleGuess(type) {
-    if (!started || locked) return;
+    if (!started || locked || paused) return;
     locked = true;
     setButtonsEnabled(false);
 
@@ -158,6 +159,7 @@
     resultTitle.textContent = 'ゲームオーバー';
     resultText.innerHTML = 'スコア: <b>' + score + '</b><br>最大コンボ: <b>' + comboMax + '</b>';
     result.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function init() {
@@ -170,6 +172,7 @@
     goldenActive = false;
     locked = false;
     started = true;
+    paused = false;
 
     renderCard(current);
     updateHUD();
@@ -179,7 +182,33 @@
     flashMsg.className = 'flashMsg';
     setButtonsEnabled(true);
     result.classList.add('hidden');
+    pauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
   }
+
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlay = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', () => {
+    if (!started || paused) return;
+    paused = true;
+    setButtonsEnabled(false);
+    pauseOverlay.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    paused = false;
+    if (!locked) setButtonsEnabled(true);
+    pauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', () => {
+    pauseOverlay.classList.add('hidden');
+    init();
+  });
 
   startBtn.addEventListener('click', () => {
     intro.classList.add('hidden');

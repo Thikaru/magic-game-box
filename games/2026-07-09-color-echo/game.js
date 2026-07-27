@@ -20,6 +20,7 @@
   let inputIndex = 0;
   let accepting = false;
   let reverseRound = false;
+  let paused = false;
   let timers = [];
   let best = Number(localStorage.getItem(BEST_KEY)) || 0;
 
@@ -69,7 +70,7 @@
   }
 
   function handlePad(idx) {
-    if (!accepting) return;
+    if (!accepting || paused) return;
     lightPad(idx, 180);
     if (idx === expected[inputIndex]) {
       inputIndex++;
@@ -99,6 +100,7 @@
     resultTitle.textContent = 'ゲームオーバー';
     resultText.textContent = score + 'ラウンドまで到達！' + (isBest ? '(自己ベスト更新！)' : '');
     result.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function startGame() {
@@ -107,12 +109,42 @@
     round = 0;
     inputIndex = 0;
     accepting = false;
+    paused = false;
     board.classList.remove('reverse');
     intro.classList.add('hidden');
     result.classList.add('hidden');
+    pauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
     pads.forEach(p => p.classList.remove('lit'));
     newRound();
   }
+
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlay = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', () => {
+    if (paused || !result.classList.contains('hidden')) return;
+    paused = true;
+    accepting = false;
+    clearTimers();
+    pads.forEach(p => p.classList.remove('lit'));
+    pauseOverlay.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    paused = false;
+    pauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+    playSequence();
+  });
+  restartBtn.addEventListener('click', () => {
+    paused = false;
+    pauseOverlay.classList.add('hidden');
+    startGame();
+  });
 
   pads.forEach(pad => {
     pad.addEventListener('click', () => handlePad(Number(pad.dataset.idx)));

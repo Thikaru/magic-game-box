@@ -239,6 +239,7 @@
       resultText.textContent = `正解は ${code.join('-')} だった。次はもっと早く見つけよう!`;
     }
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function newGame() {
@@ -295,16 +296,45 @@
     }
   });
 
-  startBtn.addEventListener('click', () => {
-    introEl.classList.add('hidden');
+  function startGame() {
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
     newGame();
     startTicker();
+  }
+
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlayEl = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', () => {
+    if (!gameActive) return;
+    gameActive = false;
+    clearInterval(ticker);
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', () => {
+    if (gameActive) return;
+    gameActive = true;
+    ticker = setInterval(tick, 100);
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', () => {
+    pauseOverlayEl.classList.add('hidden');
+    startGame();
+  });
+
+  startBtn.addEventListener('click', () => {
+    introEl.classList.add('hidden');
+    startGame();
   });
 
   retryBtn.addEventListener('click', () => {
     resultEl.classList.add('hidden');
-    newGame();
-    startTicker();
+    startGame();
   });
 
   renderKeypad();

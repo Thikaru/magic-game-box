@@ -55,6 +55,7 @@
 
   // ---- state ----
   let state = 'intro'; // intro | playing | over
+  let paused = false;
   let map, explored, lit;
   let monsters, chests, stairs;
   let player, floor;
@@ -245,7 +246,7 @@
   }
 
   function tryMove(dx, dy) {
-    if (state !== 'playing') return;
+    if (state !== 'playing' || paused) return;
     const nx = player.x + dx, ny = player.y + dy;
     if (nx < 0 || ny < 0 || nx >= GRID || ny >= GRID) return;
     if (map[ny][nx] !== 1) return;
@@ -267,6 +268,7 @@
       '集めた金貨 <b>' + player.gold + '</b><br>' +
       'スコア <b>' + score + '</b>';
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   // ---- input: keyboard ----
@@ -390,12 +392,37 @@
     updateVision();
     updateHud();
     state = 'playing';
+    paused = false;
     introEl.classList.add('hidden');
     resultEl.classList.add('hidden');
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
     flashMsgEl.textContent = '';
     flashMsgEl.className = 'flashMsg';
     flashTimer = 0;
   }
+
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlayEl = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', () => {
+    if (state !== 'playing' || paused) return;
+    paused = true;
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    paused = false;
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', () => {
+    pauseOverlayEl.classList.add('hidden');
+    startGame();
+  });
 
   startBtn.addEventListener('click', startGame);
   retryBtn.addEventListener('click', startGame);

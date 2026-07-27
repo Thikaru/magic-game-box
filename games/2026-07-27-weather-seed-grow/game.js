@@ -48,6 +48,9 @@
   let overallIntervalId = null;
   let timeLeft = TOTAL_TIME;
   let gameOver = true;
+  let paused = false;
+  let pauseStartedAt = 0;
+  let remainingRoundMs = 0;
   let stageIndex = 0;
   let roundStartTime = 0;
   let roundDuration = 2600;
@@ -110,7 +113,7 @@
   }
 
   function startRound() {
-    if (gameOver) return;
+    if (gameOver || paused) return;
     clearRoundTimers();
     rainbowTaps = 0;
     currentWeatherKey = pickWeatherKey();
@@ -177,7 +180,7 @@
   }
 
   function handleAction(action) {
-    if (gameOver || !roundActive) return;
+    if (gameOver || !roundActive || paused) return;
     const btn = actionButtons.find((b) => b.dataset.action === action);
 
     if (currentWeatherKey === 'rainbow') {
@@ -268,6 +271,7 @@
       resultText.textContent = '育成ステージ「' + STAGES[stageIndex].name + '」で時間切れ。スコア ' + score;
     }
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function newGame() {
@@ -278,6 +282,7 @@
     guaranteedRainbowNext = false;
     currentWeatherKey = null;
     gameOver = false;
+    paused = false;
     stageIndex = -1;
     updateGrowthUI(false);
     updateComboUI();
@@ -297,14 +302,78 @@
     if (action) handleAction(action);
   });
 
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlayEl = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  function startGame() {
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+    newGame();
+  }
+
+  pauseBtn.addEventListener('click', () => {
+    if (gameOver || paused) return;
+    paused = true;
+    pauseStartedAt = performance.now();
+    if (roundActive) {
+      remainingRoundMs = Math.max(0, roundDuration - (pauseStartedAt - roundStartTime));
+    }
+    clearRoundTimers();
+    if (overallIntervalId) { clearInterval(overallIntervalId); overallIntervalId = null; }
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    const pausedMs = performance.now() - pauseStartedAt;
+    roundStartTime += pausedMs;
+    paused = false;
+
+    overallIntervalId = setInterval(() => {
+      timeLeft -= 1;
+      timeLabel.textContent = 'TIME ' + Math.max(0, timeLeft);
+      timerBar.style.width = Math.max(0, (timeLeft / TOTAL_TIME) * 100) + '%';
+      if (timeLeft <= 0) {
+        endGame('timeup');
+      }
+    }, 1000);
+
+    if (roundActive) {
+      function tick(now) {
+        if (!roundActive || paused) return;
+        const elapsed = now - roundStartTime;
+        const pct = Math.max(0, 100 - (elapsed / roundDuration) * 100);
+        roundBarFill.style.width = pct + '%';
+        if (elapsed < roundDuration) {
+          roundBarRaf = requestAnimationFrame(tick);
+        }
+      }
+      roundBarRaf = requestAnimationFrame(tick);
+      roundTimeoutId = setTimeout(() => {
+        handleTimeout();
+      }, remainingRoundMs);
+    }
+
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+
+  restartBtn.addEventListener('click', () => {
+    pauseOverlayEl.classList.add('hidden');
+    startGame();
+  });
+
   startBtn.addEventListener('click', () => {
     introEl.classList.add('hidden');
-    newGame();
+    startGame();
   });
 
   retryBtn.addEventListener('click', () => {
     resultEl.classList.add('hidden');
-    newGame();
+    startGame();
   });
 })();
 

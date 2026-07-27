@@ -24,6 +24,7 @@
 
   let state = null; // current game state
   let tickHandle = null;
+  let paused = false;
 
   function rand(n) { return Math.floor(Math.random() * n); }
   function choice(arr) { return arr[rand(arr.length)]; }
@@ -318,7 +319,7 @@
   }
 
   function rotateTile(r, c) {
-    if (!state.running) return;
+    if (!state.running || paused) return;
     const tile = state.puzzle.tiles[cellKey(r, c)];
     if (tile.shape === 'X') return;
     tile.rot = (tile.rot + 1) % 4;
@@ -359,12 +360,13 @@
     resultTitleEl.textContent = 'ゲームオーバー';
     resultTextEl.innerHTML = 'スコア: ' + state.score + '<br>到達レベル: ' + state.level;
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function startTicker() {
     stopTicker();
     tickHandle = setInterval(() => {
-      if (!state.running) return;
+      if (!state.running || paused) return;
       state.timeLeft -= 0.1;
       if (state.timeLeft <= 0) {
         state.timeLeft = 0;
@@ -394,7 +396,7 @@
   }
 
   canvas.addEventListener('pointerdown', (evt) => {
-    if (!state || !state.running) return;
+    if (!state || !state.running || paused) return;
     const cell = cellFromEvent(evt);
     if (!cell) return;
     state.cursor = cell;
@@ -402,7 +404,7 @@
   });
 
   window.addEventListener('keydown', (evt) => {
-    if (!state || !state.running) return;
+    if (!state || !state.running || paused) return;
     const { rows, cols } = state.puzzle;
     let handled = true;
     switch (evt.key) {
@@ -422,16 +424,44 @@
     }
   });
 
-  startBtn.addEventListener('click', () => {
-    introEl.classList.add('hidden');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlayEl = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  function startGame() {
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+    paused = false;
     newGame();
     startTicker();
+  }
+
+  pauseBtn.addEventListener('click', () => {
+    if (!state || !state.running || paused) return;
+    paused = true;
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    paused = false;
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', () => {
+    pauseOverlayEl.classList.add('hidden');
+    startGame();
+  });
+
+  startBtn.addEventListener('click', () => {
+    introEl.classList.add('hidden');
+    startGame();
   });
 
   retryBtn.addEventListener('click', () => {
     resultEl.classList.add('hidden');
-    newGame();
-    startTicker();
+    startGame();
   });
 })();
 

@@ -22,6 +22,7 @@
   };
 
   let state = null;
+  let paused = false;
 
   function freshState() {
     return {
@@ -254,6 +255,7 @@
   let lastTime = null;
   function loop(ts) {
     if (!state.running) return;
+    if (paused) { requestAnimationFrame(loop); return; }
     if (lastTime === null) lastTime = ts;
     let dt = (ts - lastTime) / 1000;
     lastTime = ts;
@@ -273,6 +275,7 @@
     resultTitleEl.textContent = 'GAME OVER';
     resultTextEl.textContent = `スコア: ${state.score} / 最大コンボ倍率 x${multiplier().toFixed(1)}\n${msg}`;
     resultEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function startGame() {
@@ -280,23 +283,49 @@
     setPlayerColor('red');
     introEl.classList.add('hidden');
     resultEl.classList.add('hidden');
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+    paused = false;
     lastTime = null;
     state.running = true;
     updateHud();
     requestAnimationFrame(loop);
   }
 
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseOverlayEl = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', () => {
+    if (!state || !state.running || paused) return;
+    paused = true;
+    pauseOverlayEl.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', () => {
+    if (!paused) return;
+    paused = false;
+    lastTime = null;
+    pauseOverlayEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', () => {
+    pauseOverlayEl.classList.add('hidden');
+    startGame();
+  });
+
   startBtn.addEventListener('click', startGame);
   retryBtn.addEventListener('click', startGame);
 
   for (const k of ORDER) {
-    colorBtns[k].addEventListener('click', () => { if (state && state.running) setPlayerColor(k); });
+    colorBtns[k].addEventListener('click', () => { if (state && state.running && !paused) setPlayerColor(k); });
   }
 
   window.addEventListener('keydown', (e) => {
     if (!state) return;
     state.keys[e.key] = true;
-    if (!state.running) return;
+    if (!state.running || paused) return;
     if (e.key === '1') setPlayerColor('red');
     if (e.key === '2') setPlayerColor('blue');
     if (e.key === '3') setPlayerColor('yellow');
@@ -313,7 +342,7 @@
   }
 
   canvas.addEventListener('pointerdown', (e) => {
-    if (!state || !state.running) return;
+    if (!state || !state.running || paused) return;
     state.dragging = true;
     state.player.x = pointerToX(e.clientX);
     canvas.setPointerCapture(e.pointerId);

@@ -249,14 +249,40 @@
 
   function showResult() {
     elResult.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
   }
 
   function startGame() {
     elIntro.classList.add('hidden');
     elResult.classList.add('hidden');
+    elPauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
     setup();
     intervalId = setInterval(tick, 100);
   }
+
+  var pauseBtn = document.getElementById('pauseBtn');
+  var elPauseOverlay = document.getElementById('pauseOverlay');
+  var resumeBtn = document.getElementById('resumeBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  pauseBtn.addEventListener('click', function () {
+    if (!running) return;
+    stopLoop();
+    elPauseOverlay.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', function () {
+    if (running) return;
+    running = true;
+    intervalId = setInterval(tick, 100);
+    elPauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', function () {
+    elPauseOverlay.classList.add('hidden');
+    startGame();
+  });
 
   startBtn.addEventListener('click', startGame);
   retryBtn.addEventListener('click', startGame);
