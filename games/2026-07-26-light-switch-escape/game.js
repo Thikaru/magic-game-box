@@ -42,6 +42,7 @@
   let mode = 'light';
   let charges = MAX_CHARGES;
   let flickerRemaining = 0;
+  let flickerMax = FLICKER_DURATION;
   let timeLeft = TOTAL_TIME;
   let inputBuffer = [];
   let gameActive = false;
@@ -155,7 +156,10 @@
     }
     charges--;
     chargesLabel.textContent = `残り${charges}`;
-    flickerRemaining = FLICKER_DURATION;
+    // 残り時間が減るほど、くらやみでいられる時間が短くなる
+    const progress = 1 - Math.max(0, timeLeft) / TOTAL_TIME;
+    flickerMax = Math.max(2, FLICKER_DURATION - progress * 2);
+    flickerRemaining = flickerMax;
     setMode('dark');
   }
 
@@ -211,7 +215,7 @@
         setMode('light');
       }
     }
-    flickerFill.style.width = `${Math.max(0, (flickerRemaining / FLICKER_DURATION) * 100)}%`;
+    flickerFill.style.width = `${Math.max(0, (flickerRemaining / flickerMax) * 100)}%`;
     timerBar.style.width = `${Math.max(0, (timeLeft / TOTAL_TIME) * 100)}%`;
     timeLabel.textContent = `TIME ${Math.max(0, Math.ceil(timeLeft))}`;
     if (timeLeft <= 0) {
@@ -242,6 +246,7 @@
     mode = 'light';
     charges = MAX_CHARGES;
     flickerRemaining = 0;
+    flickerMax = FLICKER_DURATION;
     timeLeft = TOTAL_TIME;
     inputBuffer = [];
     gameActive = false;

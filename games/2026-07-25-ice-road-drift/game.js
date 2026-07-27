@@ -15,10 +15,6 @@
   const livesLabel = document.getElementById('livesLabel');
   const comboLabel = document.getElementById('comboLabel');
   const gripLabel = document.getElementById('gripLabel');
-  const controllerEl = document.getElementById('controller');
-  const leftBtn = document.getElementById('leftBtn');
-  const rightBtn = document.getElementById('rightBtn');
-  const toggleBtn = document.getElementById('toggleBtn');
 
   const BEST_KEY = 'iceRoadDriftBest';
   let best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
@@ -97,28 +93,6 @@
   canvas.addEventListener('pointermove', (e) => { if (touching) updateDragSide(e.clientX); });
   window.addEventListener('pointerup', () => { touching = false; dragSide = 0; });
   canvas.addEventListener('pointercancel', () => { touching = false; dragSide = 0; });
-
-  // --- 入力: 仮想コントローラ(押している間だけ舵きり) ---
-  function bindPad(btn, setFlag) {
-    btn.addEventListener('pointerdown', (e) => { e.preventDefault(); setFlag(true); });
-    const release = () => setFlag(false);
-    btn.addEventListener('pointerup', release);
-    btn.addEventListener('pointerleave', release);
-    btn.addEventListener('pointercancel', release);
-  }
-  bindPad(leftBtn, (v) => { holdLeft = v; });
-  bindPad(rightBtn, (v) => { holdRight = v; });
-
-  let controllerVisible = true;
-  function applyControllerVisibility() {
-    controllerVisible = window.matchMedia('(pointer: coarse)').matches;
-    controllerEl.querySelector('.padBtns').style.display = controllerVisible ? 'flex' : 'none';
-  }
-  applyControllerVisibility();
-  toggleBtn.addEventListener('click', () => {
-    controllerVisible = !controllerVisible;
-    controllerEl.querySelector('.padBtns').style.display = controllerVisible ? 'flex' : 'none';
-  });
 
   function spawnBonfiresAhead() {
     while (bonfireHorizon - progress < H * 1.6) {

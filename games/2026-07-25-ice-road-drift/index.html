@@ -26,12 +26,6 @@
   .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; color:var(--neon); margin-top:10px; font-size:.95rem; flex-wrap:wrap; }
   .hud b { color:var(--paper); }
   .grip-tag { color:var(--fire); }
-  .controller { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:12px; }
-  .padBtns { display:flex; gap:10px; }
-  .padBtn { width:72px; height:56px; border-radius:12px; border:2px solid var(--neon); background:rgba(77,216,255,.12);
-    color:var(--neon); font-size:1.6rem; touch-action:none; }
-  .padBtn:active { background:rgba(77,216,255,.35); }
-  #toggleBtn { min-height:44px; padding:8px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.06); color:var(--paper); font-size:.85rem; }
   .musicBar { display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:.85rem; flex-wrap:wrap; }
   .musicBar select { font-family:inherit; font-size:.9rem; min-height:44px; border-radius:8px; border:1px solid #ffd23f; background:#fffdf5; color:#1c1c28; padding:0 8px; }
   .musicToggle { font-family:inherit; font-size:.85rem; color:#fffdf5; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.45); border-radius:8px; padding:0 12px; min-height:44px; cursor:pointer; }
@@ -80,7 +74,7 @@
     <div class="overlay" id="intro">
       <h2>あそびかた</h2>
       <p>凍った一本道をそりで爆走!ブレーキは効かず、ツルツル滑る慣性操作で<br>道からはみ出さないように左右へ舵を切ろう。</p>
-      <p>⌨ ←→ / A・D キー長押し　👆 画面タッチ長押し　🎮 画面の←→ボタン<br>のいずれかで加速。離すと滑って進む。</p>
+      <p>⌨ ←→ / A・D キー長押し　👆 画面タッチ長押し　🎮 画面下のコントローラ<br>のいずれかで加速。離すと滑って進む。</p>
       <p>🔥 焚き火ゾーンを通ると数秒だけ滑りにくくなる<b>グリップ状態</b>に!<br>連続で通るとコンボで高得点。</p>
       <p>道からはみ出すとクラッシュしてライフが1減る。ライフは3つ。</p>
       <button class="btn" id="startBtn">スタート</button>
@@ -102,14 +96,6 @@
     <span id="gripLabel" class="grip-tag hidden">🔥グリップ中</span>
   </div>
 
-  <div class="controller" id="controller">
-    <span style="font-size:.8rem;opacity:.8;">舵きり</span>
-    <div class="padBtns">
-      <button class="padBtn" id="leftBtn">◀</button>
-      <button class="padBtn" id="rightBtn">▶</button>
-    </div>
-    <button id="toggleBtn">🎮 コントローラ</button>
-  </div>
 </div>
 
 <div class="vpadArea">

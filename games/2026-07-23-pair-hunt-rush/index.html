@@ -103,6 +103,8 @@
         <b>はずれると3秒へる</b>ので慎重に!連続成功で<b>コンボ</b>が伸びてスコア倍率アップ。</p>
       <p>レベル2から、まれに <b style="color:#ffd23f">★の激レアペア</b> が混ざる。
         見つけると得点大幅アップ+時間も少し回復する。</p>
+      <p>レベル3以降は盤面がどんどん広がり、クリアでもらえるボーナス時間は
+        少しずつ減っていく。時間切れにならないよう慎重に!</p>
       <p>👆 タップ/クリックでめくる &nbsp; ⌨ 矢印キーで移動 + Enter/Space でめくる</p>
       <p id="bestLine"></p>
       <button class="btn" id="startBtn">スタート</button>
@@ -165,7 +167,12 @@
   function levelConfig(lv){
     if (lv === 1) return { cols:4, rows:3, pairs:6, star:false, bonus:15, startTime:40 };
     if (lv === 2) return { cols:4, rows:4, pairs:8, star:true, bonus:15 };
-    return { cols:5, rows:4, pairs:10, star:true, bonus:12 };
+    // レベル3以降は段階的に盤面が広がり、クリアボーナスの時間は減っていく
+    var cols = Math.min(6, 5 + Math.floor((lv - 3) / 2));
+    var rows = Math.min(6, 4 + Math.floor((lv - 3) / 3));
+    var pairs = Math.floor((cols * rows) / 2);
+    var bonus = Math.max(6, 12 - Math.floor((lv - 3) / 2));
+    return { cols: cols, rows: rows, pairs: pairs, star: true, bonus: bonus };
   }
 
   function shuffle(arr){
@@ -357,6 +364,16 @@
 
   startBtn.addEventListener('click', begin);
   retryBtn.addEventListener('click', begin);
+
+  // フォーカス中のカードをEnter/Spaceでめくる(仮想コントローラのRボタン用の合成キーイベントにも対応)
+  document.addEventListener('keydown', function(ev){
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    var el = document.activeElement;
+    if (el && el.classList && el.classList.contains('card')) {
+      ev.preventDefault();
+      el.click();
+    }
+  });
 
   bestLine.textContent = 'ベストスコア: ' + getBest();
 })();
