@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>タイプ迎撃!ワードフォール — DAILY GAMES</title>
+<style>
+  :root { --bg:#050818; --panel:#0c1230; --line:#2c3a7a; --gold:#ffd23f; --cyan:#4dd8e6; --pink:#ff5da2; --paper:#eef1ff; --danger:#ff5d6c; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:'Hiragino Maru Gothic ProN','M PLUS Rounded 1c',system-ui,sans-serif; background:radial-gradient(circle at 50% -10%,#182058,var(--bg) 70%); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--pink); white-space:nowrap; }
+  h1 { font-family:monospace; color:var(--gold); font-size:1.1rem; letter-spacing:.02em; }
+  .hud { display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:.95rem; color:var(--cyan); margin-bottom:8px; }
+  .hud b { color:var(--gold); }
+  #lives { letter-spacing:2px; }
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:0; height:360px; overflow:hidden; }
+  .lanes { position:absolute; inset:0; display:flex; }
+  .lane { position:relative; flex:1; border-left:1px dashed rgba(255,255,255,.08); }
+  .lane:first-child { border-left:none; }
+  .goalLine { position:absolute; left:0; right:0; bottom:12px; height:2px; background:rgba(255,93,108,.5); }
+  .wordCard { position:absolute; left:50%; top:0%; transform:translate(-50%,0); width:92%; text-align:center; padding:4px 2px; border-radius:8px; background:rgba(10,14,40,.85); border:1px solid rgba(255,255,255,.18); }
+  .wordCard.golden { border-color:var(--gold); box-shadow:0 0 10px rgba(255,210,63,.6); background:rgba(60,45,5,.85); }
+  .wordCard .kana { font-size:.72rem; opacity:.8; }
+  .wordCard.golden .kana::after { content:" ★"; color:var(--gold); }
+  .wordCard .romaji { font-family:monospace; font-size:1rem; letter-spacing:.03em; }
+  .wordCard .romaji span { opacity:.35; }
+  .wordCard .romaji span.typed { color:#57e389; opacity:1; }
+  .stage.shake { animation:shake .25s; }
+  @keyframes shake { 0%,100%{ transform:translateX(0) } 25%{ transform:translateX(-5px) } 75%{ transform:translateX(5px) } }
+  .stage.frozen::after { content:"⏱ タイムストップ!"; position:absolute; top:6px; left:50%; transform:translateX(-50%); font-family:monospace; color:var(--gold); font-size:.85rem; background:rgba(0,0,0,.4); padding:2px 10px; border-radius:8px; z-index:4; }
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(5,8,24,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 16px; z-index:5; }
+  .overlay h2 { font-family:monospace; color:var(--gold); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.88rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-family:monospace; font-size:1.1rem; background:var(--gold);
+    color:#1c1c28; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .result-score { font-family:monospace; color:var(--gold); font-size:2rem; margin:6px 0; }
+  .vkb-toggle { display:block; margin:10px auto 4px; font-family:monospace; font-size:.85rem; background:rgba(255,255,255,.1);
+    color:var(--paper); border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:8px 14px; min-height:44px; cursor:pointer; width:100%; }
+  .vkb { margin-top:6px; }
+  .vkb-row { display:flex; gap:4px; margin-bottom:4px; }
+  .vkb-row button { flex:1; min-width:0; min-height:44px; font-family:monospace; font-size:1rem; background:rgba(255,255,255,.1);
+    color:var(--paper); border:1px solid rgba(255,255,255,.25); border-radius:6px; cursor:pointer; }
+  .vkb-row button:active { background:var(--gold); color:#1c1c28; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>タイプ迎撃!ワードフォール</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span id="lives">❤️❤️❤️</span>
+    <span>SCORE <b id="scoreLabel">0</b></span>
+    <span>コンボ <b id="comboLabel">0</b></span>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="lanes" id="lanes">
+      <div class="lane" data-lane="0"></div>
+      <div class="lane" data-lane="1"></div>
+      <div class="lane" data-lane="2"></div>
+    </div>
+    <div class="goalLine"></div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>上から降ってくる単語のローマ字を、下のラインに届く前にすべてタイプして迎撃しよう。</p>
+      <p>複数の単語が同時に降ってくるので、押したキーに合う単語へ自動でねらいが定まる。</p>
+      <p><span style="color:#ffd23f">★金色の単語</span>を迎撃すると2秒間「タイムストップ」が発生し、
+        他の単語がすべて止まる大チャンス!</p>
+      <p>単語がラインに届くとライフが1つ減る。ライフ0でゲームオーバー。</p>
+      <p>⌨ キーボード入力、またはスマホは下の仮想キーボードでタップ入力できる。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲームオーバー</h2>
+      <p>迎撃数 <b id="finalCleared"></b> / 最大コンボ <b id="finalCombo"></b></p>
+      <div class="result-score" id="finalScore"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <button class="vkb-toggle" id="vkbToggle">⌨️ キーボード 表示/非表示</button>
+  <div class="vkb hidden" id="vkb">
+    <div class="vkb-row" data-row="qwertyuiop"></div>
+    <div class="vkb-row" data-row="asdfghjkl"></div>
+    <div class="vkb-row" data-row="zxcvbnm"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var NORMAL_WORDS = [
+    { kana:"ねこ", romaji:"neko" },
+    { kana:"いぬ", romaji:"inu" },
+    { kana:"とり", romaji:"tori" },
+    { kana:"くま", romaji:"kuma" },
+    { kana:"うさぎ", romaji:"usagi" },
+    { kana:"きつね", romaji:"kitsune" },
+    { kana:"たぬき", romaji:"tanuki" },
+    { kana:"ぱんだ", romaji:"panda" },
+    { kana:"かえる", romaji:"kaeru" },
+    { kana:"りす", romaji:"risu" },
+    { kana:"ぞう", romaji:"zou" },
+    { kana:"さる", romaji:"saru" }
+  ];
+  var GOLDEN_WORDS = [
+    { kana:"ふくろう", romaji:"fukurou" },
+    { kana:"かんがるー", romaji:"kangaruu" },
+    { kana:"あるまじろ", romaji:"arumajiro" },
+    { kana:"かめれおん", romaji:"kamereon" },
+    { kana:"ぺんぎん", romaji:"pengin" }
+  ];
+  var LANE_COUNT = 3;
+  var START_LIVES = 3;
+  var TIMESTOP_MS = 2000;
+
+  var lanes = document.querySelectorAll('.lane');
+  var stageEl = document.getElementById('stage');
+  var livesEl = document.getElementById('lives');
+  var scoreLabel = document.getElementById('scoreLabel');
+  var comboLabel = document.getElementById('comboLabel');
+  var introEl = document.getElementById('intro');
+  var resultEl = document.getElementById('result');
+  var resultTitleEl = document.getElementById('resultTitle');
+  var finalClearedEl = document.getElementById('finalCleared');
+  var finalComboEl = document.getElementById('finalCombo');
+  var finalScoreEl = document.getElementById('finalScore');
+  var vkb = document.getElementById('vkb');
+  var vkbToggle = document.getElementById('vkbToggle');
+
+  function buildKeyboard(){
+    vkb.querySelectorAll('.vkb-row').forEach(function(row){
+      row.getAttribute('data-row').split('').forEach(function(ch){
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = ch;
+        btn.addEventListener('click', function(){ handleChar(ch); });
+        row.appendChild(btn);
+      });
+    });
+  }
+  buildKeyboard();
+  if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+    vkb.classList.remove('hidden');
+  }
+  vkbToggle.addEventListener('click', function(){ vkb.classList.toggle('hidden'); });
+
+  var running = false;
+  var lives, score, combo, maxCombo, cleared;
+  var words, nextId, lockedWordId;
+  var spawnTimer, frozen, freezeTimer;
+  var rafId, lastTime;
+  var audioCtx = null;
+
+  function ensureAudio(){
+    if (!audioCtx) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) audioCtx = new Ctx();
+    }
+    return audioCtx;
+  }
+
+  function beep(freq, dur, type, gainVal){
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    gain.gain.value = gainVal || 0.05;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    osc.stop(ctx.currentTime + dur + 0.02);
+  }
+
+  function sfxType(){ beep(520, 0.05, 'square', 0.04); }
+  function sfxClear(golden){ beep(golden ? 880 : 700, 0.16, 'square', 0.06); if (golden) beep(1200, 0.22, 'sine', 0.05); }
+  function sfxMiss(){ beep(160, 0.15, 'sawtooth', 0.05); }
+  function sfxEscape(){ beep(110, 0.3, 'sawtooth', 0.06); }
+
+  function difficultyDuration(){
+    return Math.max(2200, 5200 - cleared * 110);
+  }
+  function difficultySpawnInterval(){
+    return Math.max(750, 1600 - cleared * 35);
+  }
+
+  function laneFree(lane){
+    return !words.some(function(w){ return w.lane === lane && !w.removed && w.progress < 0.82; });
+  }
+
+  function pickWordDef(golden){
+    var bank = golden ? GOLDEN_WORDS : NORMAL_WORDS;
+    return bank[Math.floor(Math.random() * bank.length)];
+  }
+
+  function spawnWord(){
+    var freeLanes = [];
+    for (var i = 0; i < LANE_COUNT; i++) if (laneFree(i)) freeLanes.push(i);
+    if (!freeLanes.length) return;
+    var lane = freeLanes[Math.floor(Math.random() * freeLanes.length)];
+    var goldenChance = Math.min(0.4, 0.14 + combo * 0.02);
+    var golden = Math.random() < goldenChance;
+    var def = pickWordDef(golden);
+
+    var el = document.createElement('div');
+    el.className = 'wordCard' + (golden ? ' golden' : '');
+    var kanaEl = document.createElement('div');
+    kanaEl.className = 'kana';
+    kanaEl.textContent = def.kana;
+    var romajiEl = document.createElement('div');
+    romajiEl.className = 'romaji';
+    el.appendChild(kanaEl);
+    el.appendChild(romajiEl);
+    lanes[lane].appendChild(el);
+
+    var word = {
+      id: nextId++,
+      lane: lane,
+      kana: def.kana,
+      romaji: def.romaji,
+      typed: 0,
+      progress: 0,
+      duration: difficultyDuration(),
+      golden: golden,
+      removed: false,
+      el: el,
+      romajiEl: romajiEl
+    };
+    words.push(word);
+    renderWord(word);
+  }
+
+  function renderWord(w){
+    w.romajiEl.innerHTML = '';
+    for (var i = 0; i < w.romaji.length; i++) {
+      var span = document.createElement('span');
+      span.textContent = w.romaji[i];
+      if (i < w.typed) span.className = 'typed';
+      w.romajiEl.appendChild(span);
+    }
+    w.el.style.top = (w.progress * 100) + '%';
+  }
+
+  function removeWord(w){
+    w.removed = true;
+    if (w.el.parentNode) w.el.parentNode.removeChild(w.el);
+    if (lockedWordId === w.id) lockedWordId = null;
+  }
+
+  function clearWord(w){
+    sfxClear(w.golden);
+    score += w.romaji.length * (w.golden ? 30 : 10) + combo * 2;
+    combo++;
+    cleared++;
+    if (combo > maxCombo) maxCombo = combo;
+    removeWord(w);
+    updateHud();
+    if (w.golden) triggerTimestop();
+  }
+
+  function escapeWord(w){
+    sfxEscape();
+    removeWord(w);
+    lives = Math.max(0, lives - 1);
+    combo = 0;
+    updateHud();
+    flashShake();
+    if (lives <= 0) endGame(false);
+  }
+
+  function triggerTimestop(){
+    frozen = true;
+    stageEl.classList.add('frozen');
+    clearTimeout(freezeTimer);
+    freezeTimer = setTimeout(function(){
+      frozen = false;
+      stageEl.classList.remove('frozen');
+    }, TIMESTOP_MS);
+  }
+
+  function flashShake(){
+    stageEl.classList.remove('shake');
+    void stageEl.offsetWidth;
+    stageEl.classList.add('shake');
+  }
+
+  function onMiss(){
+    combo = 0;
+    sfxMiss();
+    updateHud();
+    flashShake();
+  }
+
+  function handleChar(ch){
+    if (!running) return;
+    ch = ch.toLowerCase();
+    if (!/^[a-z]$/.test(ch)) return;
+
+    var target = null;
+    if (lockedWordId != null) {
+      target = words.find(function(w){ return w.id === lockedWordId && !w.removed; });
+    }
+    if (target) {
+      if (ch === target.romaji[target.typed]) {
+        target.typed++;
+        sfxType();
+        renderWord(target);
+        if (target.typed >= target.romaji.length) clearWord(target);
+      } else {
+        target.typed = 0;
+        lockedWordId = null;
+        renderWord(target);
+        onMiss();
+      }
+      return;
+    }
+
+    var candidates = words.filter(function(w){ return !w.removed && w.typed === 0 && w.romaji[0] === ch; });
+    if (candidates.length) {
+      candidates.sort(function(a, b){ return b.progress - a.progress; });
+      var w = candidates[0];
+      w.typed = 1;
+      lockedWordId = w.id;
+      sfxType();
+      renderWord(w);
+      if (w.typed >= w.romaji.length) clearWord(w);
+    } else {
+      onMiss();
+    }
+  }
+
+  window.addEventListener('keydown', function(e){
+    if (!running) return;
+    if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) handleChar(e.key);
+  });
+
+  function updateHud(){
+    var hearts = '';
+    for (var i = 0; i < START_LIVES; i++) hearts += i < lives ? '❤️' : '🖤';
+    livesEl.textContent = hearts;
+    scoreLabel.textContent = score;
+    comboLabel.textContent = combo;
+  }
+
+  function frame(now){
+    if (!running) return;
+    if (lastTime == null) lastTime = now;
+    var dt = now - lastTime;
+    lastTime = now;
+
+    if (!frozen) {
+      spawnTimer += dt;
+      if (spawnTimer >= difficultySpawnInterval()) {
+        spawnTimer = 0;
+        spawnWord();
+      }
+      words.forEach(function(w){
+        if (w.removed) return;
+        w.progress += dt / w.duration;
+        if (w.progress >= 1) {
+          escapeWord(w);
+        } else {
+          w.el.style.top = (w.progress * 100) + '%';
+        }
+      });
+    }
+    words = words.filter(function(w){ return !w.removed; });
+
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function clearLanes(){
+    lanes.forEach(function(lane){ lane.innerHTML = ''; });
+  }
+
+  function startGame(){
+    ensureAudio();
+    lives = START_LIVES;
+    score = 0;
+    combo = 0;
+    maxCombo = 0;
+    cleared = 0;
+    words = [];
+    nextId = 1;
+    lockedWordId = null;
+    spawnTimer = 9999;
+    frozen = false;
+    clearTimeout(freezeTimer);
+    stageEl.classList.remove('frozen', 'shake');
+    clearLanes();
+    updateHud();
+    introEl.classList.add('hidden');
+    resultEl.classList.add('hidden');
+    running = true;
+    lastTime = null;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function endGame(){
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    clearTimeout(freezeTimer);
+    resultTitleEl.textContent = 'ゲームオーバー';
+    finalClearedEl.textContent = cleared;
+    finalComboEl.textContent = maxCombo;
+    finalScoreEl.textContent = score + ' 点';
+    resultEl.classList.remove('hidden');
+  }
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+
+  updateHud();
+})();
+</script>
+</body>
+</html>
