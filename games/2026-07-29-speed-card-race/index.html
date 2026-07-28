@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>スピードカード早出しレース — DAILY GAMES</title>
+<style>
+  :root { --bg:#04140d; --panel:#0c2c1c; --line:#1f6b46; --gold:#ffd23f; --red:#ff5d6c; --paper:#eef7f0; --felt:#0f3a25; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:'Hiragino Maru Gothic ProN','M PLUS Rounded 1c',system-ui,sans-serif; background:radial-gradient(circle at 50% -10%,#12492d,var(--bg) 70%); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); white-space:nowrap; }
+  h1 { font-family:monospace; color:var(--gold); font-size:1.05rem; letter-spacing:.02em; }
+  .hud { display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:.85rem; color:#8be0af; margin-bottom:8px; gap:4px; flex-wrap:wrap; }
+  .hud b { color:var(--gold); }
+  .hud .timeLow { color:var(--red); }
+  .pauseBtn { font-family:inherit; font-size:.8rem; color:#fff; background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:0 12px; min-height:44px; cursor:pointer; margin-bottom:8px; }
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--felt); padding:14px 10px; min-height:360px; overflow:hidden; }
+  .piles { display:flex; justify-content:center; gap:18px; margin-bottom:16px; }
+  .pile { width:76px; height:104px; border-radius:10px; background:#fffdf7; color:#111; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; font-family:monospace; font-weight:bold; font-size:1.6rem; cursor:pointer;
+    border:3px solid #ddd; user-select:none; box-shadow:0 4px 0 rgba(0,0,0,.35); transition:transform .08s; }
+  .pile:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.35); }
+  .pile.red { color:var(--red); }
+  .pile.black { color:#1c1c28; }
+  .pile.hint { border-color:var(--gold); box-shadow:0 0 0 3px rgba(255,210,63,.5),0 4px 0 rgba(0,0,0,.35); }
+  .pileSuit { font-size:1.6rem; line-height:1; }
+  .pileLabel { position:absolute; margin-top:-96px; font-family:monospace; font-size:.65rem; color:#8be0af; }
+  .pilesRow { display:flex; justify-content:center; gap:18px; margin-bottom:2px; }
+  .pilesRow span { width:76px; text-align:center; font-family:monospace; font-size:.68rem; color:#8be0af; }
+  .handRow { display:flex; justify-content:center; gap:6px; margin-top:20px; flex-wrap:nowrap; }
+  .card { flex:1; max-width:64px; height:66px; border-radius:8px; background:#fffdf7; color:#111; display:flex;
+    flex-direction:column; align-items:center; justify-content:center; font-family:monospace; font-weight:bold; font-size:1.15rem;
+    cursor:pointer; border:3px solid #ddd; user-select:none; min-height:44px; box-shadow:0 3px 0 rgba(0,0,0,.3); transition:transform .08s; }
+  .card:active { transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.3); }
+  .card.red { color:var(--red); }
+  .card.black { color:#1c1c28; }
+  .card.selected { border-color:var(--gold); box-shadow:0 0 0 3px rgba(255,210,63,.6),0 3px 0 rgba(0,0,0,.3); transform:translateY(-4px); }
+  .card.empty { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.15); box-shadow:none; cursor:default; }
+  .shuffleRow { display:flex; justify-content:center; margin-top:18px; }
+  .shuffleBtn { font-family:monospace; font-size:.9rem; background:rgba(255,255,255,.12); color:var(--paper);
+    border:1px solid rgba(255,255,255,.35); border-radius:10px; padding:10px 22px; min-height:44px; cursor:pointer; }
+  .shuffleBtn:disabled { opacity:.35; cursor:default; }
+  .shuffleBtn:active:not(:disabled) { background:rgba(255,255,255,.25); }
+  .stage.shake { animation:shake .25s; }
+  @keyframes shake { 0%,100%{ transform:translateX(0) } 25%{ transform:translateX(-5px) } 75%{ transform:translateX(5px) } }
+  .flashMsg { position:absolute; top:8px; left:50%; transform:translateX(-50%); font-family:monospace; font-size:.85rem;
+    color:var(--gold); background:rgba(0,0,0,.45); padding:2px 12px; border-radius:8px; z-index:4; opacity:0; transition:opacity .2s; pointer-events:none; }
+  .flashMsg.show { opacity:1; }
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(4,20,13,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:20px 16px;
+    z-index:5; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { font-family:monospace; color:var(--gold); font-size:1.25rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.86rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-family:monospace; font-size:1.05rem; background:var(--gold);
+    color:#1c1c28; border:0; border-radius:10px; padding:12px 32px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .overlay .btn.alt { background:rgba(255,255,255,.15); color:var(--paper); box-shadow:0 5px 0 rgba(0,0,0,.3); }
+  .overlay .btn.alt:active { box-shadow:0 2px 0 rgba(0,0,0,.3); }
+  .hidden { display:none !important; }
+  .result-score { font-family:monospace; color:var(--gold); font-size:2rem; margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>スピードカード早出しレース</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span>⏱ <b id="timeLabel">75</b>秒</span>
+    <span>残り <b id="remainLabel">40</b>枚</span>
+    <span>SCORE <b id="scoreLabel">0</b></span>
+    <span>チェイン <b id="comboLabel">0</b></span>
+  </div>
+
+  <button type="button" class="pauseBtn hidden" id="pauseBtn">⏸ 一時停止</button>
+
+  <div class="stage" id="stage">
+    <div class="flashMsg" id="flashMsg"></div>
+
+    <div class="pilesRow"><span>場札 L</span><span>場札 R</span></div>
+    <div class="piles">
+      <div class="pile" id="pileL" data-side="L"></div>
+      <div class="pile" id="pileR" data-side="R"></div>
+    </div>
+
+    <div class="handRow" id="handRow">
+      <div class="card" data-idx="0"></div>
+      <div class="card" data-idx="1"></div>
+      <div class="card" data-idx="2"></div>
+      <div class="card" data-idx="3"></div>
+      <div class="card" data-idx="4"></div>
+    </div>
+
+    <div class="shuffleRow">
+      <button type="button" class="shuffleBtn" id="shuffleBtn">🔄 シャッフル(-3秒)</button>
+    </div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>手札5枚から、場札(L・R)の数字と<b>1違い</b>のカードをタップして出していこう。</p>
+      <p>①手札をタップして選ぶ → ②場札LかRをタップして出す。数字がぴったり1違いなら成功!</p>
+      <p>山札と手札のカードを<b>全部出し切れたらクリア</b>。制限時間内に出せなければタイムアップ。</p>
+      <p>出せるカードが手札にないときは<span style="color:#ffd23f">🔄シャッフル</span>で場札を入れ替えられる。ただし3秒のロスあり。</p>
+      <p>止まらずテンポよく連続で出し続けると「チェイン」が伸びてスコア倍率アップ!</p>
+      <p>⌨ PCは 1〜5キーで手札選択、←/→キーで場札L/Rに出す、Sキーでシャッフルもできる。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- 一時停止画面 -->
+    <div class="overlay hidden" id="pauseOverlay">
+      <h2>一時停止</h2>
+      <p>手札をタップして選び、場札LかRをタップして数字が1違いなら出せる。</p>
+      <p>出せないときは🔄シャッフル(-3秒)で場札を入れ替えよう。</p>
+      <p>山札と手札を全部出し切れば時間内クリア!</p>
+      <button class="btn" id="resumeBtn">▶ 再開</button>
+      <button class="btn alt" id="restartBtn">⟲ さいしょから</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">タイムアップ</h2>
+      <p id="resultDetail"></p>
+      <div class="result-score" id="finalScore"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var RANKS = 10;
+  var SUITS = ['♠','♥','♦','♣'];
+  var HAND_SIZE = 5;
+  var TIME_LIMIT_MS = 75000;
+  var SHUFFLE_PENALTY_MS = 3000;
+  var CHAIN_TIMEOUT_MS = 1500;
+
+  var stageEl = document.getElementById('stage');
+  var timeLabel = document.getElementById('timeLabel');
+  var remainLabel = document.getElementById('remainLabel');
+  var scoreLabel = document.getElementById('scoreLabel');
+  var comboLabel = document.getElementById('comboLabel');
+  var pauseBtn = document.getElementById('pauseBtn');
+  var pauseOverlay = document.getElementById('pauseOverlay');
+  var resumeBtn = document.getElementById('resumeBtn');
+  var restartBtn = document.getElementById('restartBtn');
+  var introEl = document.getElementById('intro');
+  var resultEl = document.getElementById('result');
+  var resultTitleEl = document.getElementById('resultTitle');
+  var resultDetailEl = document.getElementById('resultDetail');
+  var finalScoreEl = document.getElementById('finalScore');
+  var pileLEl = document.getElementById('pileL');
+  var pileREl = document.getElementById('pileR');
+  var handEls = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var shuffleBtn = document.getElementById('shuffleBtn');
+  var flashMsg = document.getElementById('flashMsg');
+
+  var running = false, paused = false;
+  var deck = [], pileL = null, pileR = null, hand = [], selectedIndex = -1;
+  var score = 0, combo = 0, maxCombo = 0, timeLeftMs = TIME_LIMIT_MS, ticksSincePlay = 0;
+  var tickInterval = null;
+  var audioCtx = null;
+
+  function ensureAudio(){
+    if (!audioCtx) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) audioCtx = new Ctx();
+    }
+    return audioCtx;
+  }
+  function beep(freq, dur, type, gainVal){
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    gain.gain.value = gainVal || 0.05;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    osc.stop(ctx.currentTime + dur + 0.02);
+  }
+  function sfxPlay(c){ beep(520 + Math.min(c, 10) * 25, 0.09, 'square', 0.05); }
+  function sfxMiss(){ beep(150, 0.14, 'sawtooth', 0.05); }
+  function sfxShuffle(){ beep(300, 0.08, 'triangle', 0.04); beep(220, 0.12, 'triangle', 0.04); }
+  function sfxWin(){ beep(660, 0.1, 'square', 0.06); beep(880, 0.12, 'square', 0.06); beep(1100, 0.2, 'sine', 0.06); }
+  function sfxLose(){ beep(220, 0.1, 'sawtooth', 0.05); beep(140, 0.25, 'sawtooth', 0.05); }
+
+  function shuffleArray(arr){
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+  function buildDeck(){
+    var d = [];
+    for (var s = 0; s < SUITS.length; s++) {
+      for (var r = 1; r <= RANKS; r++) d.push({ rank: r, suit: SUITS[s] });
+    }
+    return shuffleArray(d);
+  }
+  function rankLabel(r){ return r === 1 ? 'A' : String(r); }
+  function isRed(suit){ return suit === '♥' || suit === '♦'; }
+  function remainingCount(){
+    var c = deck.length;
+    for (var i = 0; i < hand.length; i++) if (hand[i]) c++;
+    return c;
+  }
+
+  function flash(text){
+    flashMsg.textContent = text;
+    flashMsg.classList.add('show');
+    clearTimeout(flash._t);
+    flash._t = setTimeout(function(){ flashMsg.classList.remove('show'); }, 700);
+  }
+  function shakeStage(){
+    stageEl.classList.remove('shake');
+    void stageEl.offsetWidth;
+    stageEl.classList.add('shake');
+  }
+
+  function renderPile(el, card){
+    el.innerHTML = '';
+    el.className = 'pile' + (card ? (isRed(card.suit) ? ' red' : ' black') : '');
+    if (!card) return;
+    var rankEl = document.createElement('div');
+    rankEl.textContent = rankLabel(card.rank);
+    var suitEl = document.createElement('div');
+    suitEl.className = 'pileSuit';
+    suitEl.textContent = card.suit;
+    el.appendChild(rankEl);
+    el.appendChild(suitEl);
+  }
+  function renderHand(){
+    for (var i = 0; i < HAND_SIZE; i++) {
+      var el = handEls[i];
+      var card = hand[i];
+      el.innerHTML = '';
+      if (!card) {
+        el.className = 'card empty';
+        continue;
+      }
+      el.className = 'card' + (isRed(card.suit) ? ' red' : ' black') + (i === selectedIndex ? ' selected' : '');
+      var rankEl = document.createElement('div');
+      rankEl.textContent = rankLabel(card.rank);
+      var suitEl = document.createElement('div');
+      suitEl.textContent = card.suit;
+      el.appendChild(rankEl);
+      el.appendChild(suitEl);
+    }
+  }
+  function render(){
+    renderPile(pileLEl, pileL);
+    renderPile(pileREl, pileR);
+    renderHand();
+    shuffleBtn.disabled = deck.length === 0 || !running || paused;
+  }
+  function updateHud(){
+    var secs = Math.max(0, Math.ceil(timeLeftMs / 1000));
+    timeLabel.textContent = secs;
+    timeLabel.parentNode.classList.toggle('timeLow', secs <= 15);
+    remainLabel.textContent = remainingCount();
+    scoreLabel.textContent = score;
+    comboLabel.textContent = combo;
+  }
+
+  function selectHand(i){
+    if (!running || paused) return;
+    if (!hand[i]) return;
+    selectedIndex = (selectedIndex === i) ? -1 : i;
+    render();
+  }
+
+  function attemptPlay(side){
+    if (!running || paused) return;
+    if (selectedIndex === -1) return;
+    var card = hand[selectedIndex];
+    if (!card) return;
+    var pileCard = side === 'L' ? pileL : pileR;
+    if (Math.abs(card.rank - pileCard.rank) === 1) {
+      if (side === 'L') pileL = card; else pileR = card;
+      hand[selectedIndex] = deck.length ? deck.pop() : null;
+      selectedIndex = -1;
+      combo++;
+      if (combo > maxCombo) maxCombo = combo;
+      score += 10 + combo * 2;
+      ticksSincePlay = 0;
+      sfxPlay(combo);
+      render();
+      updateHud();
+      if (remainingCount() === 0) { endGame(true); return; }
+    } else {
+      sfxMiss();
+      combo = 0;
+      selectedIndex = -1;
+      shakeStage();
+      flash('数字が1違いのカードだけ出せる!');
+      render();
+      updateHud();
+    }
+  }
+
+  function doShuffle(){
+    if (!running || paused) return;
+    if (deck.length === 0) return;
+    pileL = deck.pop();
+    if (deck.length) pileR = deck.pop();
+    combo = 0;
+    selectedIndex = -1;
+    timeLeftMs = Math.max(0, timeLeftMs - SHUFFLE_PENALTY_MS);
+    sfxShuffle();
+    flash('場札シャッフル!');
+    render();
+    updateHud();
+    if (timeLeftMs <= 0) { endGame(false); return; }
+    if (remainingCount() === 0) { endGame(true); }
+  }
+
+  document.querySelectorAll('.card').forEach(function(el){
+    el.addEventListener('click', function(){ selectHand(parseInt(el.getAttribute('data-idx'), 10)); });
+  });
+  pileLEl.addEventListener('click', function(){ attemptPlay('L'); });
+  pileREl.addEventListener('click', function(){ attemptPlay('R'); });
+  shuffleBtn.addEventListener('click', doShuffle);
+
+  window.addEventListener('keydown', function(e){
+    if (!running || paused) return;
+    if (e.key >= '1' && e.key <= '5') { selectHand(e.key.charCodeAt(0) - '1'.charCodeAt(0)); return; }
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { attemptPlay('L'); return; }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { attemptPlay('R'); return; }
+    if (e.key === 's' || e.key === 'S' || e.key === ' ') { e.preventDefault(); doShuffle(); return; }
+    if (e.key === 'Escape') { selectedIndex = -1; render(); }
+  });
+
+  function tick(){
+    if (!running || paused) return;
+    timeLeftMs -= 100;
+    ticksSincePlay += 100;
+    if (combo > 0 && ticksSincePlay > CHAIN_TIMEOUT_MS) combo = 0;
+    if (timeLeftMs <= 0) {
+      timeLeftMs = 0;
+      updateHud();
+      endGame(false);
+      return;
+    }
+    updateHud();
+  }
+
+  function startGame(){
+    ensureAudio();
+    deck = buildDeck();
+    pileL = deck.pop();
+    pileR = deck.pop();
+    hand = [];
+    for (var i = 0; i < HAND_SIZE; i++) hand.push(deck.length ? deck.pop() : null);
+    selectedIndex = -1;
+    score = 0;
+    combo = 0;
+    maxCombo = 0;
+    timeLeftMs = TIME_LIMIT_MS;
+    ticksSincePlay = 0;
+
+    introEl.classList.add('hidden');
+    pauseOverlay.classList.add('hidden');
+    resultEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+    stageEl.classList.remove('shake');
+    running = true;
+    paused = false;
+    render();
+    updateHud();
+    if (tickInterval) clearInterval(tickInterval);
+    tickInterval = setInterval(tick, 100);
+  }
+
+  function endGame(win){
+    running = false;
+    pauseBtn.classList.add('hidden');
+    if (win) {
+      var bonus = Math.round(timeLeftMs / 1000) * 15;
+      score += bonus;
+      resultTitleEl.textContent = 'クリア!全部出し切った!';
+      resultDetailEl.textContent = '残り時間ボーナス +' + bonus + '点 / 最大チェイン ' + maxCombo;
+      sfxWin();
+    } else {
+      resultTitleEl.textContent = 'タイムアップ...';
+      resultDetailEl.textContent = '残りカード ' + remainingCount() + '枚 / 最大チェイン ' + maxCombo;
+      sfxLose();
+    }
+    updateHud();
+    finalScoreEl.textContent = score + ' 点';
+    resultEl.classList.remove('hidden');
+  }
+
+  pauseBtn.addEventListener('click', function(){
+    if (!running || paused) return;
+    paused = true;
+    pauseOverlay.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', function(){
+    if (!paused) return;
+    paused = false;
+    pauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+  });
+  restartBtn.addEventListener('click', function(){
+    pauseOverlay.classList.add('hidden');
+    startGame();
+  });
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+
+  updateHud();
+})();
+</script>
+</body>
+</html>
