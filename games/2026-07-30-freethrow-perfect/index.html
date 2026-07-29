@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>フリースロー・パーフェクト — DAILY GAMES</title>
+<style>
+  :root { --bg:#1a0f08; --panel:#2b1a0d; --line:#7a4a20; --gold:#ffcf4d; --green:#3ddc84; --red:#ff5d6c; --paper:#fff6e8; --wood:#c9863f; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:'Hiragino Maru Gothic ProN','M PLUS Rounded 1c',system-ui,sans-serif; background:radial-gradient(circle at 50% -10%,#3a2410,var(--bg) 70%); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); white-space:nowrap; }
+  h1 { font-family:monospace; color:var(--gold); font-size:1.05rem; letter-spacing:.02em; }
+  .hud { display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:.85rem; color:#e0b98b; margin-bottom:8px; gap:4px; flex-wrap:wrap; }
+  .hud b { color:var(--gold); }
+  .hud .timeLow { color:var(--red); }
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:16px 14px; min-height:420px; overflow:hidden; }
+
+  .hoopArea { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:80px; margin-bottom:10px; }
+  .longBadge { position:absolute; top:-4px; font-family:monospace; font-size:.72rem; color:#1c1c28; background:var(--gold); padding:3px 10px; border-radius:8px; font-weight:bold; }
+  .hoopEmoji { font-size:2.6rem; line-height:1; transition:transform .15s; }
+  .hoopEmoji.pulse-green { animation:pulse .5s; color:var(--green); }
+  .hoopEmoji.pulse-yellow { animation:pulse .5s; color:var(--gold); }
+  .hoopEmoji.pulse-red { animation:pulse .5s; }
+  @keyframes pulse { 0%{ transform:scale(1) } 40%{ transform:scale(1.35) } 100%{ transform:scale(1) } }
+  .resultFlash { position:absolute; bottom:-6px; font-family:monospace; font-weight:bold; font-size:1rem; opacity:0; transition:opacity .15s; text-align:center; }
+  .resultFlash.show { opacity:1; }
+  .resultFlash.swish { color:var(--green); }
+  .resultFlash.bank { color:var(--gold); }
+  .resultFlash.miss { color:var(--red); }
+
+  .phaseLabel { text-align:center; font-family:monospace; font-size:.9rem; color:var(--paper); margin-bottom:10px; min-height:1.3em; }
+
+  .gaugeWrap { display:flex; justify-content:center; margin-bottom:14px; }
+  .gaugeTrack { position:relative; background:#150c05; border:2px solid var(--wood); border-radius:8px; overflow:hidden; }
+  .gaugeTrack.vertical { width:64px; height:190px; }
+  .gaugeTrack.horizontal { width:100%; max-width:340px; height:52px; }
+  .zone { position:absolute; }
+  .zone.yellow { background:rgba(255,207,77,.38); }
+  .zone.green { background:rgba(61,220,132,.55); }
+  .gaugeTrack.vertical .zone { left:0; width:100%; }
+  .gaugeTrack.horizontal .zone { top:0; height:100%; }
+  .marker { position:absolute; background:var(--paper); box-shadow:0 0 6px rgba(255,255,255,.8); }
+  .gaugeTrack.vertical .marker { left:0; width:100%; height:4px; transform:translateY(50%); }
+  .gaugeTrack.horizontal .marker { top:0; height:100%; width:4px; transform:translateX(-50%); }
+
+  .tapZone { text-align:center; font-family:monospace; font-size:1rem; font-weight:bold; background:rgba(255,207,77,.15); border:2px dashed var(--gold); color:var(--gold); border-radius:12px; padding:16px; min-height:56px; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; }
+  .tapZone:active { background:rgba(255,207,77,.3); }
+
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(26,15,8,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:20px 16px;
+    z-index:5; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { font-family:monospace; color:var(--gold); font-size:1.25rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.86rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-family:monospace; font-size:1.05rem; background:var(--gold);
+    color:#1c1c28; border:0; border-radius:10px; padding:12px 32px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .result-score { font-family:monospace; color:var(--gold); font-size:2rem; margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>フリースロー・パーフェクト</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span>⏱ <b id="timeLabel">60</b>秒</span>
+    <span>SCORE <b id="scoreLabel">0</b></span>
+    <span>連続 <b id="streakLabel">0</b></span>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="hoopArea">
+      <div class="longBadge hidden" id="longBadge">🔥 ロングシュートチャンス!得点3倍</div>
+      <div class="hoopEmoji" id="hoopEmoji">🧺</div>
+      <div class="resultFlash" id="resultFlash"></div>
+    </div>
+
+    <div class="phaseLabel" id="phaseLabel">①パワーを合わせてタップ!</div>
+
+    <div class="gaugeWrap" id="powerGaugeWrap">
+      <div class="gaugeTrack vertical" id="powerTrack">
+        <div class="zone yellow" id="powerZoneYellow"></div>
+        <div class="zone green" id="powerZoneGreen"></div>
+        <div class="marker" id="powerMarker"></div>
+      </div>
+    </div>
+
+    <div class="gaugeWrap hidden" id="aimGaugeWrap">
+      <div class="gaugeTrack horizontal" id="aimTrack">
+        <div class="zone yellow" id="aimZoneYellow"></div>
+        <div class="zone green" id="aimZoneGreen"></div>
+        <div class="marker" id="aimMarker"></div>
+      </div>
+    </div>
+
+    <div class="tapZone" id="tapZone">👆 タップしてストップ!</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>60秒間でシュートを決めまくれ!1本のシュートは2段階のゲージ合わせ。</p>
+      <p>①上下に動く<b>パワーゲージ</b>を、緑(パーフェクト)か黄色(バンク)のゾーンでタップして止める。</p>
+      <p>②続けて左右に動く<b>ねらいゲージ</b>も同じように止める。</p>
+      <p>両方とも緑ゾーン→<span style="color:#3ddc84">スイッシュ(高得点)</span>、両方とも黄色以上→<span style="color:#ffcf4d">バンクショット(得点)</span>、どちらか外れると<span style="color:#ff5d6c">ミス</span>。</p>
+      <p>🔥 <b>3本連続で決めると</b>、次はゾーンがせまい「ロングシュートチャンス」が出現!決めれば得点3倍。</p>
+      <p>操作は画面下の「タップしてストップ!」を押す、または PC は <b>スペース/エンターキー</b>でもOK。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">タイムアップ!</h2>
+      <p id="resultDetail"></p>
+      <div class="result-score" id="finalScore"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var TIME_LIMIT_MS = 60000;
+  var BASE_SPEED = 0.0028;
+  var AIM_SPEED_MULT = 1.15;
+  var NORMAL_GREEN = 9, NORMAL_YELLOW = 18;
+  var LONG_GREEN = 5, LONG_YELLOW = 10;
+  var RESOLVE_DELAY_MS = 750;
+
+  var timeLabel = document.getElementById('timeLabel');
+  var scoreLabel = document.getElementById('scoreLabel');
+  var streakLabel = document.getElementById('streakLabel');
+  var hoopEmoji = document.getElementById('hoopEmoji');
+  var resultFlash = document.getElementById('resultFlash');
+  var longBadge = document.getElementById('longBadge');
+  var phaseLabel = document.getElementById('phaseLabel');
+  var powerGaugeWrap = document.getElementById('powerGaugeWrap');
+  var aimGaugeWrap = document.getElementById('aimGaugeWrap');
+  var powerZoneYellow = document.getElementById('powerZoneYellow');
+  var powerZoneGreen = document.getElementById('powerZoneGreen');
+  var powerMarker = document.getElementById('powerMarker');
+  var aimZoneYellow = document.getElementById('aimZoneYellow');
+  var aimZoneGreen = document.getElementById('aimZoneGreen');
+  var aimMarker = document.getElementById('aimMarker');
+  var tapZone = document.getElementById('tapZone');
+  var introEl = document.getElementById('intro');
+  var resultEl = document.getElementById('result');
+  var resultTitleEl = document.getElementById('resultTitle');
+  var resultDetailEl = document.getElementById('resultDetail');
+  var finalScoreEl = document.getElementById('finalScore');
+
+  var running = false;
+  var phase = 'idle'; // 'power' | 'aim' | 'resolve'
+  var timeLeftMs = TIME_LIMIT_MS;
+  var score = 0, madeStreak = 0, maxStreak = 0, pendingLongShot = false, isLongShot = false;
+  var powerTarget = 50, aimTarget = 50;
+  var powerValue = 50, aimValue = 50;
+  var powerPhaseStart = 0, aimPhaseStart = 0, powerOffset = 0, aimOffset = 0, curSpeed = BASE_SPEED;
+  var lockedPower = 50, lockedAim = 50;
+  var rafId = null, tickInterval = null, resolveTimeoutId = null;
+  var audioCtx = null;
+
+  function ensureAudio(){
+    if (!audioCtx) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) audioCtx = new Ctx();
+    }
+    return audioCtx;
+  }
+  function beep(freq, dur, type, gainVal){
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    gain.gain.value = gainVal || 0.05;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    osc.stop(ctx.currentTime + dur + 0.02);
+  }
+  function sfxSwish(){ beep(880, 0.09, 'square', 0.06); beep(1180, 0.14, 'sine', 0.06); }
+  function sfxBank(){ beep(520, 0.1, 'square', 0.05); }
+  function sfxMiss(){ beep(160, 0.16, 'sawtooth', 0.05); }
+  function sfxLong(){ beep(660, 0.08, 'triangle', 0.05); beep(880, 0.1, 'triangle', 0.05); }
+  function sfxEnd(){ beep(440, 0.1, 'sine', 0.05); beep(330, 0.18, 'sine', 0.05); }
+
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  function randomTarget(half){
+    var min = half + 4, max = 100 - half - 4;
+    return min + Math.random() * (max - min);
+  }
+
+  function setZones(yellowEl, greenEl, target, greenHalf, yellowHalf, vertical){
+    var yLo = clamp(target - yellowHalf, 0, 100), yHi = clamp(target + yellowHalf, 0, 100);
+    var gLo = clamp(target - greenHalf, 0, 100), gHi = clamp(target + greenHalf, 0, 100);
+    if (vertical) {
+      yellowEl.style.bottom = yLo + '%'; yellowEl.style.height = (yHi - yLo) + '%';
+      greenEl.style.bottom = gLo + '%'; greenEl.style.height = (gHi - gLo) + '%';
+    } else {
+      yellowEl.style.left = yLo + '%'; yellowEl.style.width = (yHi - yLo) + '%';
+      greenEl.style.left = gLo + '%'; greenEl.style.width = (gHi - gLo) + '%';
+    }
+  }
+
+  function updateHud(){
+    var secs = Math.max(0, Math.ceil(timeLeftMs / 1000));
+    timeLabel.textContent = secs;
+    timeLabel.parentNode.classList.toggle('timeLow', secs <= 10);
+    scoreLabel.textContent = score;
+    streakLabel.textContent = madeStreak;
+  }
+
+  function powerLoop(now){
+    if (phase !== 'power') return;
+    var elapsed = now - powerPhaseStart;
+    powerValue = clamp(50 + 50 * Math.sin(elapsed * curSpeed + powerOffset), 0, 100);
+    powerMarker.style.bottom = powerValue + '%';
+    rafId = requestAnimationFrame(powerLoop);
+  }
+  function aimLoop(now){
+    if (phase !== 'aim') return;
+    var elapsed = now - aimPhaseStart;
+    aimValue = clamp(50 + 50 * Math.sin(elapsed * curSpeed * AIM_SPEED_MULT + aimOffset), 0, 100);
+    aimMarker.style.left = aimValue + '%';
+    rafId = requestAnimationFrame(aimLoop);
+  }
+
+  function startShot(){
+    isLongShot = pendingLongShot;
+    pendingLongShot = false;
+    if (isLongShot) { longBadge.classList.remove('hidden'); sfxLong(); }
+    else longBadge.classList.add('hidden');
+
+    var half = isLongShot ? LONG_YELLOW : NORMAL_YELLOW;
+    powerTarget = randomTarget(half);
+    aimTarget = randomTarget(half);
+    setZones(powerZoneYellow, powerZoneGreen, powerTarget, isLongShot ? LONG_GREEN : NORMAL_GREEN, half, true);
+    setZones(aimZoneYellow, aimZoneGreen, aimTarget, isLongShot ? LONG_GREEN : NORMAL_GREEN, half, false);
+
+    curSpeed = BASE_SPEED + Math.min(madeStreak, 8) * 0.00018;
+    powerOffset = Math.random() * Math.PI * 2;
+    aimOffset = Math.random() * Math.PI * 2;
+
+    powerGaugeWrap.classList.remove('hidden');
+    aimGaugeWrap.classList.add('hidden');
+    phaseLabel.textContent = '①パワーを合わせてタップ!';
+    resultFlash.classList.remove('show');
+
+    phase = 'power';
+    powerPhaseStart = performance.now();
+    rafId = requestAnimationFrame(powerLoop);
+  }
+
+  function stopPower(){
+    if (phase !== 'power') return;
+    cancelAnimationFrame(rafId);
+    lockedPower = powerValue;
+    powerGaugeWrap.classList.add('hidden');
+    aimGaugeWrap.classList.remove('hidden');
+    phaseLabel.textContent = '②ねらいを合わせてタップ!';
+    phase = 'aim';
+    aimPhaseStart = performance.now();
+    rafId = requestAnimationFrame(aimLoop);
+  }
+
+  function showResult(result, pts){
+    resultFlash.className = 'resultFlash show ' + result.toLowerCase();
+    var label = result === 'SWISH' ? 'スイッシュ!' : (result === 'BANK' ? 'バンクショット!' : 'ミス...');
+    resultFlash.textContent = label + (pts > 0 ? ' +' + pts : '');
+    hoopEmoji.className = 'hoopEmoji pulse-' + (result === 'SWISH' ? 'green' : (result === 'BANK' ? 'yellow' : 'red'));
+  }
+
+  function stopAim(){
+    if (phase !== 'aim') return;
+    cancelAnimationFrame(rafId);
+    lockedAim = aimValue;
+    aimGaugeWrap.classList.add('hidden');
+    phaseLabel.textContent = '';
+    longBadge.classList.add('hidden');
+
+    var greenHalf = isLongShot ? LONG_GREEN : NORMAL_GREEN;
+    var yellowHalf = isLongShot ? LONG_YELLOW : NORMAL_YELLOW;
+    var pd = Math.abs(lockedPower - powerTarget), ad = Math.abs(lockedAim - aimTarget);
+    var pGreen = pd <= greenHalf, aGreen = ad <= greenHalf;
+    var pYellow = pd <= yellowHalf, aYellow = ad <= yellowHalf;
+
+    var result, pts = 0;
+    if (pGreen && aGreen) { result = 'SWISH'; pts = isLongShot ? 9 : 3; }
+    else if (pYellow && aYellow) { result = 'BANK'; pts = isLongShot ? 3 : 1; }
+    else result = 'MISS';
+
+    if (result === 'MISS') {
+      madeStreak = 0;
+      pendingLongShot = false;
+      sfxMiss();
+    } else {
+      score += pts;
+      madeStreak++;
+      maxStreak = Math.max(maxStreak, madeStreak);
+      if (madeStreak % 3 === 0) pendingLongShot = true;
+      if (result === 'SWISH') sfxSwish(); else sfxBank();
+    }
+    showResult(result, pts);
+    updateHud();
+
+    phase = 'resolve';
+    resolveTimeoutId = setTimeout(function(){
+      if (!running) return;
+      if (timeLeftMs <= 0) { endGame(); return; }
+      startShot();
+    }, RESOLVE_DELAY_MS);
+  }
+
+  function onTap(){
+    if (!running) return;
+    if (phase === 'power') { ensureAudio(); stopPower(); }
+    else if (phase === 'aim') stopAim();
+  }
+  tapZone.addEventListener('click', onTap);
+  window.addEventListener('keydown', function(e){
+    if (e.key === ' ' || e.key === 'Enter') {
+      if (running && (phase === 'power' || phase === 'aim')) { e.preventDefault(); onTap(); }
+    }
+  });
+
+  function tick(){
+    if (!running) return;
+    timeLeftMs -= 100;
+    if (timeLeftMs <= 0) {
+      timeLeftMs = 0;
+      updateHud();
+      endGame();
+      return;
+    }
+    updateHud();
+  }
+
+  function startGame(){
+    ensureAudio();
+    running = true;
+    phase = 'idle';
+    timeLeftMs = TIME_LIMIT_MS;
+    score = 0;
+    madeStreak = 0;
+    maxStreak = 0;
+    pendingLongShot = false;
+    isLongShot = false;
+
+    introEl.classList.add('hidden');
+    resultEl.classList.add('hidden');
+    resultFlash.classList.remove('show');
+    hoopEmoji.className = 'hoopEmoji';
+    updateHud();
+
+    if (tickInterval) clearInterval(tickInterval);
+    tickInterval = setInterval(tick, 100);
+
+    startShot();
+  }
+
+  function endGame(){
+    running = false;
+    phase = 'idle';
+    if (rafId) cancelAnimationFrame(rafId);
+    if (tickInterval) clearInterval(tickInterval);
+    if (resolveTimeoutId) clearTimeout(resolveTimeoutId);
+    powerGaugeWrap.classList.add('hidden');
+    aimGaugeWrap.classList.add('hidden');
+    longBadge.classList.add('hidden');
+    phaseLabel.textContent = '';
+    sfxEnd();
+
+    resultTitleEl.textContent = 'タイムアップ!';
+    resultDetailEl.textContent = '最大連続成功 ' + maxStreak + '本';
+    finalScoreEl.textContent = score + ' 点';
+    resultEl.classList.remove('hidden');
+  }
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+
+  updateHud();
+})();
+</script>
+</body>
+</html>
