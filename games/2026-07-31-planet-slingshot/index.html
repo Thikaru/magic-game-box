@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>わくせいスリングショット — DAILY GAMES</title>
+<style>
+  :root { --bg:#050818; --panel:#0c1230; --line:#3a4bb0; --gold:#ffd23f; --blue:#4dd8ff; --orange:#ff8a3d; --red:#ff5d6c; --paper:#eef1ff; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:'Hiragino Maru Gothic ProN','M PLUS Rounded 1c',system-ui,sans-serif; background:radial-gradient(circle at 50% -10%,#141c4a,var(--bg) 70%); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); white-space:nowrap; }
+  h1 { color:var(--gold); font-size:1.05rem; letter-spacing:.02em; }
+  .hud { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; color:var(--blue); margin-bottom:8px; gap:4px; flex-wrap:wrap; }
+  .hud b { color:var(--gold); }
+  .pauseBtn { font-family:inherit; font-size:.8rem; color:#fff; background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:0 12px; min-height:44px; cursor:pointer; margin-bottom:8px; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; border:3px solid var(--line); border-radius:14px; background:var(--panel); touch-action:none; }
+  .flashMsg { position:absolute; top:8px; left:50%; transform:translateX(-50%); font-size:.85rem;
+    color:var(--gold); background:rgba(0,0,0,.55); padding:4px 14px; border-radius:8px; z-index:4; opacity:0; transition:opacity .2s; pointer-events:none; text-align:center; white-space:nowrap; }
+  .flashMsg.show { opacity:1; }
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(5,8,24,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:20px 16px;
+    z-index:5; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--gold); font-size:1.25rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.86rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:700; background:var(--gold);
+    color:#1c1c28; border:0; border-radius:10px; padding:12px 32px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .overlay .btn.alt { background:rgba(255,255,255,.15); color:var(--paper); box-shadow:0 5px 0 rgba(0,0,0,.3); }
+  .overlay .btn.alt:active { box-shadow:0 2px 0 rgba(0,0,0,.3); }
+  .hidden { display:none !important; }
+  .result-score { color:var(--gold); font-size:2rem; margin:6px 0; font-weight:700; }
+  .legend { display:flex; justify-content:center; gap:14px; font-size:.78rem; margin-bottom:6px; flex-wrap:wrap; color:#c6cdf5; }
+  .legend span.dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🪐 わくせいスリングショット</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span>SCORE <b id="scoreLabel">0</b></span>
+    <span>BEST <b id="bestLabel">0</b></span>
+    <span>LV <b id="levelLabel">1</b></span>
+    <span id="livesLabel">♥♥♥</span>
+    <span>連続 <b id="streakLabel">0</b></span>
+  </div>
+
+  <button type="button" class="pauseBtn hidden" id="pauseBtn">⏸ 一時停止</button>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="600"></canvas>
+    <div class="flashMsg" id="flashMsg"></div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>画面をドラッグして引っ張り、指を離すと反対方向へボールが発射される<b>重力スリングショット</b>。</p>
+      <p><span class="dot" style="background:var(--blue)"></span>青い惑星は<b>引き寄せる</b>重力、<span class="dot" style="background:var(--orange)"></span>オレンジの惑星は<b>反発する</b>重力を持つ。うまくコースを曲げて🎯ターゲットに命中させよう!</p>
+      <p>⚪隕石や惑星本体にぶつかったり、画面の外へ飛び出すとミス。ライフは3つ、なくなったら終了。</p>
+      <p>まれに出る⭐ゴールデンターゲットは的が小さく難しいが、命中で得点<b>3倍</b>!連続ヒットで得点が上乗せされるストリークボーナスもある。</p>
+      <p>⌨ PCでは ←→ で発射角度、↑↓ でパワーを調整し、スペース/Enterで発射もできる。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- 一時停止画面 -->
+    <div class="overlay hidden" id="pauseOverlay">
+      <h2>一時停止</h2>
+      <p>ドラッグで引っ張って離すと発射。青い惑星は引き寄せ、オレンジの惑星は反発する。</p>
+      <p>🎯に当てればクリア、隕石・惑星・画面外に出るとライフが1減る。</p>
+      <button class="btn" id="resumeBtn">▶ 再開</button>
+      <button class="btn alt" id="restartBtn">⟲ さいしょから</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲームオーバー</h2>
+      <p id="resultDetail"></p>
+      <div class="result-score" id="finalScore"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--blue)"></span>引力</span>
+    <span><span class="dot" style="background:var(--orange)"></span>反発</span>
+    <span><span class="dot" style="background:#9aa0c0"></span>隕石</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  var scoreLabel = document.getElementById('scoreLabel');
+  var bestLabel = document.getElementById('bestLabel');
+  var levelLabel = document.getElementById('levelLabel');
+  var livesLabel = document.getElementById('livesLabel');
+  var streakLabel = document.getElementById('streakLabel');
+  var pauseBtn = document.getElementById('pauseBtn');
+  var pauseOverlay = document.getElementById('pauseOverlay');
+  var resumeBtn = document.getElementById('resumeBtn');
+  var restartBtn = document.getElementById('restartBtn');
+  var introEl = document.getElementById('intro');
+  var resultEl = document.getElementById('result');
+  var resultTitleEl = document.getElementById('resultTitle');
+  var resultDetailEl = document.getElementById('resultDetail');
+  var finalScoreEl = document.getElementById('finalScore');
+  var flashMsg = document.getElementById('flashMsg');
+
+  var BALL_R = 7;
+  var LAUNCH = { x: 54, y: H - 60 };
+  var MAX_PULL = 90;
+  var MAX_SPEED = 480;
+  var SPEED_CAP = 900;
+  var GRAVITY_K = 110000;
+  var MAX_FLIGHT_MS = 6000;
+  var BEST_KEY = 'planetSlingshotBest';
+
+  var running = false, paused = false;
+  var state = 'idle';
+  var level = 1, score = 0, lives = 3, streak = 0;
+  var best = Number(localStorage.getItem(BEST_KEY)) || 0;
+
+  var planets = [], asteroids = [], target = null;
+  var ball = { x: LAUNCH.x, y: LAUNCH.y, vx: 0, vy: 0 };
+  var trail = [];
+  var flightStartTime = 0;
+  var aim = { dx: 0, dy: 0 };
+  var dragging = false;
+  var kbAngleDeg = -60;
+  var kbPower = 0.6;
+  var lastTs = 0;
+  var starField = [];
+
+  var audioCtx = null;
+  function ensureAudio(){
+    if (!audioCtx) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) audioCtx = new Ctx();
+    }
+    return audioCtx;
+  }
+  function beep(freq, dur, type, gainVal){
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    gain.gain.value = gainVal || 0.05;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    osc.stop(ctx.currentTime + dur + 0.02);
+  }
+  function sfxLaunch(){ beep(320, 0.08, 'triangle', 0.05); }
+  function sfxHit(golden){
+    if (golden) { beep(880, 0.1, 'square', 0.06); beep(1180, 0.14, 'square', 0.06); beep(1500, 0.18, 'sine', 0.06); }
+    else { beep(660, 0.09, 'square', 0.06); beep(920, 0.13, 'sine', 0.06); }
+  }
+  function sfxMiss(){ beep(180, 0.16, 'sawtooth', 0.05); }
+  function sfxGameOver(){ beep(220, 0.1, 'sawtooth', 0.05); beep(140, 0.3, 'sawtooth', 0.05); }
+
+  function rand(min, max){ return Math.random() * (max - min) + min; }
+  function dist(ax, ay, bx, by){ var dx = ax - bx, dy = ay - by; return Math.sqrt(dx * dx + dy * dy); }
+
+  function farEnough(x, y, r, list, pad){
+    for (var i = 0; i < list.length; i++) {
+      var o = list[i];
+      if (dist(x, y, o.x, o.y) < (r + o.r + (pad || 24))) return false;
+    }
+    if (dist(x, y, LAUNCH.x, LAUNCH.y) < r + 120) return false;
+    return true;
+  }
+  function placeRandom(r, existing, minX, maxX, minY, maxY, pad){
+    for (var tries = 0; tries < 50; tries++) {
+      var x = rand(minX, maxX), y = rand(minY, maxY);
+      if (farEnough(x, y, r, existing, pad)) return { x: x, y: y };
+    }
+    return { x: rand(minX, maxX), y: rand(minY, maxY) };
+  }
+
+  function generateLevel(lv){
+    planets = [];
+    asteroids = [];
+    var placed = [];
+
+    var tR = Math.max(12, 27 - lv * 1.1);
+    var golden = lv >= 2 && Math.random() < 0.22;
+    if (golden) tR = Math.max(9, tR * 0.65);
+    var tPos = placeRandom(tR, placed, 170, W - 30, 50, 250, 20);
+    target = { x: tPos.x, y: tPos.y, r: tR, golden: golden };
+    placed.push({ x: target.x, y: target.y, r: target.r });
+
+    var planetCount = Math.min(2 + Math.floor(lv / 2), 6);
+    for (var i = 0; i < planetCount; i++) {
+      var pr = rand(14, 22);
+      var pos = placeRandom(pr, placed, 60, W - 40, 90, H - 140, 26);
+      var repelChance = Math.min(0.15 + lv * 0.03, 0.5);
+      var type = (i === 0) ? 'attract' : (Math.random() < repelChance ? 'repel' : 'attract');
+      planets.push({ x: pos.x, y: pos.y, r: pr, type: type });
+      placed.push({ x: pos.x, y: pos.y, r: pr });
+    }
+
+    var asteroidCount = Math.min(Math.floor(lv / 3), 4);
+    for (var j = 0; j < asteroidCount; j++) {
+      var ar = rand(8, 11);
+      var apos = placeRandom(ar, placed, 50, W - 30, 90, H - 150, 20);
+      asteroids.push({ x: apos.x, y: apos.y, r: ar });
+      placed.push({ x: apos.x, y: apos.y, r: ar });
+    }
+  }
+
+  function resetBallToLaunch(){
+    ball.x = LAUNCH.x; ball.y = LAUNCH.y; ball.vx = 0; ball.vy = 0;
+    trail = [];
+  }
+
+  function setAimFromPull(dx, dy){
+    var mag = Math.sqrt(dx * dx + dy * dy);
+    if (mag > MAX_PULL) { dx = dx / mag * MAX_PULL; dy = dy / mag * MAX_PULL; }
+    aim.dx = dx; aim.dy = dy;
+  }
+  function clampAngle(){
+    if (kbAngleDeg < -175) kbAngleDeg = -175;
+    if (kbAngleDeg > -5) kbAngleDeg = -5;
+  }
+  function updateKbAim(){
+    var rad = kbAngleDeg * Math.PI / 180;
+    var pullMag = kbPower * MAX_PULL;
+    setAimFromPull(-Math.cos(rad) * pullMag, -Math.sin(rad) * pullMag);
+  }
+
+  function launchBall(){
+    if (state !== 'aim') return;
+    var mag = Math.sqrt(aim.dx * aim.dx + aim.dy * aim.dy);
+    if (mag < 10) return;
+    var k = MAX_SPEED / MAX_PULL;
+    ball.x = LAUNCH.x; ball.y = LAUNCH.y;
+    ball.vx = -aim.dx * k;
+    ball.vy = -aim.dy * k;
+    trail = [];
+    state = 'flying';
+    flightStartTime = performance.now();
+    sfxLaunch();
+  }
+
+  function flash(text){
+    flashMsg.textContent = text;
+    flashMsg.classList.add('show');
+    clearTimeout(flash._t);
+    flash._t = setTimeout(function(){ flashMsg.classList.remove('show'); }, 850);
+  }
+
+  function updateHud(){
+    scoreLabel.textContent = score;
+    bestLabel.textContent = best;
+    levelLabel.textContent = level;
+    streakLabel.textContent = streak;
+    var hearts = '';
+    for (var i = 0; i < 3; i++) hearts += (i < lives ? '♥' : '♡');
+    livesLabel.textContent = hearts;
+  }
+
+  var maxStreakReached = 0;
+
+  function endFlight(result){
+    state = 'resolved';
+    if (result === 'hit') {
+      streak++;
+      if (streak > maxStreakReached) maxStreakReached = streak;
+      var base = 100 + (level - 1) * 12;
+      var mult = target.golden ? 3 : 1;
+      var gained = Math.round(base * mult) + streak * 4;
+      score += gained;
+      if (score > best) { best = score; localStorage.setItem(BEST_KEY, String(best)); }
+      flash((target.golden ? '⭐ゴールデンヒット! +' : 'ヒット! +') + gained + '点');
+      sfxHit(target.golden);
+      level++;
+      updateHud();
+      setTimeout(function(){ if (running && !paused) nextShot(); }, 900);
+    } else {
+      streak = 0;
+      lives--;
+      var msg = result === 'miss-planet' ? '惑星に激突…' :
+                result === 'miss-asteroid' ? '隕石に激突…' :
+                result === 'miss-timeout' ? 'ボールが迷子に…' : '画面の外へ…';
+      flash(msg + ' ライフ-1');
+      sfxMiss();
+      updateHud();
+      if (lives <= 0) {
+        setTimeout(function(){ gameOver(); }, 900);
+      } else {
+        setTimeout(function(){ if (running && !paused) nextShot(); }, 900);
+      }
+    }
+  }
+
+  function nextShot(){
+    generateLevel(level);
+    resetBallToLaunch();
+    updateKbAim();
+    state = 'aim';
+  }
+
+  function gameOver(){
+    running = false;
+    pauseBtn.classList.add('hidden');
+    resultTitleEl.textContent = 'ゲームオーバー';
+    resultDetailEl.textContent = '到達レベル ' + level + ' / 最大連続ヒット ' + maxStreakReached;
+    finalScoreEl.textContent = score + ' 点';
+    sfxGameOver();
+    resultEl.classList.remove('hidden');
+  }
+
+  function stepPhysics(dt){
+    var ax = 0, ay = 0;
+    for (var i = 0; i < planets.length; i++) {
+      var p = planets[i];
+      var dx = p.x - ball.x, dy = p.y - ball.y;
+      var distSq = dx * dx + dy * dy;
+      var minDist = p.r + BALL_R + 6;
+      if (distSq < minDist * minDist) distSq = minDist * minDist;
+      var d = Math.sqrt(distSq);
+      var accel = GRAVITY_K * (p.r / 18) / distSq;
+      var sign = p.type === 'repel' ? -1 : 1;
+      ax += sign * accel * dx / d;
+      ay += sign * accel * dy / d;
+    }
+    ball.vx += ax * dt;
+    ball.vy += ay * dt;
+    var speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+    if (speed > SPEED_CAP) { ball.vx = ball.vx / speed * SPEED_CAP; ball.vy = ball.vy / speed * SPEED_CAP; }
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+    trail.push({ x: ball.x, y: ball.y });
+    if (trail.length > 18) trail.shift();
+
+    if (dist(ball.x, ball.y, target.x, target.y) <= target.r + BALL_R) { endFlight('hit'); return; }
+    for (i = 0; i < asteroids.length; i++) {
+      var a = asteroids[i];
+      if (dist(ball.x, ball.y, a.x, a.y) <= a.r + BALL_R) { endFlight('miss-asteroid'); return; }
+    }
+    for (i = 0; i < planets.length; i++) {
+      var pl = planets[i];
+      if (dist(ball.x, ball.y, pl.x, pl.y) <= pl.r + BALL_R) { endFlight('miss-planet'); return; }
+    }
+    if (ball.x < -30 || ball.x > W + 30 || ball.y < -30 || ball.y > H + 30) { endFlight('miss-bounds'); return; }
+    if (performance.now() - flightStartTime > MAX_FLIGHT_MS) { endFlight('miss-timeout'); return; }
+  }
+
+  function drawBackground(){
+    ctx.fillStyle = '#0c1230';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,.6)';
+    for (var i = 0; i < starField.length; i++) {
+      var s = starField[i];
+      ctx.globalAlpha = s.a;
+      ctx.fillRect(s.x, s.y, s.r, s.r);
+    }
+    ctx.globalAlpha = 1;
+  }
+  function drawPlanet(p){
+    var grad = ctx.createRadialGradient(p.x - p.r * 0.3, p.y - p.r * 0.3, 1, p.x, p.y, p.r);
+    if (p.type === 'attract') { grad.addColorStop(0, '#9fefff'); grad.addColorStop(1, '#1e6fb0'); }
+    else { grad.addColorStop(0, '#ffcf9f'); grad.addColorStop(1, '#c85a1e'); }
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.25)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r + 6, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  function drawAsteroid(a){
+    ctx.fillStyle = '#9aa0c0';
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#6a70a0';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+  function drawTarget(){
+    if (!target) return;
+    var colors = target.golden ? ['#ffd23f', '#ff8a3d', '#ffd23f'] : ['#ff5d6c', '#eef1ff', '#ff5d6c'];
+    ctx.save();
+    ctx.beginPath(); ctx.arc(target.x, target.y, target.r, 0, Math.PI * 2); ctx.fillStyle = colors[0]; ctx.fill();
+    ctx.beginPath(); ctx.arc(target.x, target.y, target.r * 0.66, 0, Math.PI * 2); ctx.fillStyle = colors[1]; ctx.fill();
+    ctx.beginPath(); ctx.arc(target.x, target.y, target.r * 0.33, 0, Math.PI * 2); ctx.fillStyle = colors[2]; ctx.fill();
+    if (target.golden) {
+      ctx.fillStyle = '#fff';
+      ctx.font = (target.r * 1.1) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('★', target.x, target.y + 1);
+    }
+    ctx.restore();
+  }
+  function drawTrail(){
+    for (var i = 0; i < trail.length; i++) {
+      var t = trail[i];
+      ctx.globalAlpha = (i / trail.length) * 0.5;
+      ctx.fillStyle = '#4dd8ff';
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, BALL_R * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  function drawBall(){
+    var x = state === 'flying' ? ball.x : LAUNCH.x;
+    var y = state === 'flying' ? ball.y : LAUNCH.y;
+    ctx.fillStyle = '#fffdf5';
+    ctx.beginPath();
+    ctx.arc(x, y, BALL_R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  function drawLauncherPad(){
+    ctx.strokeStyle = 'rgba(255,210,63,.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(LAUNCH.x, LAUNCH.y, 18, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  function drawAimLine(){
+    var mag = Math.sqrt(aim.dx * aim.dx + aim.dy * aim.dy);
+    if (mag < 4) return;
+    var dirX = -aim.dx / mag, dirY = -aim.dy / mag;
+    var ratio = mag / MAX_PULL;
+    var len = 40 + ratio * 170;
+    ctx.save();
+    ctx.strokeStyle = ratio < 0.5 ? '#7cfc9a' : (ratio < 0.85 ? '#ffd23f' : '#ff5d6c');
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(LAUNCH.x, LAUNCH.y);
+    ctx.lineTo(LAUNCH.x + dirX * len, LAUNCH.y + dirY * len);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,.4)';
+    ctx.beginPath();
+    ctx.arc(LAUNCH.x + aim.dx, LAUNCH.y + aim.dy, BALL_R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function render(){
+    drawBackground();
+    for (var i = 0; i < planets.length; i++) drawPlanet(planets[i]);
+    for (var j = 0; j < asteroids.length; j++) drawAsteroid(asteroids[j]);
+    drawTarget();
+    drawTrail();
+    drawLauncherPad();
+    drawBall();
+    if (state === 'aim') drawAimLine();
+  }
+
+  function loop(ts){
+    if (!lastTs) lastTs = ts;
+    var dt = Math.min((ts - lastTs) / 1000, 1 / 30);
+    lastTs = ts;
+    if (running && !paused && state === 'flying') stepPhysics(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  function getCanvasPos(evt){
+    var rect = canvas.getBoundingClientRect();
+    var clientX = evt.clientX, clientY = evt.clientY;
+    var scaleX = W / rect.width, scaleY = H / rect.height;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  }
+  function updateDrag(e){
+    var pos = getCanvasPos(e);
+    setAimFromPull(pos.x - LAUNCH.x, pos.y - LAUNCH.y);
+  }
+  canvas.addEventListener('pointerdown', function(e){
+    if (!running || paused || state !== 'aim') return;
+    dragging = true;
+    canvas.setPointerCapture(e.pointerId);
+    updateDrag(e);
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if (!dragging) return;
+    updateDrag(e);
+  });
+  canvas.addEventListener('pointerup', function(){
+    if (!dragging) return;
+    dragging = false;
+    launchBall();
+  });
+  canvas.addEventListener('pointercancel', function(){
+    dragging = false;
+  });
+
+  window.addEventListener('keydown', function(e){
+    if (!running || paused || state !== 'aim') return;
+    if (e.key === 'ArrowLeft') { kbAngleDeg -= 4; clampAngle(); updateKbAim(); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { kbAngleDeg += 4; clampAngle(); updateKbAim(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { kbPower = Math.min(1, kbPower + 0.04); updateKbAim(); e.preventDefault(); }
+    else if (e.key === 'ArrowDown') { kbPower = Math.max(0.15, kbPower - 0.04); updateKbAim(); e.preventDefault(); }
+    else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); launchBall(); }
+  });
+
+  function startGame(){
+    ensureAudio();
+    if (starField.length === 0) {
+      for (var i = 0; i < 60; i++) starField.push({ x: rand(0, W), y: rand(0, H), r: rand(1, 2), a: rand(.3, 1) });
+    }
+    level = 1; score = 0; lives = 3; streak = 0; maxStreakReached = 0;
+    introEl.classList.add('hidden');
+    pauseOverlay.classList.add('hidden');
+    resultEl.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+    running = true;
+    paused = false;
+    updateHud();
+    nextShot();
+  }
+
+  pauseBtn.addEventListener('click', function(){
+    if (!running || paused) return;
+    paused = true;
+    pauseOverlay.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+  });
+  resumeBtn.addEventListener('click', function(){
+    if (!paused) return;
+    paused = false;
+    pauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('hidden');
+    lastTs = 0;
+  });
+  restartBtn.addEventListener('click', function(){
+    pauseOverlay.classList.add('hidden');
+    startGame();
+  });
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+
+  updateHud();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
