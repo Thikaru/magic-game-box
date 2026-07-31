@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>見切り道場 — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#241209; --bg2:#150a04; --paper:#fff3e0; --ink:#241209;
+    --gold:#e8a33d; --red:#e6533f; --blue:#5b9bd8; --green:#4caf6d;
+    --panel:rgba(255,243,224,.06);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:var(--paper); min-height:100vh; -webkit-tap-highlight-color:transparent;
+  }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.1rem; letter-spacing:.02em; }
+
+  .stage { position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:#1b0d05; padding:12px; overflow:hidden; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(18,9,4,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    text-align:center; padding:18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:20; }
+  .overlay h2 { color:var(--gold); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:12px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #a06a1e;
+    cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #a06a1e; }
+  .hidden { display:none !important; }
+  .keyTable { text-align:left; background:var(--panel); border-radius:8px; padding:8px 12px; font-size:.8rem; margin:6px 0; }
+  .keyTable div { margin:2px 0; }
+
+  .topRow { display:flex; justify-content:space-between; align-items:center; font-size:.85rem; margin-bottom:8px; }
+  .hearts { color:var(--red); letter-spacing:2px; }
+  .score { font-weight:bold; color:var(--gold); }
+
+  .arena { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .fighter { font-size:2.4rem; line-height:1; }
+  .vsLabel { font-size:.75rem; opacity:.6; }
+  .enemyName { font-size:.75rem; opacity:.8; text-align:center; }
+
+  .gaugeWrap { margin-bottom:4px; }
+  .gaugeLabel { font-size:.7rem; opacity:.75; display:flex; justify-content:space-between; }
+  .gaugeBar { height:10px; border-radius:5px; background:rgba(255,255,255,.1); overflow:hidden; margin-bottom:8px; }
+  .gaugeFill { height:100%; width:0%; transition:width .15s linear; }
+  .fillEnemy { background:linear-gradient(90deg,#c94b34,#e8a33d); }
+  .fillSpecial { background:linear-gradient(90deg,#5b9bd8,#8fd6ff); }
+
+  .comboLabel { text-align:center; font-size:.8rem; opacity:.85; margin-bottom:6px; height:1.1em; }
+
+  .lanes { display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+  .lane { display:flex; align-items:center; gap:8px; background:var(--panel); border-radius:10px;
+    padding:6px 8px; border:2px solid rgba(255,255,255,.08); position:relative; }
+  .laneLabel { width:44px; font-size:.72rem; opacity:.8; flex-shrink:0; }
+  .telegraphSpot { width:46px; height:46px; border-radius:50%; flex-shrink:0; position:relative;
+    display:flex; align-items:center; justify-content:center; }
+  .telegraphSpot .icon { font-size:1.3rem; opacity:0; transition:opacity .08s; }
+  .telegraphSpot .ring { position:absolute; inset:0; border-radius:50%;
+    background:conic-gradient(var(--ringColor,var(--red)) calc(var(--pct,0) * 1%), rgba(255,255,255,.08) 0);
+    opacity:0; }
+  .lane.active .icon { opacity:1; }
+  .lane.active .ring { opacity:1; }
+  .lane.active { border-color:var(--gold); }
+  .guardBtn { flex:1; min-height:44px; font-size:.95rem; font-weight:bold; border:0; border-radius:8px;
+    background:#3a2313; color:var(--paper); cursor:pointer; box-shadow:0 4px 0 #1c1108; }
+  .guardBtn:active { transform:translateY(3px); box-shadow:0 1px 0 #1c1108; }
+
+  .specialBtn { width:100%; min-height:48px; font-size:1rem; font-weight:bold; border:0; border-radius:10px;
+    background:#2a3b52; color:#9fd4ff; box-shadow:0 4px 0 #142132; cursor:pointer; margin-top:2px; }
+  .specialBtn:disabled { opacity:.45; box-shadow:0 4px 0 #1c1108; cursor:default; }
+  .specialBtn.ready { background:linear-gradient(90deg,#5b9bd8,#8fd6ff); color:#0d1c2b;
+    box-shadow:0 4px 0 #1f6fa8; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{filter:brightness(1);} 50%{filter:brightness(1.25);} }
+
+  .toast { position:absolute; top:38%; left:50%; transform:translate(-50%,-50%); font-size:1.3rem;
+    font-weight:bold; pointer-events:none; opacity:0; z-index:30; text-shadow:0 2px 4px rgba(0,0,0,.6); }
+  .toast.show { animation:toastPop .7s ease-out; }
+  @keyframes toastPop { 0%{opacity:0; transform:translate(-50%,-40%) scale(.7);}
+    15%{opacity:1; transform:translate(-50%,-50%) scale(1.1);}
+    30%{transform:translate(-50%,-50%) scale(1);} 100%{opacity:0; transform:translate(-50%,-60%) scale(1);} }
+  .toast.good { color:#8fe0a0; } .toast.bad { color:#ff8a7a; } .toast.warn { color:#ffd27a; } .toast.info { color:#9fd4ff; }
+
+  .hint { text-align:center; font-size:.75rem; opacity:.65; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🥋 見切り道場</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="topRow">
+      <span class="hearts" id="hearts">♥♥♥</span>
+      <span class="score" id="scoreLabel">SCORE 0</span>
+    </div>
+
+    <div class="arena">
+      <div class="fighter">🥋</div>
+      <div class="vsLabel">VS</div>
+      <div style="text-align:center;">
+        <div class="fighter" id="enemyEmoji">👹</div>
+        <div class="enemyName" id="enemyName">道場破り</div>
+      </div>
+    </div>
+
+    <div class="gaugeWrap">
+      <div class="gaugeLabel"><span>てごたえ</span><span id="enemyHitsLabel">0/5</span></div>
+      <div class="gaugeBar"><div class="gaugeFill fillEnemy" id="enemyGauge"></div></div>
+      <div class="gaugeLabel"><span>秘技ゲージ</span><span id="specialLabel">0%</span></div>
+      <div class="gaugeBar"><div class="gaugeFill fillSpecial" id="specialGauge"></div></div>
+    </div>
+
+    <div class="comboLabel" id="comboLabel"></div>
+
+    <div class="lanes">
+      <div class="lane" id="lane0" data-lane="0">
+        <div class="laneLabel">上段</div>
+        <div class="telegraphSpot"><div class="ring"></div><div class="icon">👊</div></div>
+        <button type="button" class="guardBtn" data-lane="0">ガード⬆</button>
+      </div>
+      <div class="lane" id="lane1" data-lane="1">
+        <div class="laneLabel">中段</div>
+        <div class="telegraphSpot"><div class="ring"></div><div class="icon">👊</div></div>
+        <button type="button" class="guardBtn" data-lane="1">ガード➡</button>
+      </div>
+      <div class="lane" id="lane2" data-lane="2">
+        <div class="laneLabel">下段</div>
+        <div class="telegraphSpot"><div class="ring"></div><div class="icon">👊</div></div>
+        <button type="button" class="guardBtn" data-lane="2">ガード⬇</button>
+      </div>
+    </div>
+
+    <button type="button" class="specialBtn" id="specialBtn" disabled>✨ 秘技(ゲージMAXで発動)</button>
+
+    <p class="hint">⌨ 上=↑/W 中=Space/Enter/S 下=↓ &nbsp; 必殺技=F/J</p>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="overlay" id="introOverlay">
+      <h2>見切り道場 - あそびかた</h2>
+      <p>敵の「攻撃の予兆」が3つの間合い(<b>上段・中段・下段</b>)のどこかに現れる。
+        リングが縮みきる前に<b>同じ段のガード</b>を選んで防御しよう。</p>
+      <p>リングが縮みきる<b>直前のわずかな間</b>にガードすると「<b style="color:#8fe0a0">JUST!</b>」の会心ガードになり、
+        てごたえも秘技ゲージも多くもらえる。</p>
+      <p>まれに現れる<b style="color:#9fd4ff">青白くゆらめく予兆</b>は<b>フェイント</b>。
+        本当は攻撃してこないので、ガードせず<b>見切る(何もしない)</b>のが正解。
+        うっかりガードするとコンボが途切れてしまう。</p>
+      <p>てごたえがたまると相手を<b>たおして</b>次の(より速い)相手へ。ライフ(♥3つ)が0になると終了。
+        秘技ゲージが満タンになったら✨秘技ボタンでその場の攻撃を安全に防ぎつつ相手を即たおせる。</p>
+      <div class="keyTable">
+        <div>👆 タップ:各段のガードボタン / ✨秘技ボタン</div>
+        <div>⌨ 上段=↑ or W / 中段=Space, Enter, S / 下段=↓ / 秘技=F, J</div>
+      </div>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="resultOverlay">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
