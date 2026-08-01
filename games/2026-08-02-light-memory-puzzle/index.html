@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>見て覚えて!ライツパズル — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#151233; --bg2:#0a0818; --paper:#f1edff; --ink:#151233;
+    --gold:#ffd23f; --lit:#4dd8e6; --lit2:#8fefff; --red:#ff5da2; --panel:rgba(241,237,255,.06);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:var(--paper); min-height:100vh; -webkit-tap-highlight-color:transparent;
+  }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.1rem; letter-spacing:.02em; }
+
+  .topRow { display:flex; justify-content:space-between; align-items:center; font-size:.85rem; margin-bottom:8px; }
+  .hearts { color:var(--red); letter-spacing:2px; }
+  .score { font-weight:bold; color:var(--gold); }
+  .levelTag { opacity:.8; }
+
+  .stage { position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:#0d0a24; padding:14px; overflow:hidden; }
+
+  .status { text-align:center; font-size:.95rem; min-height:1.4em; margin-bottom:10px; color:var(--lit2); font-weight:bold; }
+  .subStatus { text-align:center; font-size:.8rem; opacity:.75; margin-bottom:10px; min-height:1.1em; }
+
+  .grid { display:grid; gap:8px; margin:0 auto; max-width:320px; }
+  .tile { aspect-ratio:1/1; min-height:44px; border-radius:10px; border:2px solid rgba(255,255,255,.25);
+    background:#1c1846; cursor:pointer; transition:background .12s, box-shadow .12s, transform .08s; touch-action:manipulation; }
+  .tile:active { transform:scale(.94); }
+  .tile.on { background:var(--lit); box-shadow:0 0 14px 2px var(--lit2); border-color:var(--lit2); }
+  .tile.preview { background:var(--gold); box-shadow:0 0 14px 2px #ffe89a; border-color:#ffe89a; cursor:default; }
+  .tile.selected { outline:3px solid var(--red); outline-offset:2px; }
+  .tile:disabled { cursor:default; }
+
+  .controls { display:flex; justify-content:center; gap:10px; margin-top:14px; }
+  .subBtn { font-size:.85rem; color:var(--ink); background:var(--gold); border:0; border-radius:10px;
+    padding:10px 18px; min-height:44px; cursor:pointer; box-shadow:0 4px 0 #b8912a; }
+  .subBtn:active { transform:translateY(3px); box-shadow:0 1px 0 #b8912a; }
+  .subBtn:disabled { opacity:.4; box-shadow:none; cursor:default; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(10,8,24,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    text-align:center; padding:18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:20; }
+  .overlay h2 { color:var(--gold); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:12px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a;
+    cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .keyTable { text-align:left; background:var(--panel); border-radius:8px; padding:8px 12px; font-size:.8rem; margin:6px 0; }
+  .keyTable div { margin:2px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>見て覚えて!ライツパズル</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="topRow">
+    <span class="score" id="scoreLabel">SCORE 0</span>
+    <span class="levelTag" id="levelLabel">Lv.1</span>
+    <span class="hearts" id="livesLabel">♥♥♥</span>
+  </div>
+
+  <div class="stage">
+    <div class="status" id="statusLabel">&nbsp;</div>
+    <div class="subStatus" id="subStatusLabel">&nbsp;</div>
+    <div class="grid" id="grid"></div>
+    <div class="controls">
+      <button type="button" class="subBtn" id="checkBtn" disabled>はやめに判定</button>
+    </div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>光ったマスの配置を数秒間だけ見て覚えよう。<br>消灯したら、同じ配置になるようマスをタップして再現!</p>
+      <p>ただし1回タップすると、そのマスと<br>上下左右のマスも一緒に光り方が反転する。<br>連鎖を逆算するのがコツ。</p>
+      <div class="keyTable">
+        <div>👆 タップ / 🖱 クリック でマスを反転</div>
+        <div>⌨ 矢印キーで選択 → Enter/Space で反転</div>
+      </div>
+      <p>使えるタップ回数には上限があり、<br>回数を使い切るか「はやめに判定」を押すと答え合わせ。</p>
+      <p>一致すれば次のレベルへ!残りタップが多いほど高得点。<br>
+        まちがえるとライフが1減る(♥3つ)。<br>
+        レベルが進むほど盤面が広がり、覚える時間も短くなる一発勝負!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2>ゲームオーバー</h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var scoreLabel = document.getElementById('scoreLabel');
+  var levelLabel = document.getElementById('levelLabel');
+  var livesLabel = document.getElementById('livesLabel');
+  var statusLabel = document.getElementById('statusLabel');
+  var subStatusLabel = document.getElementById('subStatusLabel');
+  var gridEl = document.getElementById('grid');
+  var checkBtn = document.getElementById('checkBtn');
+  var introOverlay = document.getElementById('intro');
+  var resultOverlay = document.getElementById('result');
+  var resultText = document.getElementById('resultText');
+  var startBtn = document.getElementById('startBtn');
+  var retryBtn = document.getElementById('retryBtn');
+
+  var state = null;
+  var timers = [];
+
+  function clearTimers() {
+    timers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
+    timers = [];
+  }
+
+  function levelConfig(level) {
+    var size = level <= 2 ? 3 : (level <= 5 ? 4 : 5);
+    var maxK = size * size - 1;
+    var k = Math.min(level + 1, maxK);
+    var memorizeMs = Math.max(1200, 3500 - (level - 1) * 150);
+    return { size: size, k: k, memorizeMs: memorizeMs, moveBudget: k + 2 };
+  }
+
+  function neighborsOf(idx, size) {
+    var r = Math.floor(idx / size), c = idx % size;
+    var list = [idx];
+    if (r > 0) list.push(idx - size);
+    if (r < size - 1) list.push(idx + size);
+    if (c > 0) list.push(idx - 1);
+    if (c < size - 1) list.push(idx + 1);
+    return list;
+  }
+
+  function toggleAt(arr, idx, size) {
+    neighborsOf(idx, size).forEach(function (i) { arr[i] = !arr[i]; });
+  }
+
+  function shuffledIndices(n) {
+    var arr = [];
+    for (var i = 0; i < n; i++) arr.push(i);
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function newGame() {
+    state = { level: 1, score: 0, lives: 3, selected: 0 };
+    updateHud();
+    startLevel();
+  }
+
+  function updateHud() {
+    scoreLabel.textContent = 'SCORE ' + state.score;
+    levelLabel.textContent = 'Lv.' + state.level;
+    livesLabel.textContent = '♥'.repeat(state.lives) + '♡'.repeat(3 - state.lives);
+  }
+
+  function buildGrid(size) {
+    gridEl.style.gridTemplateColumns = 'repeat(' + size + ', 1fr)';
+    gridEl.innerHTML = '';
+    var tiles = [];
+    for (var i = 0; i < size * size; i++) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tile';
+      btn.disabled = true;
+      (function (idx) {
+        btn.addEventListener('click', function () { onTileActivate(idx); });
+      })(i);
+      gridEl.appendChild(btn);
+      tiles.push(btn);
+    }
+    return tiles;
+  }
+
+  function startLevel() {
+    clearTimers();
+    var cfg = levelConfig(state.level);
+    var size = cfg.size;
+    var n = size * size;
+    var target = new Array(n).fill(false);
+    shuffledIndices(n).slice(0, cfg.k).forEach(function (idx) {
+      toggleAt(target, idx, size);
+    });
+
+    var tiles = buildGrid(size);
+    state.cfg = cfg;
+    state.size = size;
+    state.target = target;
+    state.lit = new Array(n).fill(false);
+    state.tiles = tiles;
+    state.selected = 0;
+    state.phase = 'memorize';
+    checkBtn.disabled = true;
+
+    tiles.forEach(function (t, idx) {
+      t.disabled = true;
+      t.classList.toggle('preview', target[idx]);
+      t.classList.remove('on', 'selected');
+    });
+
+    var remain = Math.ceil(cfg.memorizeMs / 1000);
+    statusLabel.textContent = 'おぼえて!';
+    subStatusLabel.textContent = '配置を見て覚えよう… ' + remain + '秒';
+    var tick = setInterval(function () {
+      remain--;
+      if (remain > 0) {
+        subStatusLabel.textContent = '配置を見て覚えよう… ' + remain + '秒';
+      }
+    }, 1000);
+    timers.push(tick);
+
+    var toPlay = setTimeout(function () {
+      clearInterval(tick);
+      beginPlay();
+    }, cfg.memorizeMs);
+    timers.push(toPlay);
+  }
+
+  function beginPlay() {
+    state.phase = 'play';
+    state.movesLeft = state.cfg.moveBudget;
+    state.tiles.forEach(function (t) {
+      t.classList.remove('preview', 'on');
+      t.disabled = false;
+    });
+    updateSelection();
+    checkBtn.disabled = false;
+    renderStatus();
+  }
+
+  function renderStatus() {
+    statusLabel.textContent = '同じ配置を再現しよう';
+    subStatusLabel.textContent = 'のこりタップ ' + state.movesLeft + '回';
+  }
+
+  function updateSelection() {
+    state.tiles.forEach(function (t, i) {
+      t.classList.toggle('selected', i === state.selected);
+    });
+  }
+
+  function onTileActivate(idx) {
+    if (!state || state.phase !== 'play') return;
+    toggleAt(state.lit, idx, state.size);
+    state.selected = idx;
+    render();
+    state.movesLeft--;
+    if (state.movesLeft <= 0) {
+      finishLevel();
+    } else {
+      renderStatus();
+    }
+  }
+
+  function render() {
+    state.tiles.forEach(function (t, i) {
+      t.classList.toggle('on', !!state.lit[i]);
+    });
+    updateSelection();
+  }
+
+  function patternsMatch(a, b) {
+    for (var i = 0; i < a.length; i++) if (!!a[i] !== !!b[i]) return false;
+    return true;
+  }
+
+  function finishLevel() {
+    if (!state || state.phase !== 'play') return;
+    state.phase = 'checking';
+    checkBtn.disabled = true;
+    state.tiles.forEach(function (t) { t.disabled = true; });
+
+    var success = patternsMatch(state.lit, state.target);
+    if (success) {
+      var bonus = state.size * state.size * 10 + state.movesLeft * 5;
+      state.score += bonus;
+      statusLabel.textContent = 'せいかい! +' + bonus;
+      subStatusLabel.textContent = '次のレベルへ…';
+      state.level++;
+      updateHud();
+      var t1 = setTimeout(startLevel, 1200);
+      timers.push(t1);
+    } else {
+      state.lives--;
+      updateHud();
+      if (state.lives <= 0) {
+        gameOver();
+      } else {
+        statusLabel.textContent = 'ざんねん…配置が違う';
+        subStatusLabel.textContent = 'もう一度おなじレベルに挑戦!';
+        var t2 = setTimeout(startLevel, 1300);
+        timers.push(t2);
+      }
+    }
+  }
+
+  function gameOver() {
+    clearTimers();
+    state.phase = 'gameover';
+    resultText.textContent = 'スコア ' + state.score + ' / Lv.' + state.level + ' でおわり。';
+    resultOverlay.classList.remove('hidden');
+  }
+
+  checkBtn.addEventListener('click', function () {
+    if (state && state.phase === 'play') finishLevel();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (!state || state.phase !== 'play') return;
+    var size = state.size;
+    var r = Math.floor(state.selected / size), c = state.selected % size;
+    if (e.key === 'ArrowUp') { r = Math.max(0, r - 1); state.selected = r * size + c; updateSelection(); e.preventDefault(); }
+    else if (e.key === 'ArrowDown') { r = Math.min(size - 1, r + 1); state.selected = r * size + c; updateSelection(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { c = Math.max(0, c - 1); state.selected = r * size + c; updateSelection(); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { c = Math.min(size - 1, c + 1); state.selected = r * size + c; updateSelection(); e.preventDefault(); }
+    else if (e.key === 'Enter' || e.key === ' ') { onTileActivate(state.selected); e.preventDefault(); }
+  });
+
+  startBtn.addEventListener('click', function () {
+    introOverlay.classList.add('hidden');
+    newGame();
+  });
+
+  retryBtn.addEventListener('click', function () {
+    resultOverlay.classList.add('hidden');
+    newGame();
+  });
+})();
+</script>
+</body>
+</html>
