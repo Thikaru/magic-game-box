@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>めばかり!ニアピン道場 — DAILY GAMES</title>
+<style>
+  :root { --ink:#1c1c28; --paper:#fff8ec; --wood:#7a4a2b; --accent:#ff8a3d; --gold:#ffcf4d; --good:#3fbf6f; --bad:#e2493a; --line:#e7d9c2; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,'Hiragino Sans','Yu Gothic',sans-serif; background:linear-gradient(180deg,#2b1a10,#4a2e17); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; color:var(--paper); flex-wrap:wrap; row-gap:6px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.15rem; letter-spacing:.03em; color:var(--gold); }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; border:4px solid var(--wood); border-radius:14px; background:var(--paper); touch-action:none; }
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(35,20,10,.95); color:var(--paper);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:22px;
+    overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--gold); font-size:1.4rem; margin-bottom:12px; }
+  .overlay p { line-height:1.85; font-size:.92rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; font-weight:700; background:var(--accent); color:#fff;
+    border:0; border-radius:10px; padding:12px 34px; min-height:48px; box-shadow:0 5px 0 #b85f22; cursor:pointer; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b85f22; }
+  .overlay .btn.sub { background:rgba(255,255,255,.12); box-shadow:0 5px 0 rgba(0,0,0,.3); margin-top:10px; }
+  .hidden { display:none; }
+  .toast { position:absolute; left:50%; top:44%; transform:translate(-50%,-50%); padding:14px 26px; border-radius:14px;
+    background:rgba(20,12,6,.88); color:var(--paper); font-size:1.35rem; font-weight:800; text-align:center; letter-spacing:.02em;
+    pointer-events:none; white-space:nowrap; }
+  .toast.good { color:var(--gold); }
+  .toast.bad { color:#ff9d8f; }
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; color:var(--paper); margin-top:10px; font-size:.9rem; }
+  .hearts { letter-spacing:2px; }
+  .qrow { color:var(--paper); text-align:center; margin-top:12px; }
+  .qrow .q { font-size:1.15rem; font-weight:700; color:var(--gold); }
+  .qrow .hint { font-size:.8rem; opacity:.85; margin-top:4px; min-height:1.1em; }
+  .timerOuter { margin-top:10px; height:10px; border-radius:6px; background:rgba(255,255,255,.15); overflow:hidden; }
+  .timerInner { height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--gold)); border-radius:6px; }
+  .answerRow { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:14px; }
+  .guessDisplay { min-width:110px; text-align:center; font-size:1.6rem; font-weight:800; color:var(--paper);
+    background:rgba(255,255,255,.08); border:2px solid var(--line); border-radius:10px; padding:8px 14px; }
+  .confirmBtn { font-size:1rem; font-weight:700; color:#fff; background:var(--good); border:0; border-radius:10px;
+    padding:0 20px; min-height:48px; cursor:pointer; }
+  .padArea { max-width:480px; margin:14px auto 0; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .padToggle { font-size:.85rem; color:#fff; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.4);
+    border-radius:8px; padding:0 14px; min-height:44px; cursor:pointer; }
+  .padPanel { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:100%; max-width:280px;
+    background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.25); border-radius:14px; padding:12px; }
+  .padPanel.hidden { display:none; }
+  .padBtn { min-height:48px; border-radius:10px; border:1px solid rgba(255,255,255,.4); background:rgba(255,255,255,.12);
+    color:#fff; font-size:1.15rem; font-weight:700; touch-action:none; user-select:none; -webkit-user-select:none; cursor:pointer; }
+  .padBtn:active { background:rgba(255,255,255,.28); }
+  .padBtn.wide { grid-column:span 1; }
+  .padBtn.back { background:rgba(226,73,58,.35); }
+  .padBtn.ok { background:rgba(63,191,111,.5); grid-column:span 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>めばかり!ニアピン道場</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="480" height="380"></canvas>
+
+    <!-- 説明画面 (必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>画面に散らばる <b>●の数</b> や、バーの <b>ぬられた%</b> を、
+        時間切れになる前に<b>目ばかり(目分量)</b>で当てるニアピンクイズ。</p>
+      <p>数字キー(またはコントローラ)で数を入力し、Enterか✓で決定。</p>
+      <p>誤差が小さいほど高得点!「ど真ん中」「ニアピン」を続けるほど
+        コンボ倍率がアップする。</p>
+      <p>3ラウンドに1回は<b>フラッシュラウンド</b>が登場、表示がすぐ消えるので
+        よく見て覚えてから入力しよう。</p>
+      <p>誤差が大きいと ♥ が1つ減る。♥が0になったら終了の一発勝負!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面 (必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+
+    <div class="toast hidden" id="toast"></div>
+  </div>
+
+  <div class="hud">
+    <span id="roundLabel">ROUND 0</span>
+    <span class="hearts" id="livesLabel">♥♥♥</span>
+    <span id="scoreLabel">SCORE 0</span>
+  </div>
+
+  <div class="qrow">
+    <div class="q" id="questionText">-</div>
+    <div class="hint" id="hintText"></div>
+  </div>
+
+  <div class="timerOuter"><div class="timerInner" id="timerInner"></div></div>
+
+  <div class="answerRow">
+    <div class="guessDisplay" id="guessDisplay">0</div>
+    <button type="button" class="confirmBtn" id="confirmBtn">✓ けってい</button>
+  </div>
+</div>
+
+<div class="padArea">
+  <button type="button" class="padToggle" id="padToggle">🎮 コントローラ 表示/非表示</button>
+  <div class="padPanel hidden" id="padPanel">
+    <button type="button" class="padBtn" data-d="1">1</button>
+    <button type="button" class="padBtn" data-d="2">2</button>
+    <button type="button" class="padBtn" data-d="3">3</button>
+    <button type="button" class="padBtn" data-d="4">4</button>
+    <button type="button" class="padBtn" data-d="5">5</button>
+    <button type="button" class="padBtn" data-d="6">6</button>
+    <button type="button" class="padBtn" data-d="7">7</button>
+    <button type="button" class="padBtn" data-d="8">8</button>
+    <button type="button" class="padBtn" data-d="9">9</button>
+    <button type="button" class="padBtn back" id="padBack">⌫</button>
+    <button type="button" class="padBtn" data-d="0">0</button>
+    <button type="button" class="padBtn ok" id="padOk">✓</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
