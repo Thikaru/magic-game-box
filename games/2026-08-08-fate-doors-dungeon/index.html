@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>えらべ!運命の三つの扉 — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#1c1033; --bg2:#0b0616; --paper:#f3ecff; --ink:#1c1033;
+    --gold:#e8c34d; --red:#e6533f; --blue:#5b9bd8; --green:#4caf6d; --mystery:#b485f0;
+    --panel:rgba(243,236,255,.06);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:var(--paper); min-height:100vh; -webkit-tap-highlight-color:transparent;
+  }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.05rem; letter-spacing:.02em; }
+
+  .stage { position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:#150a26; padding:12px; overflow:hidden; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(10,5,20,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    text-align:center; padding:18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:20; }
+  .overlay h2 { color:var(--gold); font-size:1.25rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.85rem; margin-bottom:8px; text-align:left; }
+  .overlay .btn { margin-top:12px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #a07f1e;
+    cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #a07f1e; }
+  .hidden { display:none !important; }
+  .doorLegend { text-align:left; background:var(--panel); border-radius:8px; padding:8px 12px; font-size:.78rem; margin:8px 0; width:100%; }
+  .doorLegend div { margin:3px 0; }
+
+  .topRow { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; margin-bottom:8px; flex-wrap:wrap; gap:4px; }
+  .goldLabel { font-weight:bold; color:var(--gold); }
+  .floorLabel { font-weight:bold; color:var(--mystery); }
+  .atkLabel { opacity:.85; }
+
+  .hpWrap { margin-bottom:10px; }
+  .hpTop { display:flex; justify-content:space-between; font-size:.75rem; opacity:.85; margin-bottom:2px; }
+  .hpBar { height:14px; border-radius:7px; background:rgba(255,255,255,.1); overflow:hidden; }
+  .hpFill { height:100%; width:100%; background:linear-gradient(90deg,#e6533f,#e8c34d,#4caf6d); transition:width .3s ease; }
+
+  .logBox { min-height:2.4em; font-size:.82rem; text-align:center; background:var(--panel);
+    border-radius:8px; padding:8px; margin-bottom:10px; line-height:1.5; }
+  .logBox b { color:var(--gold); }
+
+  .doorsRow { display:flex; gap:8px; margin-bottom:8px; }
+  .doorBtn { flex:1; min-height:108px; border:2px solid rgba(255,255,255,.15); border-radius:12px;
+    background:#241338; color:var(--paper); cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:4px; padding:6px; box-shadow:0 4px 0 #0f0820; }
+  .doorBtn:active { transform:translateY(3px); box-shadow:0 1px 0 #0f0820; }
+  .doorBtn .emoji { font-size:2rem; }
+  .doorBtn .name { font-size:.78rem; font-weight:bold; }
+  .doorBtn .key { font-size:.68rem; opacity:.6; }
+  .doorBtn:disabled { opacity:.4; cursor:default; }
+
+  .bossBtn { width:100%; min-height:120px; border:3px solid var(--red); border-radius:12px;
+    background:#3a1220; color:var(--paper); cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:6px; box-shadow:0 5px 0 #200a11; margin-bottom:8px; }
+  .bossBtn:active { transform:translateY(3px); box-shadow:0 2px 0 #200a11; }
+  .bossBtn .emoji { font-size:2.4rem; }
+  .bossBtn .name { font-size:.9rem; font-weight:bold; color:var(--red); }
+
+  .continueRow { display:flex; justify-content:center; }
+  .continueBtn { min-height:48px; width:100%; font-size:1rem; font-weight:bold; border:0; border-radius:10px;
+    background:var(--gold); color:var(--ink); box-shadow:0 4px 0 #a07f1e; cursor:pointer; }
+  .continueBtn:active { transform:translateY(3px); box-shadow:0 1px 0 #a07f1e; }
+
+  .resolving { text-align:center; font-size:.9rem; opacity:.85; padding:20px 0; }
+
+  .hint { text-align:center; font-size:.72rem; opacity:.6; margin-top:6px; }
+
+  #resultOverlay .scoreBig { font-size:2.2rem; color:var(--gold); font-weight:bold; margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚪 えらべ!運命の三つの扉</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="topRow">
+      <span class="floorLabel" id="floorLabel">地下1階</span>
+      <span class="atkLabel" id="atkLabel">⚔ATK 12</span>
+      <span class="goldLabel" id="goldLabel">💰0</span>
+    </div>
+
+    <div class="hpWrap">
+      <div class="hpTop"><span>HP</span><span id="hpText">100/100</span></div>
+      <div class="hpBar"><div class="hpFill" id="hpFill"></div></div>
+    </div>
+
+    <div class="logBox" id="logBox">扉を選んで進もう。</div>
+
+    <div id="doorsArea"></div>
+
+    <p class="hint">⌨ 扉=1・2・3キー / つづける=Enter,Space</p>
+
+    <div class="overlay" id="introOverlay">
+      <h2>えらべ!運命の三つの扉</h2>
+      <p>地下ダンジョンで<b>3つの扉</b>から1つを選んで進む、押し引き勝負のローグライク。
+        扉の奥では「たたかい」「たからばこ」「わな」「めぐみ」のどれかが待っている。</p>
+      <p>扉のマークは<b>だいたいの傾向</b>を示すヒントで、100%当たるわけではない。
+        見た目を信じて手堅く進むか、リスクを取って大当たりを狙うかは自分しだい。</p>
+      <div class="doorLegend">
+        <div>⚔️ <b>剣の扉</b> … たたかいが多め。時々わな・たからばこ</div>
+        <div>💰 <b>宝の扉</b> … たからばこが多め。時々めぐみ・わな</div>
+        <div>❓ <b>謎の扉</b> … 4つの結果が均等。ハイリスク・ハイリターン</div>
+      </div>
+      <p>5階ごとに強力な<b style="color:#ff8a7a">ボス</b>が待ち構える。倒すと大きな報酬あり。
+        HPが0になったら終了、そこまでの<b>到達階とゴールド</b>がスコアになる。何度でも挑戦しよう。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="resultOverlay">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <div class="scoreBig" id="scoreBig"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
