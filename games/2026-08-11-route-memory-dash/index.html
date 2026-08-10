@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>おぼえて爆走!ルートメモリーダッシュ — DAILY GAMES</title>
+<style>
+  :root { --bg1:#123a5e; --bg2:#0a2036; --panel:#173f63; --line:#2f7bb8; --sun:#ffd23f; --track:#0d2a44;
+    --hp:#ff5d7a; --safe:#6be6b0; --danger:#ff5d5d; --ink:#0a2036; --paper:#f4faff; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { overflow-x:hidden; }
+  body { font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN',system-ui,sans-serif;
+    background:radial-gradient(circle at 50% 0%,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:460px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; flex-wrap:wrap; gap:6px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--sun); }
+  h1 { color:var(--sun); font-size:1.05rem; letter-spacing:.02em; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; font-size:.85rem; margin-bottom:8px; gap:6px; flex-wrap:wrap; }
+  .hud .hp { color:var(--hp); font-weight:bold; }
+  .hud .stage { color:var(--safe); font-weight:bold; }
+  .hud .score { color:var(--sun); font-weight:bold; }
+
+  .stage-box { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:14px 10px; }
+
+  .phaseLabel { text-align:center; font-size:.82rem; font-weight:bold; color:var(--sun); min-height:1.3em; margin-bottom:6px; }
+  .memoBar { height:8px; border-radius:5px; background:rgba(255,255,255,.12); overflow:hidden; margin-bottom:12px; }
+  .memoBar > i { display:block; height:100%; width:100%; background:var(--sun); transform-origin:left; transition:transform .05s linear; }
+
+  .tiles { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-bottom:14px; }
+  .tile { position:relative; width:38px; height:38px; border-radius:9px; background:var(--track);
+    border:2px solid rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; font-size:1.15rem; }
+  .tile.active { border-color:var(--sun); box-shadow:0 0 0 3px rgba(255,210,63,.25); }
+  .tile.correct { border-color:var(--safe); background:rgba(107,230,176,.18); }
+  .tile.wrong { border-color:var(--danger); background:rgba(255,93,93,.22); }
+  .tile .ring { position:absolute; left:2px; right:2px; bottom:2px; height:3px; border-radius:2px; background:var(--sun); transform-origin:left; }
+
+  .track { position:relative; height:34px; border-radius:17px; background:var(--track); border:2px solid rgba(255,255,255,.15); margin-bottom:14px; overflow:hidden; }
+  .track .flagS, .track .flagG { position:absolute; top:50%; transform:translateY(-50%); font-size:1rem; }
+  .track .flagS { left:6px; }
+  .track .flagG { right:6px; }
+  .track .runner { position:absolute; top:50%; left:0%; transform:translate(-50%,-50%); font-size:1.4rem; transition:left .28s ease; }
+
+  .flashMsg { text-align:center; min-height:1.4em; font-weight:bold; font-size:.92rem; margin-bottom:4px; }
+  .flashMsg.ok { color:var(--safe); }
+  .flashMsg.bonus { color:var(--sun); }
+  .flashMsg.bad { color:var(--danger); }
+
+  .ctrlRow { display:flex; gap:8px; margin-top:4px; }
+  .ctrlBtn { flex:1; min-height:58px; border-radius:12px; border:0; background:var(--sun); color:var(--ink);
+    font-family:inherit; font-weight:bold; font-size:.95rem; box-shadow:0 5px 0 #b8912a; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  .ctrlBtn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .ctrlBtn .ic { font-size:1.3rem; }
+
+  .footNote { text-align:center; font-size:.72rem; opacity:.65; margin-top:10px; }
+
+  .overlay { position:absolute; inset:6px; border-radius:10px; background:rgba(10,32,54,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:20px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--sun); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:16px; font-size:1.05rem; background:var(--sun); color:var(--ink); border:0; border-radius:10px;
+    padding:14px 36px; min-height:48px; box-shadow:0 5px 0 #b8912a; cursor:pointer; font-weight:bold; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>おぼえて爆走!ルートメモリーダッシュ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span class="hp" id="hpLabel">♥♥♥</span>
+    <span class="stage" id="stageLabel">STAGE 1</span>
+    <span class="score" id="scoreLabel">SCORE 0</span>
+  </div>
+
+  <div class="stage-box">
+    <div class="phaseLabel" id="phaseLabel">スタートを押してね</div>
+    <div class="memoBar hidden" id="memoBar"><i id="memoBarFill"></i></div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="track">
+      <span class="flagS">🚩</span>
+      <span class="flagG">🏁</span>
+      <span class="runner" id="runner">🏃</span>
+    </div>
+
+    <div class="flashMsg" id="flashMsg"></div>
+
+    <div class="ctrlRow">
+      <button type="button" class="ctrlBtn" id="btnLeft" data-dir="L"><span class="ic">⬅️</span>左</button>
+      <button type="button" class="ctrlBtn" id="btnStraight" data-dir="S"><span class="ic">⬆️</span>まっすぐ</button>
+      <button type="button" class="ctrlBtn" id="btnRight" data-dir="R"><span class="ic">➡️</span>右</button>
+    </div>
+
+    <div class="footNote">タップ、または ⌨ ←↑→ / A・W・D キーで方向を入力</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>画面上に⬅️⬆️➡️の<b>ルート</b>(3〜8手)が数秒だけ表示される。<br>
+        よく見て順番を<b>暗記</b>しよう。</p>
+      <p>ルートが隠れたら「❓」に変わり、<b>覚えた順番どおり</b>に
+        下のボタン(または矢印キー)を押して道を走り抜けよう。</p>
+      <p>1手ごとの回答タイムはステージが進むほど短くなる。
+        まちがえたりタイムアウトすると<span style="color:#ff5d5d">ライフ</span>が1減り、正解が光って表示される。</p>
+      <p>8コンボためると<span style="color:#6be6b0">ライフ回復</span>(満タンならボーナス点)のご褒美あり。<br>
+        ライフは♥3つ、0になったら終了の一発勝負!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">力尽きた…</h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
