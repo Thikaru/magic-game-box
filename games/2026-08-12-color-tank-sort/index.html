@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>そろえてスッキリ!カラータンク・ソート — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#0d2b2e; --bg2:#081a1c; --panel:#12383c; --paper:#eafbf7;
+    --accent:#4dd8e6; --marquee:#ffd23f; --ok:#6be08a; --danger:#ff5d7a;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:440px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.02rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--accent); border-radius:14px;
+    background:var(--panel); padding:16px 14px; min-height:420px;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:.82rem; margin-bottom:6px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+  .timebar-wrap { height:8px; border-radius:5px; background:rgba(255,255,255,.12); overflow:hidden; margin-bottom:14px; }
+  .timebar { height:100%; width:100%; background:var(--marquee); transition:width .1s linear, background .2s; }
+  .timebar.low { background:var(--danger); }
+
+  .tubes { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:flex-end; padding:6px 0 4px; }
+  .tube {
+    width:46px; height:140px; border:2px solid rgba(234,251,247,.4); border-bottom-left-radius:14px;
+    border-bottom-right-radius:14px; border-top-left-radius:6px; border-top-right-radius:6px;
+    background:rgba(234,251,247,.06); display:flex; flex-direction:column-reverse; align-items:center;
+    justify-content:flex-start; padding:3px; gap:3px; cursor:pointer; touch-action:manipulation;
+    user-select:none; -webkit-user-select:none; transition:border-color .12s, transform .1s, box-shadow .12s;
+  }
+  .tube:active { transform:scale(.97); }
+  .tube.selected { border-color:var(--marquee); box-shadow:0 0 0 3px rgba(255,210,63,.35); transform:translateY(-4px); }
+  .tube.wrong { animation:shake .25s ease; border-color:var(--danger); }
+  .tube.done { border-color:var(--ok); box-shadow:0 0 0 3px rgba(107,224,138,.3); }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+  .ball { width:30px; height:22px; border-radius:8px; flex:0 0 auto; box-shadow:inset 0 -3px 4px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.35); }
+
+  .toast {
+    position:absolute; left:50%; top:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--marquee); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5;
+  }
+  .toast.show { opacity:1; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(8,26,28,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--marquee); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.75; font-size:.86rem; margin-bottom:8px; }
+  .overlay .swatch { display:inline-block; width:14px; height:14px; border-radius:4px; vertical-align:-2px; margin:0 2px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--marquee);
+    color:#123; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.78rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧪 そろえてスッキリ!カラータンク・ソート</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="levelLabel">LEVEL 1</span>
+        <span id="scoreLabel">SCORE 0</span>
+        <span id="movesLabel">手数 0</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+      <div class="timebar-wrap"><div class="timebar" id="timebar"></div></div>
+
+      <div class="tubes" id="tubes"></div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>研究所のカラータンクがぐちゃぐちゃに混ざってしまった!同じ色のカプセルを
+          1つのタンクに集めて仕分けしよう。</p>
+        <p>👆 タンクを<b>タップして選択</b>し、注ぎたい別のタンクをもう一度<b>タップ</b>すると中身を注げる。
+          注げるのは「<b>空のタンク</b>」か「<b>同じ色の上</b>」だけ。タンクの容量は4個まで。</p>
+        <p>全部のタンクが「空」か「同じ色でいっぱい」になったらクリア!制限時間内に
+          仕分けできないとライフが1つ減ってしまう(ライフ♥3つ)。レベルが進むほど
+          色とタンクが増え、制限時間も短くなっていく。</p>
+        <p>手数が少なく・時間を多く残してクリアするほど高得点。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">タップでタンクを選択→注ぐ先をタップ / ⌨ 1〜8キーでも操作可</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
