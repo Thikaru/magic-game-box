@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>そだてて!なかまはずれファーム — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#132a13; --bg2:#0a170a; --panel:#234d20; --paper:#f4fbe8;
+    --accent:#ffcb47; --marquee:#ffd23f; --ok:#8bd46e; --danger:#ff6b6b;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:440px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.02rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--accent); border-radius:14px;
+    background:var(--panel); padding:16px 14px; min-height:460px;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:.82rem; margin-bottom:6px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+  .timebar-wrap { height:8px; border-radius:5px; background:rgba(255,255,255,.12); overflow:hidden; margin-bottom:12px; }
+  .timebar { height:100%; width:100%; background:var(--marquee); transition:width .1s linear, background .2s; }
+  .timebar.low { background:var(--danger); }
+
+  .pet-row { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:8px; }
+  .pet-emoji { font-size:2.4rem; line-height:1; }
+  .growth-wrap { flex:1; max-width:180px; }
+  .growth-label { font-size:.72rem; opacity:.8; margin-bottom:3px; }
+  .growth-bar-wrap { height:10px; border-radius:6px; background:rgba(255,255,255,.12); overflow:hidden; }
+  .growth-bar { height:100%; width:0%; background:linear-gradient(90deg,#8bd46e,#ffd23f); transition:width .25s; }
+
+  .catlabel { text-align:center; font-size:.9rem; margin:6px 0 8px; opacity:.9; }
+  .catlabel b { color:var(--marquee); }
+
+  .bonus-banner { text-align:center; font-size:.82rem; font-weight:bold; color:#123; background:var(--marquee);
+    border-radius:8px; padding:4px 8px; margin-bottom:8px; display:none; }
+  .bonus-banner.show { display:block; }
+
+  .choices { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:4px 0; }
+  .choice {
+    background:rgba(244,251,232,.08); border:2px solid rgba(244,251,232,.35); border-radius:12px;
+    min-height:96px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    transition:border-color .12s, transform .1s, box-shadow .12s, background .15s;
+  }
+  .choice:active { transform:scale(.96); }
+  .choice .em { font-size:2.1rem; }
+  .choice .lbl { font-size:.74rem; opacity:.85; }
+  .choice.correct { border-color:var(--ok); background:rgba(139,212,110,.28); box-shadow:0 0 0 3px rgba(139,212,110,.3); }
+  .choice.wrong { border-color:var(--danger); background:rgba(255,107,107,.28); animation:shake .25s ease; }
+  .choice.disabled { pointer-events:none; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+  .toast {
+    position:absolute; left:50%; top:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--marquee); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5;
+  }
+  .toast.show { opacity:1; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(10,23,10,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--marquee); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.75; font-size:.86rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--marquee);
+    color:#123; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.78rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌱 そだてて!なかまはずれファーム</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="scoreLabel">SCORE 0</span>
+        <span id="comboLabel">COMBO 0</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+      <div class="timebar-wrap"><div class="timebar" id="timebar"></div></div>
+
+      <div class="pet-row">
+        <span class="pet-emoji" id="petEmoji">🥚</span>
+        <div class="growth-wrap">
+          <div class="growth-label" id="petLabel">たまご</div>
+          <div class="growth-bar-wrap"><div class="growth-bar" id="growthBar"></div></div>
+        </div>
+      </div>
+
+      <div class="bonus-banner" id="bonusBanner">✨ そだてボーナス!得点2倍 ✨</div>
+      <div class="catlabel" id="catLabel">「<b>どうぶつ</b>」の中から仲間はずれをタップ!</div>
+
+      <div class="choices" id="choices"></div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>4つのアイコンのうち3つは同じグループ、1つだけ別のグループの
+          「なかまはずれ」がまぎれている。それを見つけて<b>タップ</b>しよう。</p>
+        <p>正解するとタマゴが少しずつ育っていく!正解が続くほど制限時間が
+          どんどん短くなるので油断は禁物。まちがえたりタイムアウトすると
+          ライフが1つ減ってしまう(ライフ♥3つ)。</p>
+        <p>5問正解するごとに得点2倍の「✨そだてボーナス」ラウンドが登場。
+          たくさん正解してタマゴを進化させよう!</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">アイコンをタップして選択 / ⌨ 1〜4キーでも操作可</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
