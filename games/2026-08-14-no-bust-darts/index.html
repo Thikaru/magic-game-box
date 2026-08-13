@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ねらえ!ノーバスト・ダーツ — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#1a1030; --bg2:#0a0716; --panel:#241a44; --paper:#fffdf5;
+    --gold:#ffd23f; --danger:#ff5d7a; --ok:#6be08a; --crt:#4dd8e6;
+    --secA:#33255c; --secB:#2a1f4d;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.05rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--crt); border-radius:14px;
+    background:var(--panel); padding:16px 14px 20px; min-height:480px;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:.82rem; margin-bottom:10px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+
+  .remainBox { text-align:center; margin-bottom:10px; }
+  .remainBox .label { font-size:.75rem; opacity:.75; }
+  .remainBox .num { font-size:2.4rem; font-weight:800; color:var(--gold); line-height:1.1; font-variant-numeric:tabular-nums; transition:transform .12s; }
+  .remainBox.bonus .num { color:#ff9de2; }
+  .remainBox .num.pulse { transform:scale(1.2); }
+
+  .dialWrap { position:relative; width:260px; height:260px; margin:0 auto 14px; }
+  .dial { position:relative; width:260px; height:260px; border-radius:50%; border:3px solid rgba(255,253,245,.3); overflow:hidden; }
+  .doubleZone { position:absolute; inset:0; border-radius:50%; pointer-events:none; }
+  .dialNum { position:absolute; font-size:.72rem; font-weight:700; color:var(--paper); text-shadow:0 1px 2px rgba(0,0,0,.6); pointer-events:none; }
+  .hub { position:absolute; left:50%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:var(--gold); border:2px solid #3a2d10; z-index:5; }
+  .needle { position:absolute; left:50%; top:50%; width:5px; height:104px; margin-left:-2.5px; margin-top:-104px; transform-origin:50% 100%;
+    background:linear-gradient(180deg,var(--danger),#8c1030); border-radius:3px 3px 1px 1px; z-index:4; }
+  .dial.flash { animation:flashBust .3s ease; }
+  @keyframes flashBust { 0%,100%{ box-shadow:none; } 40%{ box-shadow:0 0 0 8px rgba(255,93,122,.5) inset; } }
+
+  .throwBtn { display:block; width:100%; min-height:52px; font-size:1.15rem; font-weight:800;
+    background:var(--gold); color:#2a2450; border:0; border-radius:12px; box-shadow:0 5px 0 #b8912a;
+    cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none; }
+  .throwBtn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+
+  .toast {
+    position:absolute; left:50%; top:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--gold); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:20; white-space:nowrap;
+  }
+  .toast.show { opacity:1; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(10,7,22,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:30; }
+  .overlay h2 { color:var(--gold); font-size:1.35rem; margin-bottom:12px; }
+  .overlay p { line-height:1.75; font-size:.86rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:#2a2450; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.78rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎯 ねらえ!ノーバスト・ダーツ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="roundLabel">ROUND 1</span>
+        <span id="comboLabel">COMBO 0</span>
+        <span id="scoreLabel">SCORE 0</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+
+      <div class="remainBox" id="remainBox">
+        <div class="label">のこり</div>
+        <div class="num" id="remainNum">0</div>
+      </div>
+
+      <div class="dialWrap">
+        <div class="dial" id="dial">
+          <div class="doubleZone" id="doubleZone"></div>
+          <div id="numLayer"></div>
+          <div class="needle" id="needle"></div>
+          <div class="hub"></div>
+        </div>
+      </div>
+
+      <button class="throwBtn" id="throwBtn">🎯 なげる!</button>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>1〜20の数字が並んだダイヤルの上を針がぐるぐる回転し続けている本格ダーツ風ゲーム。
+          <b>「なげる!」</b>ボタン(または <b>スペース/エンター</b>キー)を押した瞬間に針が止まった数字が命中する。</p>
+        <p>「のこり」の数字をぴったり<b>0</b>にすることが目標。命中した数字が「のこり」以下ならその分だけ
+          「のこり」が減る。でも<b>「のこり」を超える数字に命中するとバースト!</b>本物のダーツと同じく
+          ライフが1減ってしまう(「のこり」は変わらないので何度でも狙い直せる)。</p>
+        <p>まれに現れる金色の<b>ダブルゾーン</b>で命中すると得点・減らせる数字が<b>2倍</b>になるが、
+          「のこり」を超えやすくなるハイリスク・ハイリターン。</p>
+        <p>「のこり」がぴったり0になればラウンドクリア!次はさらに大きな「のこり」と速い針が
+          待っている。4ラウンドごとに「のこり」が小さくなり得点2倍の<b>ボーナスラウンド</b>も登場。
+          バーストせず命中を続けるほどコンボボーナスが積み重なる。</p>
+        <p>ライフが0になるまでに、どこまで潜り抜けられるか挑戦しよう。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">🎯ボタンタップで投げる / ⌨ スペース・エンターキーでも操作可</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
