@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>うちやぶれ!ワードウォールラン — DAILY GAMES</title>
+<style>
+  :root { --bg1:#241636; --bg2:#0d0a1a; --panel:#231a3f; --line:#6a3fd6; --gold:#ffd23f; --cyan:#4dd8e6; --pink:#ff5da2; --paper:#f3eeff; --danger:#ff5d6c; --ok:#57e389; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html, body { overflow-x:hidden; }
+  body { font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN',system-ui,sans-serif; background:radial-gradient(circle at 50% -10%,#3a2a5c,var(--bg2) 70%); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--pink); white-space:nowrap; }
+  h1 { color:var(--gold); font-size:1.05rem; letter-spacing:.02em; }
+  .hud { display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:.85rem; color:var(--cyan); margin-bottom:8px; flex-wrap:wrap; gap:4px; }
+  .hud b { color:var(--gold); }
+  #lives { letter-spacing:2px; }
+
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:10px; }
+  .stage.shake { animation:shake .25s; }
+  @keyframes shake { 0%,100%{ transform:translateX(0) } 25%{ transform:translateX(-6px) } 75%{ transform:translateX(6px) } }
+
+  canvas { display:block; width:100%; height:250px; border-radius:10px; background:#150f28; touch-action:manipulation; }
+
+  .wordPanel, .hurdleHint { min-height:58px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-top:8px; }
+  .wordKana { font-size:1.15rem; color:var(--paper); margin-bottom:4px; }
+  .wordBlanks { display:flex; flex-wrap:wrap; justify-content:center; gap:3px; }
+  .wordBlanks span { font-family:monospace; font-size:1.1rem; width:1.05em; text-align:center; color:var(--cyan); opacity:.55; border-bottom:2px solid rgba(255,255,255,.3); }
+  .wordBlanks span.typed { color:var(--ok); opacity:1; border-bottom-color:var(--ok); }
+  .hurdleHint { font-size:1.05rem; color:var(--gold); font-weight:bold; }
+
+  .flashMsg { text-align:center; min-height:1.3em; font-weight:bold; font-size:.95rem; margin-top:6px; }
+  .flashMsg.ok { color:var(--ok); }
+  .flashMsg.bonus { color:var(--gold); }
+  .flashMsg.bad { color:var(--danger); }
+
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(10,6,22,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 16px; z-index:5; overflow-y:auto; }
+  .overlay h2 { color:var(--gold); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.86rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.1rem; background:var(--gold);
+    color:#1c1c28; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; font-weight:bold; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .result-score { color:var(--gold); font-size:2rem; margin:6px 0; font-family:monospace; }
+
+  .ctrlToggle { display:block; margin:12px auto 8px; font-size:.85rem; background:rgba(255,255,255,.1);
+    color:var(--paper); border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:8px 14px; min-height:44px; cursor:pointer; width:100%; }
+  .ctrlPanel { margin-top:4px; }
+  .jumpBtn { display:block; width:100%; min-height:52px; font-size:1.05rem; font-weight:bold; background:var(--cyan); color:#0d0a1a;
+    border:0; border-radius:12px; margin-bottom:10px; cursor:pointer; box-shadow:0 4px 0 #2b8f99; }
+  .jumpBtn:active { transform:translateY(3px); box-shadow:0 1px 0 #2b8f99; }
+  .vkb-row { display:flex; gap:4px; margin-bottom:4px; }
+  .vkb-row button { flex:1; min-width:0; min-height:44px; font-family:monospace; font-size:1rem; background:rgba(255,255,255,.1);
+    color:var(--paper); border:1px solid rgba(255,255,255,.25); border-radius:6px; cursor:pointer; }
+  .vkb-row button:active { background:var(--gold); color:#1c1c28; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>うちやぶれ!ワードウォールラン</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span id="lives">❤️❤️❤️</span>
+    <span>SCORE <b id="scoreLabel">0</b></span>
+    <span>とっぱ <b id="clearedLabel">0</b></span>
+    <span>コンボ <b id="comboLabel">0</b></span>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="game"></canvas>
+
+    <div class="wordPanel hidden" id="wordPanel">
+      <div class="wordKana" id="wordKana"></div>
+      <div class="wordBlanks" id="wordBlanks"></div>
+    </div>
+    <div class="hurdleHint hidden" id="hurdleHint">🚧 タイミングよくジャンプ!</div>
+
+    <div class="flashMsg" id="flashMsg"></div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>ランナーは自動で走り続ける。前方から2種類の障害物がせまってくる。</p>
+      <p><b style="color:#4dd8e6">■ ワード壁</b>: 書かれたひらがなの読みを<b>ローマ字</b>でタイピングし、壁が届く前に打ちぬこう。</p>
+      <p><b style="color:#ffd23f">🚧 ハードル</b>: ジャンプボタン(または Space / ↑キー)でタイミングよく跳び越えよう。</p>
+      <p>打ちぬき・ジャンプに失敗するとライフが1つ減る。まれに出る<b style="color:#ffd23f">★ゴールドワード</b>を打ちぬくと得点2倍+ライフ回復!</p>
+      <p>突破するほど単語は長く、障害物の間隔もどんどん短くなる。コンボを切らさず走りぬけ!ライフは♥3つの一発勝負。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲーム終了</h2>
+      <p>とっぱ数 <b id="finalCleared"></b> / 最大コンボ <b id="finalCombo"></b></p>
+      <div class="result-score" id="finalScore"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <button type="button" class="ctrlToggle" id="ctrlToggle">🎮 コントローラ 表示/非表示</button>
+  <div class="ctrlPanel hidden" id="ctrlPanel">
+    <button type="button" class="jumpBtn" id="jumpBtn">⬆️ ジャンプ</button>
+    <div class="vkb-row" data-row="qwertyuiop"></div>
+    <div class="vkb-row" data-row="asdfghjkl"></div>
+    <div class="vkb-row" data-row="zxcvbnm"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ---- word bank (kana -> romaji) ----
+  var WORD_BANK = [
+    { kana:'き', romaji:'ki' }, { kana:'め', romaji:'me' }, { kana:'て', romaji:'te' }, { kana:'ひ', romaji:'hi' },
+    { kana:'いぬ', romaji:'inu' }, { kana:'うみ', romaji:'umi' }, { kana:'あめ', romaji:'ame' },
+    { kana:'ねこ', romaji:'neko' }, { kana:'そら', romaji:'sora' }, { kana:'やま', romaji:'yama' },
+    { kana:'はな', romaji:'hana' }, { kana:'くも', romaji:'kumo' }, { kana:'かぜ', romaji:'kaze' },
+    { kana:'ゆき', romaji:'yuki' }, { kana:'たこ', romaji:'tako' }, { kana:'とり', romaji:'tori' },
+    { kana:'にじ', romaji:'niji' }, { kana:'かに', romaji:'kani' },
+    { kana:'つき', romaji:'tsuki' }, { kana:'ほし', romaji:'hoshi' }, { kana:'りんご', romaji:'ringo' },
+    { kana:'きりん', romaji:'kirin' }, { kana:'すいか', romaji:'suika' }, { kana:'らいおん', romaji:'raion' },
+    { kana:'さかな', romaji:'sakana' }, { kana:'たまご', romaji:'tamago' }, { kana:'せっけん', romaji:'sekken' },
+    { kana:'ばなな', romaji:'banana' }, { kana:'めがね', romaji:'megane' }, { kana:'でんしゃ', romaji:'densha' },
+    { kana:'がっこう', romaji:'gakkou' }, { kana:'おんがく', romaji:'ongaku' }, { kana:'たいよう', romaji:'taiyou' },
+    { kana:'くじら', romaji:'kujira' }, { kana:'ぺんぎん', romaji:'pengin' }, { kana:'とまと', romaji:'tomato' },
+    { kana:'きゅうり', romaji:'kyuuri' }, { kana:'ほたる', romaji:'hotaru' },
+    { kana:'ひこうき', romaji:'hikouki' },
+    { kana:'しまうま', romaji:'shimauma' }, { kana:'れいぞうこ', romaji:'reizouko' },
+    { kana:'ともだち', romaji:'tomodachi' }, { kana:'すべりだい', romaji:'suberidai' },
+    { kana:'しんかんせん', romaji:'shinkansen' }, { kana:'かたつむり', romaji:'katatsumuri' },
+    { kana:'あいすくりーむ', romaji:'aisukuriimu' }
+  ];
+
+  var START_LIVES = 3;
+  var BASE_SPEED = 130, SPEED_STEP = 6, MAX_SPEED = 260;
+  var JUMP_DURATION = 550, MAX_JUMP_H = 68;
+  var HURDLE_H = 32, MIN_CLEAR_OFFSET = HURDLE_H * 0.55;
+  var COLLIDE_ZONE_HALF = 22;
+  var PLAYER_R = 15;
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var stageEl = document.getElementById('stage');
+  var livesEl = document.getElementById('lives');
+  var scoreLabelEl = document.getElementById('scoreLabel');
+  var clearedLabelEl = document.getElementById('clearedLabel');
+  var comboLabelEl = document.getElementById('comboLabel');
+  var wordPanelEl = document.getElementById('wordPanel');
+  var wordKanaEl = document.getElementById('wordKana');
+  var wordBlanksEl = document.getElementById('wordBlanks');
+  var hurdleHintEl = document.getElementById('hurdleHint');
+  var flashMsgEl = document.getElementById('flashMsg');
+  var introEl = document.getElementById('intro');
+  var resultEl = document.getElementById('result');
+  var finalClearedEl = document.getElementById('finalCleared');
+  var finalComboEl = document.getElementById('finalCombo');
+  var finalScoreEl = document.getElementById('finalScore');
+  var startBtn = document.getElementById('startBtn');
+  var retryBtn = document.getElementById('retryBtn');
+  var ctrlToggle = document.getElementById('ctrlToggle');
+  var ctrlPanel = document.getElementById('ctrlPanel');
+  var jumpBtn = document.getElementById('jumpBtn');
+  var vkbRows = document.querySelectorAll('.vkb-row');
+
+  var W = 360, H = 250, DPR = 1, GROUND_Y = 190, PLAYER_X = 70;
+
+  function resize() {
+    var rect = canvas.getBoundingClientRect();
+    W = rect.width;
+    H = rect.height;
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    GROUND_Y = Math.round(H * 0.78);
+    PLAYER_X = Math.round(W * 0.2);
+  }
+  window.addEventListener('resize', resize);
+
+  function buildKeyboard() {
+    vkbRows.forEach(function(row) {
+      row.getAttribute('data-row').split('').forEach(function(ch) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = ch;
+        btn.addEventListener('click', function(){ handleChar(ch); });
+        row.appendChild(btn);
+      });
+    });
+  }
+  buildKeyboard();
+  if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+    ctrlPanel.classList.remove('hidden');
+  }
+  ctrlToggle.addEventListener('click', function(){ ctrlPanel.classList.toggle('hidden'); });
+
+  // ---- audio ----
+  var actx = null;
+  function ensureAudio() {
+    if (!actx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) actx = new AC();
+    }
+  }
+  function beep(freq, dur, type, vol) {
+    if (!actx) return;
+    var osc = actx.createOscillator();
+    var gain = actx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    gain.gain.value = vol || 0.07;
+    osc.connect(gain).connect(actx.destination);
+    var now = actx.currentTime;
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.start(now);
+    osc.stop(now + dur);
+  }
+  var sfxType = function(){ beep(560, 0.05, 'square', 0.05); };
+  var sfxBreak = function(golden){ beep(golden ? 900 : 720, 0.16, 'square', 0.07); if (golden) beep(1300, 0.2, 'sine', 0.05); };
+  var sfxJumpUp = function(){ beep(440, 0.08, 'triangle', 0.06); };
+  var sfxJumpOk = function(){ beep(760, 0.14, 'triangle', 0.07); };
+  var sfxHit = function(){ beep(150, 0.22, 'sawtooth', 0.09); };
+  var sfxMiss = function(){ beep(220, 0.06, 'sawtooth', 0.04); };
+  var sfxOver = function(){ beep(300, 0.2, 'sawtooth', 0.08); setTimeout(function(){ beep(150, 0.35, 'sawtooth', 0.08); }, 150); };
+
+  // ---- state ----
+  var state = 'intro'; // intro | playing | over
+  var lives, score, combo, maxCombo, cleared;
+  var player, obstacles, particles, activeObstacle;
+  var spawnTimer, flashTimer, lastWordKana, runPhase;
+  var lastTime = 0, rafId;
+
+  function speedFor() { return Math.min(MAX_SPEED, BASE_SPEED + cleared * SPEED_STEP); }
+  function gapFor() { return Math.max(280, 700 - cleared * 10); }
+  function hurdleChance() { return Math.min(0.4, 0.26 + cleared * 0.004); }
+  function maxLenFor() { return cleared < 6 ? 4 : cleared < 14 ? 6 : cleared < 24 ? 8 : 11; }
+
+  function pickWord(maxLen) {
+    var pool = WORD_BANK.filter(function(w){ return w.romaji.length <= maxLen; });
+    var w;
+    do { w = pool[Math.floor(Math.random() * pool.length)]; } while (pool.length > 1 && w.kana === lastWordKana);
+    lastWordKana = w.kana;
+    return w;
+  }
+
+  function resetGame() {
+    player = { jumping:false, jumpElapsed:0 };
+    obstacles = [];
+    particles = [];
+    activeObstacle = null;
+    lives = START_LIVES; score = 0; combo = 0; maxCombo = 0; cleared = 0;
+    spawnTimer = 400; flashTimer = 0; lastWordKana = null; runPhase = 0;
+    updateHud();
+    hideObstacleUI();
+  }
+
+  function updateHud() {
+    var hearts = '';
+    for (var i = 0; i < START_LIVES; i++) hearts += i < lives ? '❤️' : '🖤';
+    livesEl.textContent = hearts;
+    scoreLabelEl.textContent = score;
+    clearedLabelEl.textContent = cleared;
+    comboLabelEl.textContent = combo;
+  }
+
+  function showFlash(text, cls) {
+    flashMsgEl.textContent = text;
+    flashMsgEl.className = 'flashMsg ' + cls;
+    flashTimer = 900;
+  }
+
+  function flashShake() {
+    stageEl.classList.remove('shake');
+    void stageEl.offsetWidth;
+    stageEl.classList.add('shake');
+  }
+
+  function hideObstacleUI() {
+    wordPanelEl.classList.add('hidden');
+    hurdleHintEl.classList.add('hidden');
+  }
+
+  function renderWordBlanks() {
+    wordBlanksEl.innerHTML = '';
+    for (var i = 0; i < activeObstacle.romaji.length; i++) {
+      var span = document.createElement('span');
+      if (i < activeObstacle.typed) {
+        span.textContent = activeObstacle.romaji[i];
+        span.className = 'typed';
+      } else {
+        span.textContent = '_';
+      }
+      wordBlanksEl.appendChild(span);
+    }
+  }
+
+  function spawnObstacle() {
+    if (Math.random() < hurdleChance()) {
+      activeObstacle = { type:'hurdle', x: W + 40, resolved:false };
+      hideObstacleUI();
+      hurdleHintEl.classList.remove('hidden');
+    } else {
+      var golden = Math.random() < 0.12;
+      var maxLen = golden ? Math.min(maxLenFor(), 6) : maxLenFor();
+      var word = pickWord(maxLen);
+      activeObstacle = { type:'word', x: W + 40, resolved:false, kana:word.kana, romaji:word.romaji, typed:0, golden:golden };
+      hideObstacleUI();
+      wordPanelEl.classList.remove('hidden');
+      wordKanaEl.textContent = (golden ? '★ ' : '') + activeObstacle.kana;
+      wordKanaEl.style.color = golden ? '#ffd23f' : '#f3eeff';
+      renderWordBlanks();
+    }
+    obstacles = [activeObstacle];
+  }
+
+  function addParticles(x, y, color, n) {
+    for (var i = 0; i < n; i++) {
+      var ang = Math.random() * Math.PI * 2;
+      var spd = 40 + Math.random() * 100;
+      particles.push({ x:x, y:y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, life: 0.5, color: color });
+    }
+  }
+
+  function scheduleNext() {
+    activeObstacle = null;
+    obstacles = [];
+    hideObstacleUI();
+    spawnTimer = gapFor();
+  }
+
+  function clearWord(o) {
+    sfxBreak(o.golden);
+    var base = o.romaji.length * 15 * (o.golden ? 2 : 1);
+    var comboBonus = combo * 4;
+    score += base + comboBonus;
+    combo++; if (combo > maxCombo) maxCombo = combo;
+    cleared++;
+    if (o.golden) {
+      lives = Math.min(START_LIVES, lives + 1);
+      showFlash('★ゴールド!+' + (base + comboBonus) + ' ライフ回復', 'bonus');
+    } else {
+      showFlash('とっぱ! +' + (base + comboBonus), 'ok');
+    }
+    addParticles(PLAYER_X + 40, GROUND_Y - 30, o.golden ? '#ffd23f' : '#4dd8e6', 14);
+    updateHud();
+    scheduleNext();
+  }
+
+  function failWord(o) {
+    sfxHit();
+    lives = Math.max(0, lives - 1); combo = 0;
+    showFlash('激突!「' + o.romaji + '」', 'bad');
+    flashShake();
+    addParticles(PLAYER_X, GROUND_Y - PLAYER_R, '#ff5d6c', 12);
+    updateHud();
+    if (lives <= 0) { endGame(); } else { scheduleNext(); }
+  }
+
+  function clearHurdle() {
+    sfxJumpOk();
+    var base = 25, comboBonus = combo * 4;
+    score += base + comboBonus;
+    combo++; if (combo > maxCombo) maxCombo = combo;
+    cleared++;
+    showFlash('ナイスジャンプ! +' + (base + comboBonus), 'ok');
+    updateHud();
+    scheduleNext();
+  }
+
+  function failHurdle() {
+    sfxHit();
+    lives = Math.max(0, lives - 1); combo = 0;
+    showFlash('つまずいた…', 'bad');
+    flashShake();
+    addParticles(PLAYER_X, GROUND_Y - PLAYER_R, '#ff5d6c', 12);
+    updateHud();
+    if (lives <= 0) { endGame(); } else { scheduleNext(); }
+  }
+
+  function jumpOffsetNow() {
+    if (!player.jumping) return 0;
+    return MAX_JUMP_H * Math.sin(Math.PI * Math.min(1, player.jumpElapsed / JUMP_DURATION));
+  }
+
+  function triggerJump() {
+    if (state !== 'playing') return;
+    if (player.jumping) return;
+    player.jumping = true;
+    player.jumpElapsed = 0;
+    sfxJumpUp();
+  }
+
+  function handleChar(ch) {
+    if (state !== 'playing') return;
+    if (!activeObstacle || activeObstacle.type !== 'word' || activeObstacle.resolved) return;
+    ch = ch.toLowerCase();
+    if (!/^[a-z]$/.test(ch)) return;
+    if (ch === activeObstacle.romaji[activeObstacle.typed]) {
+      activeObstacle.typed++;
+      sfxType();
+      renderWordBlanks();
+      if (activeObstacle.typed >= activeObstacle.romaji.length) {
+        activeObstacle.resolved = true;
+        clearWord(activeObstacle);
+      }
+    } else {
+      sfxMiss();
+    }
+  }
+
+  jumpBtn.addEventListener('pointerdown', function(e){ e.preventDefault(); triggerJump(); });
+  window.addEventListener('keydown', function(e){
+    if (state !== 'playing') return;
+    if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); triggerJump(); return; }
+    if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) handleChar(e.key);
+  });
+
+  function update(dt) {
+    var speed = speedFor();
+    runPhase += dt * (player.jumping ? 4 : 10);
+
+    spawnTimer -= dt * 1000;
+    if (spawnTimer <= 0 && !activeObstacle) {
+      spawnObstacle();
+    }
+
+    if (player.jumping) {
+      player.jumpElapsed += dt * 1000;
+      if (player.jumpElapsed >= JUMP_DURATION) { player.jumping = false; player.jumpElapsed = 0; }
+    }
+
+    if (activeObstacle && !activeObstacle.resolved) {
+      activeObstacle.x -= speed * dt;
+      if (activeObstacle.type === 'word') {
+        if (activeObstacle.x <= PLAYER_X) {
+          activeObstacle.resolved = true;
+          failWord(activeObstacle);
+        }
+      } else {
+        if (activeObstacle.x <= PLAYER_X + COLLIDE_ZONE_HALF && activeObstacle.x >= PLAYER_X - COLLIDE_ZONE_HALF) {
+          if (player.jumping && jumpOffsetNow() >= MIN_CLEAR_OFFSET) {
+            activeObstacle.resolved = true;
+            clearHurdle();
+          }
+        } else if (activeObstacle.x < PLAYER_X - COLLIDE_ZONE_HALF) {
+          activeObstacle.resolved = true;
+          failHurdle();
+        }
+      }
+    }
+
+    for (var i = particles.length - 1; i >= 0; i--) {
+      var p = particles[i];
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 220 * dt; p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    if (flashTimer > 0) flashTimer -= dt * 1000;
+  }
+
+  function drawBackground() {
+    ctx.clearRect(0, 0, W, H);
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#2a1c48'); g.addColorStop(1, '#150f28');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawGround() {
+    ctx.fillStyle = '#3a2a5c';
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+    ctx.strokeStyle = 'rgba(255,255,255,.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
+    var offset = (performance.now() / 6) % 40;
+    ctx.strokeStyle = 'rgba(255,255,255,.1)';
+    for (var x = -offset; x < W; x += 40) {
+      ctx.beginPath(); ctx.moveTo(x, GROUND_Y + 8); ctx.lineTo(x + 18, GROUND_Y + 8); ctx.stroke();
+    }
+  }
+
+  function drawPlayer() {
+    var offsetY = jumpOffsetNow();
+    var cy = GROUND_Y - PLAYER_R - offsetY;
+    ctx.save();
+    ctx.translate(PLAYER_X, cy);
+    ctx.fillStyle = '#ff9f4d';
+    ctx.beginPath();
+    ctx.arc(0, 0, PLAYER_R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#150f28';
+    ctx.beginPath(); ctx.arc(5, -2, 2.4, 0, Math.PI * 2); ctx.fill();
+    // legs
+    var legPhase = player.jumping ? 0.5 : Math.sin(runPhase) * 0.5;
+    ctx.strokeStyle = '#ff9f4d';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-4, PLAYER_R - 2); ctx.lineTo(-4 + legPhase * 10, PLAYER_R + 10);
+    ctx.moveTo(4, PLAYER_R - 2); ctx.lineTo(4 - legPhase * 10, PLAYER_R + 10);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawObstacles() {
+    if (!activeObstacle) return;
+    var o = activeObstacle;
+    if (o.type === 'word') {
+      var w = 62, h = 56;
+      var cy = GROUND_Y - h / 2;
+      ctx.fillStyle = o.golden ? '#ffd23f' : '#4dd8e6';
+      ctx.strokeStyle = o.golden ? '#fff3c4' : '#bff3f8';
+      ctx.lineWidth = 2;
+      roundRect(o.x - w / 2, cy - h / 2, w, h, 8);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#150f28';
+      var fontSize = o.kana.length <= 3 ? 20 : o.kana.length <= 4 ? 16 : 13;
+      ctx.font = 'bold ' + fontSize + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(o.kana, o.x, cy);
+    } else {
+      var hw = 12;
+      ctx.fillStyle = '#ffd23f';
+      ctx.fillRect(o.x - hw, GROUND_Y - HURDLE_H, 4, HURDLE_H);
+      ctx.fillRect(o.x + hw - 4, GROUND_Y - HURDLE_H, 4, HURDLE_H);
+      ctx.fillRect(o.x - hw, GROUND_Y - HURDLE_H, hw * 2, 6);
+    }
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawParticles() {
+    particles.forEach(function(p){
+      ctx.globalAlpha = Math.max(p.life / 0.5, 0);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function render() {
+    drawBackground();
+    drawGround();
+    drawObstacles();
+    drawPlayer();
+    drawParticles();
+  }
+
+  function loop(ts) {
+    if (!lastTime) lastTime = ts;
+    var dt = (ts - lastTime) / 1000;
+    lastTime = ts;
+    if (dt > 0.05) dt = 0.05;
+    if (state === 'playing') update(dt);
+    render();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function startGame() {
+    ensureAudio();
+    resize();
+    resetGame();
+    state = 'playing';
+    introEl.classList.add('hidden');
+    resultEl.classList.add('hidden');
+    stageEl.classList.remove('shake');
+    flashMsgEl.textContent = '';
+    flashMsgEl.className = 'flashMsg';
+    lastTime = 0;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function endGame() {
+    state = 'over';
+    sfxOver();
+    hideObstacleUI();
+    finalClearedEl.textContent = cleared;
+    finalComboEl.textContent = maxCombo;
+    finalScoreEl.textContent = score + ' 点';
+    resultEl.classList.remove('hidden');
+  }
+
+  startBtn.addEventListener('click', startGame);
+  retryBtn.addEventListener('click', startGame);
+
+  resize();
+  resetGame();
+  render();
+})();
+</script>
+</body>
+</html>
