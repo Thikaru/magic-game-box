@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>みやぶれ!三すくみ道場 — DAILY GAMES</title>
+<style>
+  :root { --bg1:#1a0f14; --bg2:#2b1620; --paper:#f6efe6; --ink:#1a0f14;
+    --accent:#ff9f45; --danger:#ff5d6c; --gold:#ffd23f;
+    --up:#ff5d6c; --mid:#4fc3f7; --down:#66d18a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.02rem; letter-spacing:.02em; }
+  .stage { position:relative; }
+  .arena { position:relative; border:3px solid var(--accent); border-radius:12px; background:#150b0e;
+    padding:18px 14px; min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+  .foeLabel { font-size:.8rem; opacity:.8; }
+  .foeIcon { font-size:4rem; line-height:1; transition:transform .12s; }
+  .foeIcon.shake { animation:shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  .timerTrack { width:90%; height:10px; background:rgba(255,255,255,.15); border-radius:6px; overflow:hidden; }
+  .timerBar { height:100%; background:var(--accent); width:100%; transform-origin:left; }
+  .timerBar.bonus { background:var(--gold); }
+  .feedback { min-height:1.4em; font-size:1rem; font-weight:bold; }
+  .feedback.ok { color:var(--down); }
+  .feedback.ng { color:var(--danger); }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(10,6,8,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:18px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--accent); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.84rem; margin-bottom:8px; }
+  .cycle { display:flex; flex-direction:column; gap:6px; margin:6px 0 10px; width:100%; text-align:left; font-size:.82rem; }
+  .cycle div { display:flex; align-items:center; gap:8px; }
+  .overlay .btn { margin-top:8px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b3651c; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b3651c; }
+  .hidden { display:none !important; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:10px; font-size:.9rem; }
+  .combo { opacity:.85; }
+  .stanceRow { display:flex; gap:6px; margin-top:10px; }
+  .stanceBtn { flex:1; min-height:60px; border-radius:10px; border:0; font-size:1rem; font-weight:bold;
+    color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.35); cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px; }
+  .stanceBtn span { font-size:1.6rem; }
+  .stanceBtn:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.35); }
+  .stanceBtn.up { background:var(--up); }
+  .stanceBtn.mid { background:var(--mid); }
+  .stanceBtn.down { background:var(--down); }
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🥋 みやぶれ!三すくみ道場</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="arena">
+      <div class="foeLabel" id="foeLabel">相手の構え</div>
+      <div class="foeIcon" id="foeIcon">⬆️</div>
+      <div class="timerTrack"><div class="timerBar" id="timerBar"></div></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>道場破りの構えをその場で見破り、<b>勝てる構え</b>のボタンを時間内にタップして打ち破る三すくみバトル。</p>
+      <div class="cycle">
+        <div>⬆️ 上段 は ➡️ 中段 に勝つ</div>
+        <div>➡️ 中段 は ⬇️ 下段 に勝つ</div>
+        <div>⬇️ 下段 は ⬆️ 上段 に勝つ</div>
+      </div>
+      <p>相手の構えを見て、<b>それに勝てる構え</b>のボタンを選ぼう(同じ構えを押しても負ける!)。まちがえたり時間切れだとライフが1減ってコンボがリセットされる。</p>
+      <p>成功が続くほど反応できる時間がどんどん短くなる無限エスカレーション。まれに現れる🌟金色ラウンドは反応時間が長めで得点2倍。ライフは♥3つの一発勝負。</p>
+      <p>👆 構えボタンをタップ / ⌨ 1・2・3キーでも対応</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span class="combo" id="comboLabel">COMBO 0</span>
+    <span id="livesLabel">♥♥♥</span>
+  </div>
+  <div class="stanceRow" id="stanceRow">
+    <button class="stanceBtn up" data-stance="up"><span>⬆️</span>上段</button>
+    <button class="stanceBtn mid" data-stance="mid"><span>➡️</span>中段</button>
+    <button class="stanceBtn down" data-stance="down"><span>⬇️</span>下段</button>
+  </div>
+  <p class="hint">勝てる構えをタップ / ⌨ 1(上段)・2(中段)・3(下段)</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
