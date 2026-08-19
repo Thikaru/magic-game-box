@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>見て覚えて!観察力クイズ — DAILY GAMES</title>
+<style>
+  :root { --bg1:#0f1a24; --bg2:#16283a; --paper:#f6efe6; --ink:#0f1a24;
+    --accent:#4fc3f7; --danger:#ff5d6c; --gold:#ffd23f; --panel:#0b141c; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1rem; letter-spacing:.02em; }
+  .stage { position:relative; }
+  .arena { position:relative; border:3px solid var(--accent); border-radius:12px; background:var(--panel);
+    padding:16px 14px; min-height:340px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:12px; }
+  .phaseLabel { font-size:.86rem; opacity:.85; min-height:1.3em; text-align:center; }
+  .phaseLabel.bonus { color:var(--gold); font-weight:bold; }
+  .scene-grid { display:grid; gap:6px; width:100%; max-width:300px; margin:0 auto; }
+  .cell { aspect-ratio:1/1; border-radius:50%; background:#22303e; display:flex; align-items:center; justify-content:center;
+    font-size:1rem; color:rgba(255,255,255,.35); transition:background-color .15s; }
+  .timerTrack { width:92%; height:9px; background:rgba(255,255,255,.15); border-radius:6px; overflow:hidden; }
+  .timerBar { height:100%; background:var(--accent); width:100%; transform-origin:left; }
+  .timerBar.bonus { background:var(--gold); }
+  .question { min-height:2.6em; font-size:.98rem; font-weight:bold; text-align:center; line-height:1.4; }
+  .feedback { min-height:1.4em; font-size:.92rem; font-weight:bold; text-align:center; }
+  .feedback.ok { color:#66d18a; }
+  .feedback.ng { color:var(--danger); }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(6,10,14,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:18px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--accent); font-size:1.25rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.84rem; margin-bottom:8px; }
+  .legend { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:6px 0 10px; font-size:.78rem; }
+  .legend span { display:inline-flex; align-items:center; gap:4px; }
+  .swatch { width:12px; height:12px; border-radius:50%; display:inline-block; }
+  .overlay .btn { margin-top:8px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #1d7fa3; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #1d7fa3; }
+  .hidden { display:none !important; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:10px; font-size:.9rem; }
+  .combo { opacity:.85; }
+  .answerGrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+  .answerBtn { min-height:52px; border-radius:10px; border:0; font-size:1.05rem; font-weight:bold;
+    color:#fff; background:#2a3f52; box-shadow:0 4px 0 rgba(0,0,0,.35); cursor:pointer; display:flex;
+    align-items:center; justify-content:center; gap:6px; padding:6px 8px; }
+  .answerBtn:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.35); }
+  .answerBtn:disabled { opacity:.6; }
+  .answerBtn .dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔎 見て覚えて!観察力クイズ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="arena">
+      <div class="phaseLabel" id="phaseLabel">覚えて!</div>
+      <div class="scene-grid" id="sceneGrid"></div>
+      <div class="question" id="question"></div>
+      <div class="timerTrack"><div class="timerBar" id="timerBar"></div></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="answerGrid hidden" id="answerGrid"></div>
+    </div>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>画面に並ぶ色つきの丸をよく見て、<b>色と数</b>を覚えよう。少し経つと丸が隠れてクイズが出題される。</p>
+      <div class="legend">
+        <span><i class="swatch" style="background:#ff5d6c"></i>あか</span>
+        <span><i class="swatch" style="background:#4fc3f7"></i>あお</span>
+        <span><i class="swatch" style="background:#ffd23f"></i>きいろ</span>
+        <span><i class="swatch" style="background:#66d18a"></i>みどり</span>
+        <span><i class="swatch" style="background:#b388ff"></i>むらさき</span>
+        <span><i class="swatch" style="background:#ff9f45"></i>だいだい</span>
+      </div>
+      <p>出題は「〇〇は何個あった?」か「いちばん多かった色は?」のどちらか。4つの選択肢からタップで答えよう。まちがえたり時間切れするとライフが1減ってコンボがリセットされる。</p>
+      <p>正解が続くほど覚える時間・答える時間がどんどん短くなり、色の種類とマスの数も増えていく無限エスカレーション。5コンボごとに登場する🌟ボーナスラウンドは時間が長めで得点2倍。ライフは♥3つの一発勝負。</p>
+      <p>👆 選択肢をタップ / ⌨ 1〜4キーでも対応</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span class="combo" id="comboLabel">COMBO 0</span>
+    <span id="livesLabel">♥♥♥</span>
+  </div>
+  <p class="hint">選択肢をタップ / ⌨ 1・2・3・4キー</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
