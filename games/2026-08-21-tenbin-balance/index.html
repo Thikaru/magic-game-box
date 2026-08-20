@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>かたむくな!てんびんパズル — DAILY GAMES</title>
+<style>
+  :root { --bg1:#07211f; --bg2:#0d3531; --paper:#f2f8f6; --ink:#07211f;
+    --accent:#3fd6c2; --danger:#ff5d6c; --gold:#ffd23f; --left:#5aa9ff; --right:#ff9f6b; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.02rem; letter-spacing:.02em; }
+  .stage { position:relative; }
+  .arena { position:relative; border:3px solid var(--accent); border-radius:12px; background:#04211d;
+    padding:16px 14px; min-height:320px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+  .weightBox { display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; }
+  .weightLabel { font-size:.78rem; opacity:.8; }
+  .weightNum { font-size:2.4rem; font-weight:bold; line-height:1; transition:transform .12s; }
+  .weightNum.pop { animation:pop .25s; }
+  @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.25)} 100%{transform:scale(1)} }
+  .timerTrack { width:90%; height:9px; background:rgba(255,255,255,.15); border-radius:6px; overflow:hidden; }
+  .timerBar { height:100%; background:var(--accent); width:100%; transform-origin:left; }
+  .timerBar.golden { background:var(--gold); }
+  .scale { width:100%; display:flex; flex-direction:column; align-items:center; margin-top:34px; }
+  .pivotBase { font-size:1.6rem; margin-top:-6px; }
+  .beam { position:relative; width:86%; height:6px; background:var(--paper); border-radius:3px;
+    transition:transform .28s cubic-bezier(.34,1.56,.64,1); transform-origin:center center; }
+  .beam.shake { animation:shake .3s; }
+  @keyframes shake { 0%,100%{filter:none} 40%{filter:drop-shadow(0 0 6px var(--danger))} }
+  .pan { position:absolute; top:6px; width:56px; height:56px; border-radius:50%; display:flex;
+    align-items:center; justify-content:center; font-weight:bold; font-size:1.1rem; color:var(--ink); }
+  .pan.left { left:-10px; background:var(--left); }
+  .pan.right { right:-10px; background:var(--right); }
+  .diffReadout { font-size:.86rem; opacity:.85; margin-top:24px; }
+  .diffReadout.warn { color:var(--danger); font-weight:bold; animation:blink .5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .feedback { min-height:1.4em; font-size:.95rem; font-weight:bold; text-align:center; }
+  .feedback.ok { color:var(--left); }
+  .feedback.ng { color:var(--danger); }
+  .feedback.gold { color:var(--gold); }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(4,10,9,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:18px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--accent); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.84rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:8px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #1c8a7c; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #1c8a7c; }
+  .hidden { display:none !important; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:10px; font-size:.9rem; }
+  .combo { opacity:.85; }
+  .sideRow { display:flex; gap:6px; margin-top:10px; }
+  .sideBtn { flex:1; min-height:60px; border-radius:10px; border:0; font-size:1.05rem; font-weight:bold;
+    color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.35); cursor:pointer; }
+  .sideBtn:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.35); }
+  .sideBtn.left { background:var(--left); }
+  .sideBtn.right { background:var(--right); }
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>⚖️ かたむくな!てんびんパズル</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="arena">
+      <div class="weightBox">
+        <div class="weightLabel" id="weightLabel">つぎのおもり</div>
+        <div class="weightNum" id="weightNum">5</div>
+        <div class="timerTrack"><div class="timerBar" id="timerBar"></div></div>
+      </div>
+
+      <div class="scale">
+        <div class="beam" id="beam">
+          <div class="pan left" id="panLeft">0</div>
+          <div class="pan right" id="panRight">0</div>
+        </div>
+        <div class="pivotBase">▲</div>
+      </div>
+      <div class="diffReadout" id="diffReadout">差 0 / きょよう 16</div>
+      <div class="feedback" id="feedback"></div>
+
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>次々に落ちてくる数字の<b>おもり</b>を、てんびんの<b>ひだり</b>か<b>みぎ</b>のどちらかに乗せていくパズル。</p>
+        <p>左右の合計の<b>差</b>が「きょよう」を超えるとかたむきすぎでライフが1減り、てんびんはリセットされる。時間内にどちらへ置くか選び、なるべく差が小さくなる側を選ぼう。</p>
+        <p>置くたびにコンボが伸びて得点倍率アップ、成功が続くほど<b>きょようは狭く・制限時間は短く・おもりの数字は大きく</b>なる無限エスカレーション。まれに現れる⭐金色のおもりはどちらに置いても差をゼロにリセットしてくれる頼れる存在。</p>
+        <p>👆 ひだり/みぎボタンをタップ、または画面のてんびんを直接タップ / ⌨ ←→キーまたはA・Dキーでも対応</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span class="combo" id="comboLabel">COMBO 0</span>
+    <span id="livesLabel">♥♥♥</span>
+  </div>
+  <div class="sideRow" id="sideRow">
+    <button class="sideBtn left" data-side="left">⬅️ ひだり</button>
+    <button class="sideBtn right" data-side="right">➡️ みぎ</button>
+  </div>
+  <p class="hint">おもりを置く側をタップ / ⌨ ←→ または A・D キー</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
