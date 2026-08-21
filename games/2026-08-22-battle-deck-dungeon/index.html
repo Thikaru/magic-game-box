@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>そなえて突破!バトルデッキダンジョン — DAILY GAMES</title>
+<style>
+  :root { --bg1:#170a12; --bg2:#2a0f1c; --paper:#f6efe6; --ink:#170a12;
+    --accent:#ffb347; --gold:#ffd23f; --hp:#ff5d6c; --shield:#4fc3f7; --heal:#66d18a;
+    --danger:#ff5d6c; --ok:#66d18a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; flex-wrap:wrap; row-gap:4px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:.98rem; letter-spacing:.02em; }
+  .stage { position:relative; }
+  .arena { position:relative; border:3px solid var(--accent); border-radius:12px; background:#1b0c14;
+    padding:16px 14px; min-height:340px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+  .waveLabel { font-size:.78rem; opacity:.8; }
+  .foeIcon { font-size:3.4rem; line-height:1; transition:transform .12s; }
+  .foeIcon.shake { animation:shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  .barRow { width:92%; }
+  .barLabel { display:flex; justify-content:space-between; font-size:.72rem; opacity:.85; margin-bottom:2px; }
+  .barTrack { width:100%; height:12px; background:rgba(255,255,255,.14); border-radius:7px; overflow:hidden; }
+  .barFill { height:100%; border-radius:7px; transition:width .15s; }
+  .barFill.hp { background:var(--hp); }
+  .barFill.foehp { background:var(--accent); }
+  .atkTelegraph { font-size:1rem; font-weight:bold; color:var(--gold); text-align:center; }
+  .timerTrack { width:92%; height:8px; background:rgba(255,255,255,.15); border-radius:5px; overflow:hidden; }
+  .timerBar { height:100%; background:var(--shield); width:100%; transform-origin:left; }
+  .timerBar.low { background:var(--danger); }
+  .feedback { min-height:1.3em; font-size:.95rem; font-weight:bold; text-align:center; }
+  .feedback.ok { color:var(--ok); }
+  .feedback.ng { color:var(--danger); }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(10,4,7,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:18px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--accent); font-size:1.25rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.83rem; margin-bottom:8px; }
+  .cardLegend { display:flex; flex-direction:column; gap:6px; margin:6px 0 10px; width:100%; text-align:left; font-size:.82rem; }
+  .cardLegend div { display:flex; align-items:center; gap:8px; }
+  .overlay .btn { margin-top:8px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b3651c; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b3651c; }
+  .hidden { display:none !important; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:10px; font-size:.88rem; }
+  .combo { opacity:.85; }
+  .cardRow { display:flex; gap:8px; margin-top:12px; }
+  .cardBtn { flex:1; min-height:78px; border-radius:12px; border:0; font-size:.85rem; font-weight:bold;
+    color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.35); cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px; padding:6px 2px; }
+  .cardBtn span.icon { font-size:1.5rem; }
+  .cardBtn:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.35); }
+  .cardBtn.atk { background:#c9414f; }
+  .cardBtn.shield { background:#2f8fc4; }
+  .cardBtn.heal { background:#2f9e6e; }
+  .cardBtn.gold { background:linear-gradient(135deg,#ffd23f,#ff9f45); color:#3a2200; }
+  .cardBtn:disabled { opacity:.35; cursor:default; }
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🗡️ そなえて突破!バトルデッキダンジョン</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="arena">
+      <div class="waveLabel" id="waveLabel">WAVE 1</div>
+      <div class="foeIcon" id="foeIcon">👹</div>
+      <div class="barRow">
+        <div class="barLabel"><span>敵HP</span><span id="foeHpText"></span></div>
+        <div class="barTrack"><div class="barFill foehp" id="foeHpBar"></div></div>
+      </div>
+      <div class="atkTelegraph" id="atkTelegraph">つぎの攻撃: 8</div>
+      <div class="timerTrack"><div class="timerBar" id="timerBar"></div></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="barRow">
+        <div class="barLabel"><span>じぶんのHP</span><span id="hpText"></span></div>
+        <div class="barTrack"><div class="barFill hp" id="hpBar"></div></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>次々に現れる敵と1対1でわたりあう、ローグライク×カードのバトルゲーム。敵は<b>つぎの攻撃力を予告</b>してくるので、それを見てから配られる3枚の手札のうち<b>1枚だけ</b>を選んで対応しよう。</p>
+      <div class="cardLegend">
+        <div>⚔️ <b>攻撃</b> — 敵にダメージ。ただし反撃をまともに受ける(敵をたおせば反撃なし)</div>
+        <div>🛡️ <b>防御</b> — 防御力が予告攻撃<b>以上</b>なら無傷、足りない分はダメージが貫通</div>
+        <div>❤️ <b>回復</b> — HP回復。ただし反撃をまともに受ける</div>
+        <div>⭐ <b>必殺</b>(まれ) — 大ダメージ＋反撃を完全ブロックの一石二鳥</div>
+      </div>
+      <p>無傷でしのぐ(完全ブロック/敵を倒す)ほどコンボが伸びて得点倍率アップ、被弾するとリセット。カードを選ぶ制限時間はどんどん短くなり、敵のHP・攻撃力も上がっていく無限エスカレーション。HPが0になるまで何体たおせるか挑戦しよう。</p>
+      <p>👆 カードをタップ/クリック / ⌨ 1・2・3キーでも選択可能</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span class="combo" id="comboLabel">COMBO 0</span>
+  </div>
+  <div class="cardRow" id="cardRow"></div>
+  <p class="hint">カードをタップ / ⌨ 1・2・3キーで選択</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
