@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>こげ!ヒルクライム・ペダルダッシュ</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; overflow-x: hidden;
+    background: #0f172a; color: #f1f5f9;
+    font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+    touch-action: manipulation;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: #1e293b; gap: 8px;
+  }
+  header a {
+    color: #93c5fd; text-decoration: none; font-size: 13px; flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  header h1 {
+    font-size: 14px; margin: 0; flex: 1 1 auto; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #wrap {
+    max-width: 480px; margin: 0 auto; padding: 8px; position: relative;
+  }
+  #stage {
+    position: relative; width: 100%; aspect-ratio: 360 / 480;
+    background: #38bdf8; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 0 0 2px #1e293b inset;
+  }
+  canvas { width: 100%; height: 100%; display: block; }
+  #hud {
+    position: absolute; top: 6px; left: 6px; right: 6px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    font-size: 14px; font-weight: bold; text-shadow: 0 1px 3px rgba(0,0,0,.6);
+    pointer-events: none;
+  }
+  #hearts { font-size: 18px; }
+  .overlay {
+    position: absolute; inset: 0; background: rgba(10,15,30,.92);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 16px; gap: 10px;
+  }
+  .hidden { display: none !important; }
+  .overlay h2 { margin: 0 0 4px; font-size: 20px; }
+  .overlay p { margin: 0; font-size: 13px; line-height: 1.6; max-width: 300px; }
+  .btn {
+    margin-top: 8px; padding: 12px 28px; font-size: 16px; font-weight: bold;
+    border: none; border-radius: 999px; background: #f59e0b; color: #1e293b;
+    cursor: pointer; min-height: 44px;
+  }
+  .btn:active { background: #d97706; }
+  #controls {
+    display: flex; gap: 8px; margin-top: 10px; width: 100%; justify-content: center;
+  }
+  #controls.auto-hide { display: none; }
+  .pad {
+    flex: 1; max-width: 110px; min-height: 56px; border-radius: 12px; border: none;
+    background: #334155; color: #f1f5f9; font-size: 22px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none; touch-action: manipulation;
+  }
+  .pad:active { background: #475569; }
+  #jumpPad { background: #b45309; }
+  #jumpPad:active { background: #92400e; }
+  #toggleCtrl {
+    position: fixed; right: 8px; bottom: 8px; z-index: 5;
+    padding: 8px 12px; font-size: 12px; border-radius: 999px; border: none;
+    background: #1e293b; color: #f1f5f9; min-height: 40px;
+  }
+  #speedbar {
+    position: absolute; left: 6px; bottom: 6px; width: 100px; height: 8px;
+    background: rgba(0,0,0,.4); border-radius: 4px; overflow: hidden;
+    pointer-events: none;
+  }
+  #speedfill { height: 100%; width: 0%; background: #4ade80; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🚴 こげ!ヒルクライム・ペダルダッシュ</h1>
+  <a href="../../index.html">🏠 トップへ戻る</a>
+</header>
+
+<div id="wrap">
+  <div id="stage">
+    <canvas id="game" width="360" height="480"></canvas>
+    <div id="hud">
+      <span id="hearts">❤️❤️❤️</span>
+      <span id="scoreLabel">0 m</span>
+    </div>
+    <div id="speedbar"><div id="speedfill"></div></div>
+
+    <div id="introOverlay" class="overlay">
+      <h2>こげ!ヒルクライム・ペダルダッシュ</h2>
+      <p>
+        自転車で坂道をどこまでも駆け上がろう!<br><br>
+        ⬅️➡️ を<b>交互に</b>踏んでペダルをこぎ、スピードを上げる。<br>
+        同じ側を2回続けて踏むと「空こぎ」でスピードが上がらない。<br><br>
+        のぼり坂ではスピードが落ちるので、こぎ続けて0にならないように!<br>
+        速度が0のまま止まるとこけてライフが1減る。<br><br>
+        🪨岩が近づいたらジャンプボタン(またはSpace/↑)で飛び越えよう。<br>
+        🧃ドリンクに触れると3秒間スピード2倍!<br><br>
+        ⌨️ ←/→ または A/D でペダル、Space/↑/W でジャンプ<br>
+        👆 画面下のボタンでも操作できます。<br><br>
+        ライフは♥3つ。坂はどんどん急に、岩の間隔もどんどん短くなる一発勝負!
+      </p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div id="overOverlay" class="overlay hidden">
+      <h2>ゲームオーバー</h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button class="pad" id="padL">⬅️</button>
+    <button class="pad" id="jumpPad">⤴️</button>
+    <button class="pad" id="padR">➡️</button>
+  </div>
+</div>
+<button id="toggleCtrl">🎮 コントローラ</button>
+
+<script>
+(function () {
+  "use strict";
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  var introOverlay = document.getElementById('introOverlay');
+  var overOverlay = document.getElementById('overOverlay');
+  var startBtn = document.getElementById('startBtn');
+  var retryBtn = document.getElementById('retryBtn');
+  var heartsEl = document.getElementById('hearts');
+  var scoreLabel = document.getElementById('scoreLabel');
+  var resultText = document.getElementById('resultText');
+  var speedFill = document.getElementById('speedfill');
+  var controlsEl = document.getElementById('controls');
+  var toggleCtrlBtn = document.getElementById('toggleCtrl');
+  var padL = document.getElementById('padL');
+  var padR = document.getElementById('padR');
+  var jumpPad = document.getElementById('jumpPad');
+
+  // ---------- Audio ----------
+  var actx = null;
+  function ensureAudio() {
+    if (!actx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      actx = new AC();
+    }
+    if (actx.state === 'suspended') actx.resume();
+  }
+  function beep(freq, dur, type, vol, glide) {
+    if (!actx) return;
+    var t0 = actx.currentTime;
+    var osc = actx.createOscillator();
+    var gain = actx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(freq, t0);
+    if (glide) osc.frequency.linearRampToValueAtTime(glide, t0 + dur);
+    gain.gain.setValueAtTime((vol || 0.15), t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    osc.connect(gain).connect(actx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+  function sfxPedalOk() { beep(520, 0.06, 'square', 0.10); }
+  function sfxPedalBad() { beep(140, 0.12, 'sawtooth', 0.10); }
+  function sfxJump() { beep(660, 0.10, 'triangle', 0.12, 880); }
+  function sfxCrash() { beep(90, 0.30, 'sawtooth', 0.18, 40); }
+  function sfxBoost() {
+    beep(500, 0.08, 'square', 0.12);
+    setTimeout(function(){ beep(700, 0.08, 'square', 0.12); }, 70);
+    setTimeout(function(){ beep(940, 0.10, 'square', 0.12); }, 140);
+  }
+  function sfxGameOver() { beep(300, 0.5, 'sawtooth', 0.15, 60); }
+
+  // ---------- Game constants ----------
+  var MAX_SPEED = 260;      // world units / sec at full pedal
+  var COAST_MAX = 190;      // natural speed cap on downhill/flat
+  var PEDAL_BOOST = 34;     // speed added per correct alternating pedal
+  var STALL_TIME = 1.1;     // seconds at speed 0 on an uphill before crash
+  var GROUND_SCALE = 0.34;  // px per world-unit for elevation drawing
+  var PLAYER_SCREEN_X = 100;
+
+  // ---------- State ----------
+  var state = null;
+
+  function freshState() {
+    return {
+      running: false,
+      distance: 0,
+      speed: 40,
+      lastPedal: null,
+      stallTimer: 0,
+      lives: 3,
+      invuln: 0,
+      score: 0,
+      segments: [],
+      nextSegStart: 0,
+      lastSegY: 0,
+      obstacles: [],
+      nextObstacleDist: 400,
+      boosts: [],
+      nextBoostDist: 900,
+      boostTimer: 0,
+      jumpTimer: 0,      // >0 while airborne
+      jumpCooldown: 0,
+      shakeTimer: 0,
+      wobble: 0,
+      over: false
+    };
+  }
+
+  function difficultyFactor(dist) {
+    return 1 + Math.min(dist / 4500, 2.2); // grows then caps
+  }
+
+  function genSegment(s) {
+    var df = difficultyFactor(s.nextSegStart);
+    var len = 260 + Math.random() * 220;
+    var typeRoll = Math.random();
+    var type;
+    // bias away from the screen edges of the elevation band
+    if (s.lastSegY < -140) type = 'down';
+    else if (s.lastSegY > 40) type = 'up';
+    else if (typeRoll < 0.45) type = 'up';
+    else if (typeRoll < 0.8) type = 'down';
+    else type = 'flat';
+
+    var steep;
+    if (type === 'up') steep = (0.10 + Math.random() * 0.10) * df;
+    else if (type === 'down') steep = 0.16 + Math.random() * 0.10;
+    else steep = 0;
+
+    var dy = type === 'up' ? -steep * len : (type === 'down' ? steep * len : 0);
+    var yStart = s.lastSegY;
+    var yEnd = yStart + dy;
+
+    s.segments.push({ start: s.nextSegStart, len: len, type: type, steep: steep, yStart: yStart, yEnd: yEnd });
+    s.nextSegStart += len;
+    s.lastSegY = yEnd;
+
+    // prune old segments behind the player
+    while (s.segments.length > 4 && s.segments[1].start + s.segments[1].len < s.distance - 400) {
+      s.segments.shift();
+    }
+  }
+
+  function segmentAt(s, dist) {
+    for (var i = 0; i < s.segments.length; i++) {
+      var seg = s.segments[i];
+      if (dist >= seg.start && dist < seg.start + seg.len) return seg;
+    }
+    return s.segments[s.segments.length - 1];
+  }
+
+  function elevationAt(s, dist) {
+    var seg = segmentAt(s, dist);
+    if (!seg) return 0;
+    var t = (dist - seg.start) / seg.len;
+    t = Math.max(0, Math.min(1, t));
+    return seg.yStart + (seg.yEnd - seg.yStart) * t;
+  }
+
+  function maybeSpawnObstacle(s) {
+    if (s.distance + 700 > s.nextObstacleDist) {
+      var df = difficultyFactor(s.distance);
+      s.obstacles.push({ dist: s.nextObstacleDist, cleared: false, hit: false });
+      var gap = Math.max(230, 620 - df * 130 + Math.random() * 160);
+      s.nextObstacleDist += gap;
+    }
+    if (s.distance + 900 > s.nextBoostDist) {
+      s.boosts.push({ dist: s.nextBoostDist, taken: false });
+      s.nextBoostDist += 1400 + Math.random() * 900;
+    }
+  }
+
+  function pedal(side) {
+    if (!state || !state.running || state.over) return;
+    var s = state;
+    if (s.lastPedal === side) {
+      sfxPedalBad();
+      s.speed = Math.max(0, s.speed - 6);
+    } else {
+      s.lastPedal = side;
+      sfxPedalOk();
+      var cap = s.boostTimer > 0 ? MAX_SPEED * 1.6 : MAX_SPEED;
+      s.speed = Math.min(cap, s.speed + PEDAL_BOOST);
+    }
+  }
+
+  function doJump() {
+    if (!state || !state.running || state.over) return;
+    var s = state;
+    if (s.jumpTimer <= 0 && s.jumpCooldown <= 0) {
+      s.jumpTimer = 0.55;
+      s.jumpCooldown = 0.15;
+      sfxJump();
+    }
+  }
+
+  function crash(s) {
+    if (s.invuln > 0) return;
+    s.lives -= 1;
+    s.invuln = 1.6;
+    s.shakeTimer = 0.35;
+    s.speed = MAX_SPEED * 0.28;
+    s.stallTimer = 0;
+    sfxCrash();
+    if (s.lives <= 0) {
+      endGame(s);
+    }
+  }
+
+  function endGame(s) {
+    s.over = true;
+    s.running = false;
+    sfxGameOver();
+    resultText.textContent = '走った距離: ' + Math.floor(s.distance) + ' m ／ スコア: ' + Math.floor(s.score);
+    overOverlay.classList.remove('hidden');
+  }
+
+  // ---------- Update / Draw ----------
+  var lastT = null;
+  function frame(ts) {
+    if (lastT === null) lastT = ts;
+    var dt = Math.min(0.05, (ts - lastT) / 1000);
+    lastT = ts;
+
+    if (state && state.running && !state.over) update(state, dt);
+    draw(state);
+
+    requestAnimationFrame(frame);
+  }
+
+  function update(s, dt) {
+    var seg = segmentAt(s, s.distance);
+
+    if (s.jumpTimer > 0) s.jumpTimer -= dt;
+    if (s.jumpCooldown > 0) s.jumpCooldown -= dt;
+    if (s.invuln > 0) s.invuln -= dt;
+    if (s.boostTimer > 0) {
+      s.boostTimer -= dt;
+    } else if (s.speed > MAX_SPEED) {
+      s.speed = MAX_SPEED;
+    }
+    if (s.shakeTimer > 0) s.shakeTimer -= dt;
+
+    // speed dynamics depending on terrain
+    if (seg.type === 'up') {
+      var decay = (60 + seg.steep * 420) * dt;
+      s.speed = Math.max(0, s.speed - decay);
+      if (s.speed <= 0.5) {
+        s.stallTimer += dt;
+        if (s.stallTimer >= STALL_TIME) {
+          s.stallTimer = 0;
+          crash(s);
+        }
+      } else {
+        s.stallTimer = 0;
+      }
+    } else {
+      s.stallTimer = 0;
+      var coastCap = s.boostTimer > 0 ? COAST_MAX * 1.6 : COAST_MAX;
+      if (seg.type === 'down') {
+        s.speed = Math.min(coastCap, s.speed + (40 + seg.steep * 260) * dt);
+      } else {
+        // flat: gentle decay toward a comfortable cruise speed
+        if (s.speed > coastCap * 0.7) s.speed -= 20 * dt;
+      }
+    }
+
+    if (!s.over) {
+      var prevDist = s.distance;
+      s.distance += s.speed * dt;
+      s.score += s.speed * dt * (s.boostTimer > 0 ? 2 : 1) * 0.1;
+
+      genAheadIfNeeded(s);
+      maybeSpawnObstacle(s);
+
+      // obstacle collision check (only when not airborne / not invulnerable)
+      for (var i = 0; i < s.obstacles.length; i++) {
+        var ob = s.obstacles[i];
+        if (!ob.hit && !ob.cleared && ob.dist <= s.distance) {
+          ob.cleared = true;
+          var airborne = s.jumpTimer > 0.15; // must be mid-jump to clear
+          if (!airborne && s.invuln <= 0) {
+            ob.hit = true;
+            crash(s);
+          }
+        }
+      }
+      // boost pickup
+      for (var j = 0; j < s.boosts.length; j++) {
+        var b = s.boosts[j];
+        if (!b.taken && b.dist <= s.distance) {
+          b.taken = true;
+          s.boostTimer = 3;
+          s.score += 50;
+          sfxBoost();
+        }
+      }
+      // prune far-behind items
+      s.obstacles = s.obstacles.filter(function (o) { return o.dist > s.distance - 300; });
+      s.boosts = s.boosts.filter(function (b) { return b.dist > s.distance - 300; });
+    }
+  }
+
+  function genAheadIfNeeded(s) {
+    while (s.nextSegStart < s.distance + 900) genSegment(s);
+  }
+
+  function worldToScreenX(s, dist) {
+    return PLAYER_SCREEN_X + (dist - s.distance);
+  }
+
+  function draw(s) {
+    ctx.clearRect(0, 0, W, H);
+
+    // sky
+    var grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#38bdf8');
+    grad.addColorStop(1, '#bae6fd');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    if (!s) return;
+
+    var shakeX = 0, shakeY = 0;
+    if (s.shakeTimer > 0) {
+      shakeX = (Math.random() - 0.5) * 8;
+      shakeY = (Math.random() - 0.5) * 8;
+    }
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+
+    var baseY = H - 140;
+    var playerY = baseY + elevationAt(s, s.distance) * GROUND_SCALE;
+
+    // ground polygon
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    var step = 8;
+    for (var x = 0; x <= W; x += step) {
+      var d = s.distance + (x - PLAYER_SCREEN_X);
+      var y = baseY + elevationAt(s, d) * GROUND_SCALE;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    var gGrad = ctx.createLinearGradient(0, baseY - 160, 0, H);
+    gGrad.addColorStop(0, '#65a30d');
+    gGrad.addColorStop(1, '#3f6212');
+    ctx.fillStyle = gGrad;
+    ctx.fill();
+
+    // obstacles
+    ctx.font = '30px sans-serif';
+    ctx.textAlign = 'center';
+    s.obstacles.forEach(function (ob) {
+      var sx = worldToScreenX(s, ob.dist);
+      if (sx > -40 && sx < W + 40) {
+        var oy = baseY + elevationAt(s, ob.dist) * GROUND_SCALE;
+        ctx.fillText('🪨', sx, oy - 6);
+      }
+    });
+    // boosts
+    s.boosts.forEach(function (b) {
+      if (b.taken) return;
+      var sx = worldToScreenX(s, b.dist);
+      if (sx > -40 && sx < W + 40) {
+        var oy = baseY + elevationAt(s, b.dist) * GROUND_SCALE;
+        ctx.fillText('🧃', sx, oy - 34);
+      }
+    });
+
+    // player
+    var jumpArc = 0;
+    if (s.jumpTimer > 0) {
+      var tt = 1 - (s.jumpTimer / 0.55);
+      jumpArc = Math.sin(Math.min(1, tt) * Math.PI) * 46;
+    }
+    var flicker = s.invuln > 0 && Math.floor(s.invuln * 12) % 2 === 0;
+    ctx.font = '38px sans-serif';
+    ctx.globalAlpha = flicker ? 0.35 : 1;
+    ctx.fillText('🚴', PLAYER_SCREEN_X, playerY - 14 - jumpArc);
+    ctx.globalAlpha = 1;
+
+    if (s.boostTimer > 0) {
+      ctx.font = '20px sans-serif';
+      ctx.fillText('⚡', PLAYER_SCREEN_X - 26, playerY - 40 - jumpArc);
+    }
+
+    ctx.restore();
+
+    // stall warning
+    var seg = segmentAt(s, s.distance);
+    if (seg && seg.type === 'up' && s.stallTimer > 0.25) {
+      ctx.fillStyle = 'rgba(220,38,38,' + Math.min(0.7, s.stallTimer) + ')';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('⚠ こげ!', W / 2, 40);
+    }
+
+    // HUD
+    heartsEl.textContent = '❤️'.repeat(Math.max(0, s.lives)) + '🖤'.repeat(Math.max(0, 3 - s.lives));
+    scoreLabel.textContent = Math.floor(s.distance) + ' m';
+    var pct = Math.max(0, Math.min(100, (s.speed / MAX_SPEED) * 100));
+    speedFill.style.width = pct + '%';
+    speedFill.style.background = s.boostTimer > 0 ? '#facc15' : (pct < 20 ? '#f87171' : '#4ade80');
+  }
+
+  // ---------- Input ----------
+  var keyMap = { ArrowLeft: 'L', a: 'L', A: 'L', ArrowRight: 'R', d: 'R', D: 'R' };
+  window.addEventListener('keydown', function (e) {
+    if (introOverlay.classList.contains('hidden') === false) return;
+    if (overOverlay.classList.contains('hidden') === false) return;
+    if (keyMap[e.key]) { pedal(keyMap[e.key]); e.preventDefault(); }
+    else if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { doJump(); e.preventDefault(); }
+  });
+
+  function bindPad(el, fn) {
+    el.addEventListener('touchstart', function (e) { e.preventDefault(); fn(); }, { passive: false });
+    el.addEventListener('mousedown', function (e) { e.preventDefault(); fn(); });
+  }
+  bindPad(padL, function () { pedal('L'); });
+  bindPad(padR, function () { pedal('R'); });
+  bindPad(jumpPad, function () { doJump(); });
+
+  // ---------- Controller visibility ----------
+  function isCoarsePointer() {
+    return window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  }
+  var ctrlManuallyShown = null;
+  function applyControllerVisibility() {
+    var show = ctrlManuallyShown !== null ? ctrlManuallyShown : isCoarsePointer();
+    controlsEl.classList.toggle('auto-hide', !show);
+  }
+  toggleCtrlBtn.addEventListener('click', function () {
+    var currentlyShown = !controlsEl.classList.contains('auto-hide');
+    ctrlManuallyShown = !currentlyShown;
+    applyControllerVisibility();
+  });
+  applyControllerVisibility();
+
+  // ---------- Start / Retry ----------
+  function startGame() {
+    ensureAudio();
+    state = freshState();
+    genSegment(state); // seed first segment
+    while (state.nextSegStart < 1200) genSegment(state);
+    state.running = true;
+    introOverlay.classList.add('hidden');
+    overOverlay.classList.add('hidden');
+  }
+  startBtn.addEventListener('click', startGame);
+  retryBtn.addEventListener('click', startGame);
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
