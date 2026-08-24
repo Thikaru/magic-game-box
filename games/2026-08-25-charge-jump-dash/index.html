@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>とびこせ!ためジャンプダッシュ — DAILY GAMES</title>
+<style>
+  :root {
+    --sky1:#2b1f5c; --sky2:#0d0a24; --panel:#1c1440; --paper:#fdf6ff;
+    --gold:#ffd23f; --safe:#5fe3a8; --danger:#ff5d7a; --wall:#c9784a; --spike:#ff6b4a; --dim:#9c8fb5;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--sky1),var(--sky2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.02rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:var(--panel); padding:12px 12px 14px; overflow:hidden;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.85rem; margin-bottom:8px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+
+  canvas { display:block; width:100%; height:auto; background:linear-gradient(180deg,#4a3a86,#221a4a 70%,#3a2e1e); border-radius:10px; touch-action:none; }
+
+  .chargeWrap { height:10px; border-radius:6px; background:rgba(0,0,0,.35); overflow:hidden; margin:10px 0 8px; border:1px solid rgba(253,246,255,.2); }
+  .chargeBar { height:100%; width:0%; background:linear-gradient(90deg,var(--safe),var(--gold),var(--danger)); transition:width .03s linear; }
+
+  .jumpBtn {
+    display:block; width:100%; min-height:56px; font-size:1.15rem; font-weight:700;
+    background:var(--gold); color:#2a1f45; border:0; border-radius:12px;
+    box-shadow:0 5px 0 #b8912a; cursor:pointer; user-select:none; -webkit-user-select:none; touch-action:none;
+  }
+  .jumpBtn:active, .jumpBtn.pressed { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+
+  .toast {
+    position:absolute; left:50%; top:8px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--gold); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5;
+    max-width:90%; text-align:center;
+  }
+  .toast.show { opacity:1; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(10,6,18,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:10; }
+  .overlay h2 { color:var(--gold); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.75; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:#2a1f45; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🏃 とびこせ!ためジャンプダッシュ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="distLabel">距離 0m</span>
+        <span id="scoreLabel">SCORE 0</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+
+      <canvas id="game" width="320" height="360"></canvas>
+
+      <div class="chargeWrap"><div class="chargeBar" id="chargeBar"></div></div>
+      <button class="jumpBtn" id="jumpBtn">おして ためる → はなして ジャンプ</button>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>キャラは自動で右へ走り続ける。下の<b>ジャンプボタン</b>を押しっぱなしにすると
+          ジャンプの高さがどんどん<b>たまり</b>、離した瞬間その高さでジャンプする。</p>
+        <p>行く手には2種類のじゃまものが現れる。<b>ひくい壁</b>はどんな高さのジャンプでも
+          飛び越えられるので、タイミングだけ間に合わせればOK。</p>
+        <p>いっぽう<b>上下にはさまれた「ゲート」</b>は要注意。ため不足だと下の壁に激突し、
+          ため<b>すぎても</b>天井のトゲに激突してしまう。すきまの高さを見て、
+          ちょうどいい「ため」でジャンプの頂点を合わせよう。</p>
+        <p>じゃまものにぶつかるとライフが1減ってコンボがリセット。ノーヒットで抜けるほど
+          コンボが伸びてスコア倍率アップ。まれに浮かぶ🪙コインは触れるだけでボーナス
+          (逃しても減点なし)。距離が伸びるほど速度アップ&ゲートの幅もせまくなる。</p>
+        <p>ライフは♥3つの一発勝負。👆ジャンプボタンを押しっぱなし/はなす、⌨スペースキーでも同様に操作できる。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">ボタンを押す長さでジャンプの高さが変わる。ひくい壁はどんな高さでもOK、ゲートは高さピッタリで抜けよう</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
