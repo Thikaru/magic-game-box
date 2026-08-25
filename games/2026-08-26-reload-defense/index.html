@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>たまぎれ迎撃!リロード・ディフェンス — DAILY GAMES</title>
+<style>
+  :root { --bg1:#0b1020; --bg2:#141c3a; --paper:#f5f7ff; --ink:#12162a;
+    --cyan:#4de3ff; --purple:#b892ff; --gold:#ffd23f; --accent:#7dffb3; --warn:#ff5d6c; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.02rem; letter-spacing:.02em; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; border:3px solid var(--accent); border-radius:12px; background:#080b18; touch-action:none; }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(8,11,24,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:20px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--accent); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.7; font-size:.84rem; margin-bottom:8px; }
+  .overlay .legend { display:flex; flex-direction:column; gap:6px; margin:6px 0 10px; width:100%; text-align:left; }
+  .overlay .legend div { display:flex; align-items:center; gap:8px; font-size:.8rem; }
+  .overlay .legend .dot { width:22px; height:22px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.75rem; }
+  .overlay .legend .dot.normal { background:var(--cyan); color:#04303a; }
+  .overlay .legend .dot.armored { background:var(--purple); color:#2a0d55; }
+  .overlay .legend .dot.gold { background:var(--gold); color:#5a4400; }
+  .overlay .btn { margin-top:8px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #4bbf83; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #4bbf83; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:10px; font-size:.88rem; flex-wrap:wrap; }
+  .combo { opacity:.85; }
+  .controls { display:flex; gap:8px; margin-top:10px; }
+  #reloadBtn { flex:1; font-size:1rem; font-weight:bold; background:var(--purple); color:#1a0838;
+    border:0; border-radius:10px; padding:12px 10px; min-height:48px; cursor:pointer; box-shadow:0 4px 0 #7a55c4; }
+  #reloadBtn:active { transform:translateY(3px); box-shadow:0 1px 0 #7a55c4; }
+  #reloadBtn.reloading { background:#3a3252; color:#8a83a8; box-shadow:0 4px 0 #241f38; }
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔫 たまぎれ迎撃!リロード・ディフェンス</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="560"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>5つのレーンを敵が落ちてくる。落ちてくる敵を<b>直接タップ</b>して撃破しよう。</p>
+      <div class="legend">
+        <div><span class="dot normal">●</span>通常の敵 — 1発で撃破</div>
+        <div><span class="dot armored">🛡</span>装甲の敵 — 2発当てないと倒せない</div>
+        <div><span class="dot gold">★</span>金色の敵 — 1発で高得点、しかも<b>弾を2発補充</b>してくれる</div>
+      </div>
+      <p>マガジンは<b>6発</b>だけ。撃つたびに1発減り、装甲の敵には2発必要。弾切れになると<b>命中しても撃てない</b>のでご用心。</p>
+      <p>弾がなくなったら「🔄リロード」ボタン(⌨Rキー)でフル補充できるが、<b>約1.1秒は撃てない</b>。しかもリロードを押した瞬間、残っていた弾は捨てられてしまう。空になるまで粘るか、敵が少ない今のうちに早めに撃ち尽くしてリロードするか——弾の使いどころとリロードのタイミングを読む判断が鍵。</p>
+      <p>敵が下の点線ラインまで届くとライフが1減る。倒すほどコンボが伸びてスコア倍率アップ、被弾でコンボはリセット。距離が伸びるほど敵の速度と装甲率が上がる無限エスカレーション。ライフは♥3つの一発勝負。</p>
+      <p>👆 敵を直接タップして撃つ / ⌨ 1〜5キーでそのレーンの手前の敵を撃つ・Rキーでリロード</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span class="combo" id="comboLabel">COMBO 0</span>
+    <span id="livesLabel">♥♥♥</span>
+  </div>
+  <div class="hud">
+    <span id="ammoLabel">AMMO 6/6</span>
+    <span id="levelLabel">LV 1</span>
+  </div>
+  <div class="controls">
+    <button id="reloadBtn">🔄 リロード (R)</button>
+  </div>
+  <p class="hint">タップで敵を撃つ / ⌨ 1〜5キーでレーン撃ち・Rでリロード</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
