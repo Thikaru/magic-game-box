@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>まねしてビート!リズムコピー道場</title>
+<style>
+  :root {
+    --bg: #14101c;
+    --panel: #201a2e;
+    --accent: #ffd43b;
+    --text: #f5f2ff;
+    --sub: #b6acd1;
+    --pad1: #ff6b6b;
+    --pad2: #4dabf7;
+    --pad3: #ffd43b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; overflow-x: hidden;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  }
+  body {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center;
+  }
+  header {
+    width: 100%; max-width: 480px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--panel);
+    border-bottom: 1px solid #3a3153;
+  }
+  header a {
+    color: var(--sub); text-decoration: none; font-size: 0.85rem;
+    padding: 8px 10px; border-radius: 8px; background: #2b2440;
+  }
+  header a:active { background: #392f57; }
+  header h1 {
+    font-size: 0.95rem; margin: 0; text-align: right; line-height: 1.3;
+  }
+  main {
+    width: 100%; max-width: 480px;
+    padding: 12px 14px 20px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 12px;
+    position: relative;
+  }
+  .hud {
+    width: 100%;
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+  .hud .lives { color: #ff6b6b; letter-spacing: 2px; }
+  .hud .score { font-weight: bold; color: var(--accent); }
+  .hud .combo { color: #69db7c; }
+
+  .stage {
+    width: 100%;
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 16px 12px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 12px;
+    min-height: 120px;
+    position: relative;
+  }
+  .phase-msg {
+    font-size: 1.1rem; font-weight: bold;
+    min-height: 1.4em;
+    text-align: center;
+  }
+  .phase-msg.listen { color: #74c0fc; }
+  .phase-msg.play { color: #ffa94d; }
+
+  .dots {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+    min-height: 18px;
+  }
+  .dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #3a3153;
+    border: 2px solid #4a4066;
+    transition: transform 0.1s, background 0.1s;
+  }
+  .dot.rest { background: transparent; border-style: dashed; }
+  .dot.active { transform: scale(1.4); background: var(--accent); border-color: var(--accent); }
+  .dot.done { background: #69db7c; border-color: #69db7c; }
+  .dot.failed { background: #ff6b6b; border-color: #ff6b6b; }
+
+  .bonus-banner {
+    background: linear-gradient(90deg, #ffd43b, #ff922b);
+    color: #2b1d00; font-weight: bold; font-size: 0.85rem;
+    padding: 4px 12px; border-radius: 20px;
+  }
+
+  .pads {
+    width: 100%;
+    display: flex; gap: 10px; justify-content: center;
+  }
+  .pad {
+    flex: 1; min-height: 88px; max-width: 140px;
+    border: none; border-radius: 16px;
+    font-size: 0.95rem; font-weight: bold; color: #1a1420;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: transform 0.08s, filter 0.08s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.35);
+  }
+  .pad:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
+  .pad .num { font-size: 0.75rem; opacity: 0.7; }
+  .pad.lit { filter: brightness(1.5); transform: translateY(-2px) scale(1.05); }
+  .pad.correct { filter: brightness(1.7) saturate(1.4); }
+  .pad.wrong { filter: brightness(0.5); }
+  .pad.golden { box-shadow: 0 4px 0 rgba(0,0,0,0.35), 0 0 16px 4px #fff3bf; }
+  .pad1 { background: var(--pad1); }
+  .pad2 { background: var(--pad2); }
+  .pad3 { background: var(--pad3); }
+
+  .hint {
+    font-size: 0.75rem; color: var(--sub); text-align: center;
+  }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(10, 8, 16, 0.92);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    z-index: 50;
+  }
+  .overlay.hidden { display: none; }
+  .card {
+    background: var(--panel);
+    border-radius: 18px;
+    padding: 22px 20px;
+    max-width: 420px; width: 100%;
+    text-align: center;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .card h2 { margin-top: 0; font-size: 1.3rem; }
+  .card p { font-size: 0.9rem; line-height: 1.7; color: var(--sub); text-align: left; }
+  .card .final-score { font-size: 2rem; color: var(--accent); font-weight: bold; margin: 10px 0; }
+  .big-btn {
+    display: block; width: 100%;
+    margin-top: 14px;
+    padding: 14px;
+    font-size: 1.05rem; font-weight: bold;
+    border: none; border-radius: 12px;
+    background: linear-gradient(90deg, #ffd43b, #ff922b);
+    color: #2b1d00;
+    cursor: pointer;
+    min-height: 48px;
+  }
+  .big-btn:active { filter: brightness(0.92); }
+  .legend {
+    display: flex; flex-direction: column; gap: 6px;
+    margin: 12px 0;
+    font-size: 0.85rem;
+    text-align: left;
+  }
+  .legend span.sw {
+    display: inline-block; width: 14px; height: 14px; border-radius: 4px;
+    margin-right: 6px; vertical-align: -2px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="../../index.html">← トップへ</a>
+  <h1>まねしてビート!<br>リズムコピー道場</h1>
+</header>
+
+<main>
+  <div class="hud">
+    <div class="lives" id="lives">♥♥♥</div>
+    <div class="score" id="score">スコア: 0</div>
+    <div class="combo" id="combo">コンボ: 0</div>
+  </div>
+
+  <div class="stage">
+    <div class="bonus-banner" id="bonusBanner" style="display:none;">🌟 ボーナスラウンド!得点2倍</div>
+    <div class="phase-msg" id="phaseMsg">スタートを押してね</div>
+    <div class="dots" id="dots"></div>
+
+    <div class="pads">
+      <button class="pad pad1" id="pad1" data-pad="1">
+        <span>🥁</span><span>キック</span><span class="num">[1]</span>
+      </button>
+      <button class="pad pad2" id="pad2" data-pad="2">
+        <span>👏</span><span>クラップ</span><span class="num">[2]</span>
+      </button>
+      <button class="pad pad3" id="pad3" data-pad="3">
+        <span>🔔</span><span>ベル</span><span class="num">[3]</span>
+      </button>
+    </div>
+    <div class="hint">聞いた順番どおりにパッドをたたこう。何も鳴らない「休符」ではパッドを押さないこと!</div>
+  </div>
+</main>
+
+<div class="overlay" id="startOverlay">
+  <div class="card">
+    <h2>まねしてビート!<br>リズムコピー道場</h2>
+    <p>
+      太鼓の師匠が鳴らすリズムパターンをよく聞いて覚え、同じ順番・同じタイミングで
+      パッドをたたいて「まねっこ」しよう。<br><br>
+      パターンには何も鳴らない「休符」が混ざっていて、休符のところでパッドを押すと
+      失敗してしまう。正しいパッドを、正しいタイミングで、休符では何もしない――
+      よく聞いて、リズムをそのままコピーするのが勝負のカギ。<br><br>
+      成功が続くほどコンボ倍率がアップ、5コンボごとに得点2倍の🌟ボーナスラウンドが
+      登場。パターンはどんどん長く、テンポもどんどん速くなっていく。ライフ♥3つの
+      一発勝負、何回でも挑戦できる!
+    </p>
+    <div class="legend">
+      <div><span class="sw" style="background:#ff6b6b;"></span>パッド1 = 🥁キック(キー: 1)</div>
+      <div><span class="sw" style="background:#4dabf7;"></span>パッド2 = 👏クラップ(キー: 2)</div>
+      <div><span class="sw" style="background:#ffd43b;"></span>パッド3 = 🔔ベル(キー: 3)</div>
+    </div>
+    <p style="text-align:center;">👆パッドをタップ、または⌨1・2・3キーで操作できます。</p>
+    <button class="big-btn" id="startBtn">スタート</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="overOverlay">
+  <div class="card">
+    <h2>ゲームオーバー</h2>
+    <div class="final-score" id="finalScore">0</div>
+    <p id="overStats" style="text-align:center;"></p>
+    <button class="big-btn" id="retryBtn">もういちど</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
