@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>かべをこえてぬれ!フラッドエリア — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#241a3d; --bg2:#120c22; --panel:#31234f; --paper:#f5f0ff;
+    --accent:#ffb454; --marquee:#ffd23f; --ok:#6be08a; --danger:#ff5d7a; --wall:#2a2333;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.0rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--accent); border-radius:14px;
+    background:var(--panel); padding:14px 12px; min-height:440px;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:.8rem; margin-bottom:10px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+  .hud .moves { color:var(--marquee); font-weight:bold; }
+  .hud .moves.low { color:var(--danger); }
+
+  .canvas-wrap { display:flex; justify-content:center; margin-bottom:12px; }
+  canvas { border-radius:8px; touch-action:manipulation; display:block; max-width:100%; }
+
+  .palette { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .colorBtn {
+    width:46px; height:46px; border-radius:12px; border:3px solid rgba(255,255,255,.25);
+    cursor:pointer; touch-action:manipulation; position:relative; box-shadow:0 3px 0 rgba(0,0,0,.25);
+    transition:transform .08s, opacity .15s;
+  }
+  .colorBtn:active { transform:scale(.93); }
+  .colorBtn.current { opacity:.3; cursor:default; border-color:rgba(255,255,255,.7); }
+  .colorBtn .num { position:absolute; bottom:1px; right:3px; font-size:.55rem; color:rgba(255,255,255,.7); }
+
+  .toast {
+    position:absolute; left:50%; top:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.78); color:var(--marquee); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5;
+    white-space:nowrap;
+  }
+  .toast.show { opacity:1; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(18,12,34,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--marquee); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.75; font-size:.85rem; margin-bottom:8px; }
+  .overlay .swatch { display:inline-block; width:14px; height:14px; border-radius:4px; vertical-align:-2px; margin:0 2px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--marquee);
+    color:#241a3d; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.78rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧱 かべをこえてぬれ!フラッドエリア</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="levelLabel">LEVEL 1</span>
+        <span id="scoreLabel">SCORE 0</span>
+        <span class="moves" id="movesLabel">のこり手数 0</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="board" width="320" height="320"></canvas>
+      </div>
+
+      <div class="palette" id="palette"></div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>左上のマスから始まる「じぶんのエリア」を、下の色ボタンをタップして
+          どんどん広げていこう。選んだ色と同じ色のマスがとなりにあれば、
+          エリアに一気にのみこまれる。</p>
+        <p>🧱の<b>壁マス</b>には色が無く、エリアは壁を飛びこえられない。壁の
+          むこう側までエリアを届かせるには、迂回できるルートを考えて色を
+          選ぼう。</p>
+        <p>盤面の壁マス以外<b>ぜんぶ同じ色</b>になればクリア!でも使える
+          回数(のこり手数)には限りがあり、0になる前にクリアできないと
+          ライフが1減ってしまう。<span class="swatch" style="background:var(--marquee)"></span>
+          ★マークのマスをエリアに取り込むと手数が1回復するボーナスも。</p>
+        <p>ライフは♥3つの一発勝負。レベルが進むほど盤面は大きく、色も
+          壁も増えていく。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">👆 色ボタンをタップしてエリアを拡張 / ⌨ 1〜6キーでも操作可</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
