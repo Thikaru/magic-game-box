@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>つないでタイピング!しりとりチェイン — DAILY GAMES</title>
+<style>
+  :root { --bg:#0a1418; --panel:#0f2229; --line:#1f5a5e; --gold:#ffd23f; --teal:#4de6c8; --pink:#ff5da2; --paper:#eafffa; --danger:#ff5d6c; --ok:#57e389; --trap:#c96bff; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:'Hiragino Maru Gothic ProN','M PLUS Rounded 1c',system-ui,sans-serif; background:radial-gradient(circle at 50% -10%,#123338,var(--bg) 70%); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--pink); white-space:nowrap; }
+  h1 { font-family:monospace; color:var(--gold); font-size:1.02rem; letter-spacing:.02em; }
+  .hud { display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:.9rem; color:var(--teal); margin-bottom:8px; flex-wrap:wrap; gap:4px; }
+  .hud b { color:var(--gold); }
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:16px 14px; min-height:420px; overflow:hidden; display:flex; flex-direction:column; }
+  .stage.shake { animation:shake .25s; }
+  @keyframes shake { 0%,100%{ transform:translateX(0) } 25%{ transform:translateX(-6px) } 75%{ transform:translateX(6px) } }
+  .timerBarWrap { height:10px; border-radius:6px; background:rgba(255,255,255,.1); overflow:hidden; margin-bottom:10px; }
+  .timerBar { height:100%; width:100%; background:var(--ok); transition:width .05s linear, background .2s; }
+  .timerBar.low { background:var(--danger); }
+  .roundTag { font-family:monospace; font-size:.75rem; color:var(--teal); margin-bottom:6px; text-align:center; }
+  .roundTag.golden { color:var(--gold); }
+  .trail { font-family:monospace; font-size:.72rem; color:rgba(255,255,255,.55); text-align:center; margin-bottom:10px; min-height:1.1em; white-space:nowrap; overflow-x:auto; }
+  .targetBox { text-align:center; margin-bottom:10px; }
+  .targetBox .label { font-size:.78rem; color:rgba(255,255,255,.7); }
+  .targetBox .kana { font-size:2.1rem; color:var(--gold); font-weight:bold; }
+  .candidates { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .cand { border:2px solid rgba(255,255,255,.2); border-radius:10px; padding:10px 12px; text-align:center; font-size:1.15rem; background:rgba(255,255,255,.04); min-height:44px; display:flex; align-items:center; justify-content:center; letter-spacing:.03em; }
+  .cand.reveal-correct { border-color:var(--ok); background:rgba(87,227,137,.18); color:var(--ok); }
+  .cand.reveal-trap { border-color:var(--trap); background:rgba(201,107,255,.18); color:var(--trap); }
+  .typedTrail { text-align:center; font-family:monospace; font-size:1.1rem; color:var(--teal); min-height:1.6em; margin-bottom:6px; letter-spacing:.06em; }
+  .toast { position:absolute; left:50%; top:44%; transform:translate(-50%,-50%); font-family:monospace; font-size:1.2rem; color:var(--gold); background:rgba(0,0,0,.6); padding:8px 20px; border-radius:10px; z-index:6; pointer-events:none; opacity:0; transition:opacity .15s; text-align:center; max-width:90%; }
+  .toast.show { opacity:1; }
+  .rule { font-size:.72rem; color:rgba(255,255,255,.5); text-align:center; margin-top:auto; padding-top:6px; }
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(4,10,12,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 16px; z-index:5; overflow-y:auto; }
+  .overlay h2 { font-family:monospace; color:var(--gold); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-family:monospace; font-size:1.1rem; background:var(--gold);
+    color:#1c1c28; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .result-score { font-family:monospace; color:var(--gold); font-size:2rem; margin:6px 0; }
+  .vkb-toggle { display:block; margin:10px auto 4px; font-family:monospace; font-size:.85rem; background:rgba(255,255,255,.1);
+    color:var(--paper); border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:8px 14px; min-height:44px; cursor:pointer; width:100%; }
+  .vkb { margin-top:6px; }
+  .vkb-row { display:flex; gap:4px; margin-bottom:4px; }
+  .vkb-row button { flex:1; min-width:0; min-height:44px; font-family:monospace; font-size:1rem; background:rgba(255,255,255,.1);
+    color:var(--paper); border:1px solid rgba(255,255,255,.25); border-radius:6px; cursor:pointer; }
+  .vkb-row button:active { background:var(--gold); color:#1c1c28; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>つないでタイピング!しりとりチェイン</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span id="lives">❤️❤️❤️</span>
+    <span>SCORE <b id="scoreLabel">0</b></span>
+    <span>正解 <b id="clearedLabel">0</b></span>
+    <span>コンボ <b id="comboLabel">0</b></span>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="timerBarWrap"><div class="timerBar" id="timerBar"></div></div>
+    <div class="roundTag" id="roundTag">正しいことばを見つけてタイプしよう</div>
+    <div class="trail" id="trail"></div>
+    <div class="targetBox">
+      <div class="label">つぎは、このかなから始まることば</div>
+      <div class="kana" id="targetKana">-</div>
+    </div>
+    <div class="candidates" id="candidates"></div>
+    <div class="typedTrail" id="typedTrail">&gt;</div>
+    <div class="toast" id="toast"></div>
+    <div class="rule">ルール: 「ん」で終わることばはNG!</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>しりとりの「つぎのことば」を、下にならぶ候補の中から見つけて<b>ローマ字</b>でタイピングしよう。候補はすべて見えているが、指定されたかなから始まらないニセモノや、正しいかなから始まっていても<b>「ん」で終わってしまうNGワード</b>が混ざっているので、よく見きわめてから打ち始めよう。</p>
+      <p>正しいことばを最後まで打ちきると、そのことばが次のお題になって「しりとり」が続いていく。まちがった文字を打つとロスタイムが発生し、タイムバーが0になる前に打ちきれないとライフが1つ減ってしまう。</p>
+      <p>正解が続くほど制限時間はどんどん短くなり、候補の数や「ん」ワードの出現率も上がっていく。5問正解するごとに登場する<b style="color:#ffd23f">🌟ボーナスラウンド</b>は時間が長めで得点2倍!</p>
+      <p>⌨ キーボード入力、またはスマホは下の仮想キーボードでタップ入力できる。ライフは♥3つの一発勝負。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲームオーバー</h2>
+      <p>正解数 <b id="finalCleared"></b> / 最大コンボ <b id="finalCombo"></b></p>
+      <div class="result-score" id="finalScore"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <button class="vkb-toggle" id="vkbToggle">⌨️ 仮想キーボード 表示/非表示</button>
+  <div class="vkb hidden" id="vkb">
+    <div class="vkb-row" data-row="qwertyuiop"></div>
+    <div class="vkb-row" data-row="asdfghjkl"></div>
+    <div class="vkb-row" data-row="zxcvbnm"></div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
