@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>さかのぼれ!メモリーバックトラック — DAILY GAMES</title>
+<style>
+  :root { --bg1:#120a24; --bg2:#241a3d; --paper:#f4f0ff; --ink:#120a24;
+    --accent:#7c9fff; --accent2:#b98bff; --danger:#ff5d6c; --gold:#ffd23f; --ok:#5be3c9; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; flex-wrap:wrap; row-gap:6px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board { border:3px solid var(--accent); border-radius:14px; background:#161027;
+    min-height:420px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:14px; }
+
+  .nInfo { font-size:.85rem; opacity:.9; text-align:center; margin-bottom:6px; }
+  .nInfo b { color:var(--accent2); font-size:1.05rem; }
+
+  .timerTrack { width:100%; height:10px; background:#241a3d; border-radius:6px; overflow:hidden; margin-bottom:14px; }
+  .timerBar { height:100%; width:100%; background:var(--ok); border-radius:6px; transform-origin:left; }
+  .timerBar.warn { background:var(--gold); }
+  .timerBar.danger2 { background:var(--danger); }
+
+  .cardZone { flex:1; display:flex; align-items:center; justify-content:center; width:100%; position:relative; min-height:180px; }
+  .card { width:150px; height:150px; border-radius:50%; background:#241a3d; border:4px solid #362857;
+    display:flex; align-items:center; justify-content:center; font-size:5rem; position:relative;
+    box-shadow:0 6px 0 rgba(0,0,0,.35); transition:transform .12s; }
+  .card.flashOK { border-color:var(--ok); box-shadow:0 0 0 6px rgba(91,227,201,.35); }
+  .card.flashNG { border-color:var(--danger); box-shadow:0 0 0 6px rgba(255,93,108,.35); }
+  .goldBadge { position:absolute; top:-6px; right:-6px; font-size:1.8rem; filter:drop-shadow(0 0 6px rgba(255,210,63,.8)); display:none; }
+  .goldBadge.show { display:block; }
+
+  .practiceLabel { font-size:.9rem; opacity:.85; margin-top:10px; text-align:center; }
+  .bonusBanner { display:none; text-align:center; color:var(--gold); font-weight:bold; font-size:.85rem; margin-bottom:6px; }
+  .bonusBanner.show { display:block; }
+
+  .judgeRow { display:flex; gap:10px; margin-top:14px; width:100%; }
+  .judgeBtn { flex:1; min-height:56px; border-radius:12px; border:0; font-size:1.05rem; font-weight:bold;
+    cursor:pointer; box-shadow:0 5px 0 rgba(0,0,0,.35); }
+  .judgeBtn:active { transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.35); }
+  #diffBtn { background:#3a2b57; color:var(--paper); }
+  #sameBtn { background:var(--accent); color:var(--ink); }
+  .judgeBtn:disabled { opacity:.35; cursor:default; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(9,5,20,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:16px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--accent2); font-size:1.2rem; margin-bottom:10px; }
+  .overlay p { line-height:1.65; font-size:.82rem; margin-bottom:8px; }
+  .overlay .example { display:flex; align-items:center; justify-content:center; gap:6px; font-size:1.5rem; margin:8px 0; }
+  .overlay .example span.arw { font-size:1rem; opacity:.7; }
+  .overlay .legend { display:flex; flex-direction:column; gap:6px; margin:6px 0 10px; width:100%; text-align:left; }
+  .overlay .legend div { display:flex; align-items:center; gap:8px; font-size:.78rem; }
+  .overlay .legend .dot { width:24px; height:24px; border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.85rem; background:#241a3d; }
+  .overlay .btn { margin-top:10px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #4a63a8; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #4a63a8; }
+  .hidden { display:none !important; }
+
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:10px; font-size:.9rem; }
+  .combo { opacity:.85; }
+  .hint { text-align:center; font-size:.75rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧠 さかのぼれ!メモリーバックトラック</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board" id="board">
+      <div class="bonusBanner" id="bonusBanner">🌟 ボーナスラウンド!得点2倍・時間長め</div>
+      <div class="nInfo" id="nInfo">いまは <b>1</b>こ前 と くらべる</div>
+      <div class="timerTrack"><div class="timerBar" id="timerBar"></div></div>
+      <div class="cardZone">
+        <div class="card" id="card">
+          <span id="cardIcon">🔴</span>
+          <span class="goldBadge" id="goldBadge">⭐</span>
+        </div>
+      </div>
+      <div class="practiceLabel hidden" id="practiceLabel">さいしょの1まい。おぼえておこう!</div>
+      <div class="judgeRow" id="judgeRow">
+        <button class="judgeBtn" id="diffBtn">✋ ちがう</button>
+        <button class="judgeBtn" id="sameBtn">👉 おなじ!</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>まん中に色まるが1つずつ出てくるよ。いま出たまるが、<b>「n こ前」</b>に出たまると同じ色なら「おなじ!」、ちがう色なら「ちがう」を制限時間内にえらぼう。</p>
+      <div class="example">🔴 <span class="arw">→</span> 🔵 <span class="arw">→</span> 🔴 <span class="arw">→</span> ❓</div>
+      <p>(1こ前とくらべるモードの例)3まい目は2まい目(🔵)とちがう色なので「ちがう」が正解。もし3まい目が🔵だったら「おなじ!」が正解。</p>
+      <div class="legend">
+        <div><span class="dot">🧠</span>正解が続くと、くらべる相手が「1こ前」→「2こ前」→「3こ前」とどんどん深くなる、思い出す力の無限エスカレーション</div>
+        <div><span class="dot" style="background:var(--gold);color:#5a4400">⭐</span>まれに金色のマークがつくカードに正解すると、ボーナス得点+ライフ回復</div>
+        <div><span class="dot" style="background:var(--gold);color:#5a4400">🌟</span>5コンボごとに時間長め・得点2倍の「ボーナスラウンド」が登場</div>
+      </div>
+      <p>まちがえたり時間切れになるとライフが1減ってコンボはリセット(くらべる数や色の種類はリセットされない)。ライフは♥3つの一発勝負!</p>
+      <p>👆 下のボタンをタップ、⌨ ←・A・Z(ちがう) / →・D・スペース(おなじ)キーでも操作できます。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span class="combo" id="comboLabel">COMBO 0</span>
+    <span id="livesLabel">♥♥♥</span>
+  </div>
+  <p class="hint">いま出た色が「nこ前」と同じか、ちがうかを見極めよう。</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
