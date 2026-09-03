@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>あわせてすりぬけろ!シェイプゲート — DAILY GAMES</title>
+<style>
+  :root {
+    --sky1:#0d2b3d; --sky2:#081420; --panel:#0f2233; --paper:#f1fbff;
+    --gold:#ffd23f; --safe:#5fe3a8; --danger:#ff5d7a;
+    --circle:#5fd2ff; --square:#ffd23f; --triangle:#ff7ad9; --wall:#274a63;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--sky1),var(--sky2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--circle); }
+  h1 { font-size:1.02rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--circle); border-radius:14px;
+    background:var(--panel); padding:12px 12px 14px; overflow:hidden;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.85rem; margin-bottom:8px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+  .combo { opacity:.85; }
+
+  canvas { display:block; width:100%; height:auto; background:linear-gradient(180deg,#123047,#0a1826 70%,#0a1420); border-radius:10px; touch-action:none; }
+
+  .toast {
+    position:absolute; left:50%; top:56px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--gold); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5;
+    max-width:90%; text-align:center;
+  }
+  .toast.show { opacity:1; }
+
+  .shapeRow { display:flex; gap:10px; margin-top:12px; }
+  .shapeBtn {
+    flex:1; min-height:56px; font-size:1.6rem; font-weight:700;
+    background:#16324a; color:var(--paper); border:3px solid #274a63; border-radius:12px;
+    box-shadow:0 5px 0 #06131f; cursor:pointer; user-select:none; -webkit-user-select:none;
+  }
+  .shapeBtn:active { transform:translateY(3px); box-shadow:0 2px 0 #06131f; }
+  .shapeBtn.active[data-shape="circle"] { border-color:var(--circle); box-shadow:0 5px 0 #06131f, 0 0 0 3px rgba(95,210,255,.4) inset; }
+  .shapeBtn.active[data-shape="square"] { border-color:var(--square); box-shadow:0 5px 0 #06131f, 0 0 0 3px rgba(255,210,63,.4) inset; }
+  .shapeBtn.active[data-shape="triangle"] { border-color:var(--triangle); box-shadow:0 5px 0 #06131f, 0 0 0 3px rgba(255,122,217,.4) inset; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(6,12,18,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:10; }
+  .overlay h2 { color:var(--gold); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.75; font-size:.85rem; margin-bottom:8px; }
+  .overlay .legend { display:flex; flex-direction:column; gap:6px; margin:6px 0 10px; width:100%; text-align:left; }
+  .overlay .legend div { display:flex; align-items:center; gap:8px; font-size:.78rem; }
+  .overlay .legend .dot { width:26px; height:26px; border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1rem; background:#16324a; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:#2a1f45; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚪 あわせてすりぬけろ!シェイプゲート</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="scoreLabel">SCORE 0</span>
+        <span class="combo" id="comboLabel">COMBO 0</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+
+      <canvas id="game" width="320" height="360"></canvas>
+
+      <div class="shapeRow" id="shapeRow">
+        <button class="shapeBtn active" id="btnCircle" data-shape="circle">●</button>
+        <button class="shapeBtn" id="btnSquare" data-shape="square">■</button>
+        <button class="shapeBtn" id="btnTriangle" data-shape="triangle">▲</button>
+      </div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>キャラは自動で右へ進み続ける。行く手にはかべに穴があいた「ゲート」が次々にせまってくる。
+          穴の形は <b>●まる / ■しかく / ▲さんかく</b> の3種類で、穴の中にその形のアイコンが見えている。</p>
+        <p>下の3つのボタン(または⌨1・2・3キー)で自分の形を切りかえて、ゲートが届く前に
+          <b>穴と同じ形</b>にしておこう。形が合っていればすり抜けられるが、
+          ちがう形のままだとかべに激突してライフが1減ってしまう。</p>
+        <div class="legend">
+          <div><span class="dot">⏱</span>すり抜けるほどコンボが伸びてスコア倍率アップ、失敗でリセット</div>
+          <div><span class="dot">🚪🚪</span>正解を重ねると、形のちがう2連続ゲートが登場するようになり、すばやい切りかえが必要になる</div>
+          <div><span class="dot" style="background:var(--gold);color:#5a4400">★</span>まれに現れる金色のゲートはどの形でもすり抜けられ、ボーナス得点+ライフ回復のご褒美つき</div>
+        </div>
+        <p>進むほどゲートの速度が上がり、間隔もどんどん短くなる無限エスカレーション。
+          ライフは♥3つの一発勝負。</p>
+        <p>👆 下の●■▲ボタンをタップ/クリック、⌨ 1・2・3キーでも操作できます。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">ゲートの穴の形を見て、ぶつかる前に自分の形を合わせよう</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
