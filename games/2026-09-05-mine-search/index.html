@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>かぞえてかいひ!マインサーチ — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#132a2e; --bg2:#0a1618; --panel:#1c3a3f; --paper:#f2fbf9;
+    --accent:#4fd6c4; --marquee:#ffd23f; --ok:#6be08a; --danger:#ff5d7a; --cell:#264f55; --cellDone:#0f2528;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.0rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--accent); border-radius:14px;
+    background:var(--panel); padding:14px 12px; min-height:440px;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:.8rem; margin-bottom:10px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+  .hud .timer { color:var(--marquee); font-weight:bold; }
+  .hud .timer.low { color:var(--danger); }
+
+  .toast {
+    position:absolute; left:50%; top:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.78); color:var(--marquee); font-weight:700; font-size:.9rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5;
+    white-space:nowrap;
+  }
+  .toast.show { opacity:1; }
+
+  .gridWrap { display:flex; justify-content:center; margin-bottom:8px; }
+  .grid { display:grid; gap:4px; width:100%; max-width:340px; }
+  .cell {
+    aspect-ratio:1/1; min-height:40px; border-radius:6px; border:2px solid rgba(255,255,255,.12);
+    background:var(--cell); color:var(--paper); font-weight:800; font-size:.95rem;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; touch-action:manipulation;
+    transition:transform .06s, background .15s; box-shadow:0 2px 0 rgba(0,0,0,.3);
+  }
+  .cell:active { transform:scale(.92); }
+  .cell.open { background:var(--cellDone); border-color:rgba(255,255,255,.06); box-shadow:none; cursor:default; }
+  .cell.bomb { background:var(--danger); }
+  .cell.star { background:var(--marquee); color:#241a3d; }
+  .cell.cursor { outline:3px solid var(--ok); outline-offset:-2px; }
+  .n1{color:#7fd0ff;} .n2{color:#8bffa0;} .n3{color:#ffd28b;} .n4{color:#ff9bd6;}
+  .n5{color:#ffb3b3;} .n6{color:#c7a4ff;} .n7{color:#ffe98b;} .n8{color:#ffffff;}
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(10,22,24,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--marquee); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.75; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--marquee);
+    color:#241a3d; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.78rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>💣 かぞえてかいひ!マインサーチ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="levelLabel">LEVEL 1</span>
+        <span id="scoreLabel">SCORE 0</span>
+        <span class="timer" id="timerLabel">⏱ 42</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+
+      <div class="gridWrap">
+        <div class="grid" id="grid"></div>
+      </div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>マスをタップして<b>あんぜんなマス</b>だけをぜんぶあばこう。
+          あけたマスに出る数字は「まわり8マスにひそむ💣きけんの数」。
+          数字を手がかりに、きけんのないマスを見きわめてね。</p>
+        <p>0だった場合は自動でまわりのマスまで一気にひらける。
+          きけんをふんでしまうとライフが1減り、盤面が新しく作りなおされる
+          (レベルはそのまま再挑戦)。制限時間切れも同じあつかい。</p>
+        <p>まれに現れる<b>⭐マス</b>を開くとボーナス得点+時間回復。
+          きけんをふまずに1面クリアするごとにコンボが伸びて得点倍率アップ、
+          レベルが進むほど盤面は大きく、きけんの数も増え、時間も短くなる。</p>
+        <p>ライフは♥3つの一発勝負。👆マスをタップ/クリック、
+          ⌨矢印キーでカーソル移動+Enter/スペースで開くのにも対応。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">👆 マスをタップして開く / ⌨ 矢印キーでカーソル移動・Enter/スペースで開く</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var $ = function(id){ return document.getElementById(id); };
+  var gridEl = $('grid'), levelLabel = $('levelLabel'), scoreLabel = $('scoreLabel'),
+      timerLabel = $('timerLabel'), livesLabel = $('livesLabel'), toastEl = $('toast'),
+      introEl = $('intro'), resultEl = $('result'), resultTitle = $('resultTitle'),
+      resultText = $('resultText'), startBtn = $('startBtn'), retryBtn = $('retryBtn');
+
+  var state = null; // set on start
+  var toastTimer = null;
+  var tickTimer = null;
+
+  // ---------- audio ----------
+  var audioCtx = null;
+  function ensureAudio(){
+    if (!audioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function beep(freq, dur, type, vol, delay){
+    if (!audioCtx) return;
+    var t0 = audioCtx.currentTime + (delay || 0);
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(vol || 0.18, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+  function noiseBurst(dur, vol){
+    if (!audioCtx) return;
+    var t0 = audioCtx.currentTime;
+    var bufferSize = Math.floor(audioCtx.sampleRate * dur);
+    var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    var src = audioCtx.createBufferSource();
+    src.buffer = buffer;
+    var gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(vol || 0.3, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(gain); gain.connect(audioCtx.destination);
+    src.start(t0);
+  }
+  function sndOpen(n){ beep(420 + n * 40, 0.08, 'triangle', 0.12); }
+  function sndStar(){ beep(880, 0.09, 'square', 0.16); beep(1320, 0.1, 'square', 0.14, 0.08); }
+  function sndBomb(){ noiseBurst(0.35, 0.35); beep(90, 0.3, 'sawtooth', 0.2); }
+  function sndClear(){ beep(660, 0.09, 'square', 0.16); beep(880, 0.09, 'square', 0.16, 0.09); beep(1180, 0.14, 'square', 0.18, 0.18); }
+  function sndTimeout(){ beep(300, 0.18, 'sawtooth', 0.18); beep(200, 0.22, 'sawtooth', 0.16, 0.12); }
+  function sndOver(){ beep(220, 0.25, 'sawtooth', 0.2); beep(140, 0.4, 'sawtooth', 0.2, 0.2); }
+
+  // ---------- difficulty ----------
+  function levelConfig(level){
+    var size = Math.min(5 + Math.floor((level - 1) / 2), 6);
+    var bombRatio = Math.min(0.14 + (level - 1) * 0.018, 0.34);
+    var bombs = Math.max(3, Math.round(size * size * bombRatio));
+    bombs = Math.min(bombs, size * size - 6);
+    var timeLimit = Math.max(14, 44 - (level - 1) * 2);
+    return { size: size, bombs: bombs, timeLimit: timeLimit };
+  }
+
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 1100);
+  }
+
+  // ---------- game state ----------
+  function newGame(){
+    state = {
+      level: 1, score: 0, life: 3, combo: 0,
+      size: 0, bombs: 0, timeLimit: 0, timeLeft: 0,
+      board: [], // {bomb, star, open, count}
+      firstTapPending: true, cursorR: 0, cursorC: 0, playing: false, busy: false
+    };
+    startLevel(state.level);
+  }
+
+  function startLevel(level){
+    var cfg = levelConfig(level);
+    state.level = level;
+    state.size = cfg.size;
+    state.bombs = cfg.bombs;
+    state.timeLimit = cfg.timeLimit;
+    state.timeLeft = cfg.timeLimit;
+    state.firstTapPending = true;
+    state.playing = true;
+    state.busy = false;
+    state.cursorR = 0; state.cursorC = 0;
+    state.board = [];
+    for (var r = 0; r < cfg.size; r++) {
+      var row = [];
+      for (var c = 0; c < cfg.size; c++) row.push({ bomb: false, star: false, open: false, count: 0 });
+      state.board.push(row);
+    }
+    clearInterval(tickTimer);
+    tickTimer = null;
+    render();
+    updateHud();
+  }
+
+  function placeBombs(avoidR, avoidC){
+    var size = state.size, board = state.board;
+    var cells = [];
+    for (var r = 0; r < size; r++) for (var c = 0; c < size; c++) {
+      if (r === avoidR && c === avoidC) continue;
+      cells.push([r, c]);
+    }
+    // shuffle
+    for (var i = cells.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = cells[i]; cells[i] = cells[j]; cells[j] = tmp;
+    }
+    var bombCells = cells.slice(0, state.bombs);
+    bombCells.forEach(function(pos){ board[pos[0]][pos[1]].bomb = true; });
+
+    // star: pick a random non-bomb, non-avoid cell
+    var starCandidates = cells.slice(state.bombs).filter(function(pos){
+      return !(pos[0] === avoidR && pos[1] === avoidC);
+    });
+    if (starCandidates.length > 0) {
+      var starPos = starCandidates[Math.floor(Math.random() * starCandidates.length)];
+      board[starPos[0]][starPos[1]].star = true;
+    }
+
+    // compute counts
+    for (var rr = 0; rr < size; rr++) {
+      for (var cc = 0; cc < size; cc++) {
+        if (board[rr][cc].bomb) continue;
+        var cnt = 0;
+        for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          var nr = rr + dr, nc = cc + dc;
+          if (nr >= 0 && nr < size && nc >= 0 && nc < size && board[nr][nc].bomb) cnt++;
+        }
+        board[rr][cc].count = cnt;
+      }
+    }
+  }
+
+  function totalSafeCells(){ return state.size * state.size - state.bombs; }
+  function openedSafeCount(){
+    var n = 0;
+    state.board.forEach(function(row){ row.forEach(function(cell){ if (cell.open && !cell.bomb) n++; }); });
+    return n;
+  }
+
+  function startTimer(){
+    clearInterval(tickTimer);
+    tickTimer = setInterval(function(){
+      if (!state.playing || state.busy) return;
+      state.timeLeft--;
+      if (state.timeLeft <= 0) {
+        state.timeLeft = 0;
+        updateHud();
+        onFail(true);
+      } else {
+        updateHud();
+      }
+    }, 1000);
+  }
+
+  function revealCell(r, c){
+    var size = state.size, board = state.board;
+    var stack = [[r, c]];
+    var openedAny = false;
+    while (stack.length) {
+      var pos = stack.pop();
+      var rr = pos[0], cc = pos[1];
+      if (rr < 0 || rr >= size || cc < 0 || cc >= size) continue;
+      var cell = board[rr][cc];
+      if (cell.open || cell.bomb) continue;
+      cell.open = true;
+      openedAny = true;
+      if (cell.star) { state.score += 25 + state.level * 5; state.timeLeft = Math.min(state.timeLimit, state.timeLeft + 5); sndStar(); showToast('⭐ボーナス!+時間'); }
+      else { state.score += 2 + state.level; sndOpen(cell.count); }
+      if (cell.count === 0) {
+        for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          stack.push([rr + dr, cc + dc]);
+        }
+      }
+    }
+    return openedAny;
+  }
+
+  function onCellActivate(r, c){
+    if (!state.playing || state.busy) return;
+    var cell = state.board[r][c];
+    if (cell.open) return;
+
+    if (state.firstTapPending) {
+      placeBombs(r, c);
+      state.firstTapPending = false;
+      startTimer();
+    }
+
+    cell = state.board[r][c];
+    if (cell.bomb) {
+      cell.open = true;
+      render();
+      onFail(false);
+      return;
+    }
+
+    revealCell(r, c);
+    render();
+    updateHud();
+
+    if (openedSafeCount() >= totalSafeCells()) {
+      onLevelClear();
+    }
+  }
+
+  function onLevelClear(){
+    state.busy = true;
+    state.playing = false;
+    clearInterval(tickTimer);
+    state.combo++;
+    var bonus = 20 + state.level * 10 + state.combo * 5;
+    state.score += bonus;
+    sndClear();
+    showToast('LEVEL ' + state.level + ' クリア! +' + bonus);
+    updateHud();
+    setTimeout(function(){
+      startLevel(state.level + 1);
+    }, 900);
+  }
+
+  function onFail(isTimeout){
+    state.busy = true;
+    state.playing = false;
+    clearInterval(tickTimer);
+    state.combo = 0;
+    state.life--;
+    if (isTimeout) { sndTimeout(); showToast('時間切れ…'); }
+    else { sndBomb(); showToast('💣きけん!'); }
+    updateHud();
+    if (state.life <= 0) {
+      setTimeout(gameOver, 700);
+    } else {
+      setTimeout(function(){ startLevel(state.level); }, 900);
+    }
+  }
+
+  function gameOver(){
+    sndOver();
+    resultTitle.textContent = 'ゲームオーバー';
+    resultText.textContent = 'スコア: ' + state.score + '  到達レベル: ' + state.level;
+    resultEl.classList.remove('hidden');
+  }
+
+  function updateHud(){
+    levelLabel.textContent = 'LEVEL ' + state.level;
+    scoreLabel.textContent = 'SCORE ' + state.score;
+    timerLabel.textContent = '⏱ ' + state.timeLeft;
+    timerLabel.classList.toggle('low', state.timeLeft <= 8);
+    livesLabel.textContent = '♥'.repeat(Math.max(0, state.life)) + '♡'.repeat(Math.max(0, 3 - state.life));
+  }
+
+  function render(){
+    var size = state.size;
+    gridEl.style.gridTemplateColumns = 'repeat(' + size + ', 1fr)';
+    gridEl.innerHTML = '';
+    for (var r = 0; r < size; r++) {
+      for (var c = 0; c < size; c++) {
+        var cell = state.board[r][c];
+        var btn = document.createElement('button');
+        btn.className = 'cell';
+        btn.setAttribute('aria-label', 'マス ' + (r + 1) + '-' + (c + 1));
+        if (r === state.cursorR && c === state.cursorC) btn.classList.add('cursor');
+        if (cell.open) {
+          btn.classList.add('open');
+          if (cell.bomb) { btn.classList.add('bomb'); btn.textContent = '💣'; }
+          else if (cell.star) { btn.classList.add('star'); btn.textContent = '⭐'; }
+          else if (cell.count > 0) { btn.textContent = String(cell.count); btn.classList.add('n' + cell.count); }
+          else { btn.textContent = ''; }
+        } else {
+          btn.textContent = '';
+        }
+        (function(rr, cc){
+          btn.addEventListener('click', function(){ state.cursorR = rr; state.cursorC = cc; onCellActivate(rr, cc); });
+        })(r, c);
+        gridEl.appendChild(btn);
+      }
+    }
+  }
+
+  // ---------- keyboard ----------
+  document.addEventListener('keydown', function(e){
+    if (!state || !state.playing) return;
+    var size = state.size;
+    if (e.key === 'ArrowUp') { state.cursorR = Math.max(0, state.cursorR - 1); render(); e.preventDefault(); }
+    else if (e.key === 'ArrowDown') { state.cursorR = Math.min(size - 1, state.cursorR + 1); render(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { state.cursorC = Math.max(0, state.cursorC - 1); render(); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { state.cursorC = Math.min(size - 1, state.cursorC + 1); render(); e.preventDefault(); }
+    else if (e.key === 'Enter' || e.key === ' ') { onCellActivate(state.cursorR, state.cursorC); e.preventDefault(); }
+  });
+
+  // ---------- flow ----------
+  startBtn.addEventListener('click', function(){
+    ensureAudio();
+    introEl.classList.add('hidden');
+    newGame();
+  });
+  retryBtn.addEventListener('click', function(){
+    ensureAudio();
+    resultEl.classList.add('hidden');
+    newGame();
+  });
+})();
+</script>
+</body>
+</html>
