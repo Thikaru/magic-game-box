@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>見越し撃ち!UFOスナイパー — DAILY GAMES</title>
+<style>
+  :root { --bg1:#070a16; --bg2:#101a3a; --paper:#f5f7ff; --ink:#12162a;
+    --cyan:#4de3ff; --orange:#ff9d4d; --gold:#ffd23f; --accent:#7dffb3; --warn:#ff5d6c; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1.02rem; letter-spacing:.02em; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; border:3px solid var(--accent); border-radius:12px; background:#080b18; touch-action:none; }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(8,11,24,.95);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:20px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--accent); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.7; font-size:.84rem; margin-bottom:8px; }
+  .overlay .legend { display:flex; flex-direction:column; gap:6px; margin:6px 0 10px; width:100%; text-align:left; }
+  .overlay .legend div { display:flex; align-items:center; gap:8px; font-size:.8rem; }
+  .overlay .legend .dot { width:22px; height:22px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.75rem; }
+  .overlay .legend .dot.normal { background:var(--cyan); color:#04303a; }
+  .overlay .legend .dot.zigzag { background:var(--orange); color:#4a2400; }
+  .overlay .legend .dot.gold { background:var(--gold); color:#5a4400; }
+  .overlay .btn { margin-top:8px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #4bbf83; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #4bbf83; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:10px; font-size:.88rem; flex-wrap:wrap; }
+  .combo { opacity:.85; }
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🛸 見越し撃ち!UFOスナイパー</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="560"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>画面上からUFOがななめに飛んでくる。下の大砲をタップ/クリックした場所へ弾を発射して撃ち落とそう。</p>
+      <p><b>弾が届くまでには少し時間がかかる。</b>今UFOがいる場所をねらっても、着弾する頃にはもう飛び去ったあと!UFOの進む先を「見越して」少し前方をねらうのがコツ(本物の射撃でいう見越し射撃)。</p>
+      <div class="legend">
+        <div><span class="dot normal">●</span>ふつうのUFO — まっすぐ進む</div>
+        <div><span class="dot zigzag">▲</span>回避UFO — とちゅうできゅうに進路を変える</div>
+        <div><span class="dot gold">★</span>金色UFO — ゆっくりで大きい。命中でボーナス得点+ライフ回復</div>
+      </div>
+      <p>弾は<b>1発ずつ</b>しか飛ばせず、着弾するまで次を撃てない。ねらいを外すとコンボがリセットされ、UFOが下のラインまで届いてしまうとライフが1減る。</p>
+      <p>命中を重ねるほどUFOの速度が上がり、判定もシビアになる無限エスカレーション。5コンボごとに次は必ず★金色UFOが登場するご褒美もある。ライフは♥3つの一発勝負。</p>
+      <p>👆 画面をタップ/クリックでその地点へ発射 / ⌨ 矢印キーで照準を動かし、Space・Enterキーで発射</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span class="combo" id="comboLabel">COMBO 0</span>
+    <span id="livesLabel">♥♥♥</span>
+  </div>
+  <div class="hud">
+    <span id="levelLabel">LV 1</span>
+  </div>
+  <p class="hint">タップ/クリックで発射 / ⌨矢印キーで照準移動・Space/Enterで発射</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
