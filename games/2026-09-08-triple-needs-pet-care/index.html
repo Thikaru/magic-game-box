@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>みきわめろ!スリーニーズ・ペットケア — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#2b1030; --bg2:#150a1c; --panel:#3a1a40; --paper:#fff6ec;
+    --gold:#ffd23f; --safe:#6fe3a0; --danger:#ff5d7a; --warn:#ff9a4c; --dim:#c9a9c9;
+    --hunger:#ff8a65; --energy:#7ec8ff; --mood:#ffd66b;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.0rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:var(--panel); padding:14px 12px; min-height:460px;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.85rem; margin-bottom:8px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+
+  .petArea { position:relative; text-align:center; padding:10px 0 4px; }
+  .petFace { font-size:3.4rem; transition:transform .15s; }
+  .petFace.hurt { animation:shake .4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+  .bonusBanner {
+    position:absolute; top:-4px; left:50%; transform:translateX(-50%);
+    background:var(--gold); color:#2a1f45; font-weight:800; font-size:.78rem;
+    padding:4px 12px; border-radius:999px; white-space:nowrap;
+  }
+
+  .stats { display:flex; flex-direction:column; gap:8px; margin:10px 0 14px; }
+  .statRow { display:flex; align-items:center; gap:8px; }
+  .statRow .ic { font-size:1.2rem; width:26px; text-align:center; }
+  .barWrap { flex:1; height:16px; border-radius:8px; background:rgba(0,0,0,.35); overflow:hidden; position:relative; }
+  .barFill { height:100%; width:70%; transition:width .15s linear, background .2s; }
+  .barFill.hunger { background:linear-gradient(90deg,#ff8a65,#ffb199); }
+  .barFill.energy { background:linear-gradient(90deg,#4fa8f0,#7ec8ff); }
+  .barFill.mood { background:linear-gradient(90deg,#ffb400,#ffd66b); }
+  .barFill.low { filter:saturate(1.6) brightness(1.15); }
+  .barFill.rush { outline:2px solid var(--danger); }
+  .statRow.rush .ic { animation:pulse .5s infinite; }
+  @keyframes pulse { 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.25); } }
+
+  .actions { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:6px; }
+  .actBtn {
+    position:relative; min-height:56px; border-radius:12px; border:2px solid rgba(255,246,236,.3);
+    background:rgba(255,246,236,.08); color:var(--paper); font-size:1.5rem;
+    cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    transition:transform .08s, border-color .15s, background .15s;
+  }
+  .actBtn:active { transform:scale(.94); }
+  .actBtn .key { font-size:.6rem; color:var(--dim); }
+  .actBtn.cooling { opacity:.45; pointer-events:none; }
+  .actBtn.cooling .cool { position:absolute; bottom:0; left:0; height:4px; background:var(--gold); transition:width .05s linear; }
+  .actBtn.bonusReady { border-color:var(--gold); box-shadow:0 0 10px rgba(255,210,63,.6); }
+
+  .toast {
+    position:absolute; left:50%; top:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--gold); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5;
+    max-width:90%; text-align:center;
+  }
+  .toast.show { opacity:1; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(10,6,18,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:10; }
+  .overlay h2 { color:var(--gold); font-size:1.3rem; margin-bottom:12px; }
+  .overlay p { line-height:1.75; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:#2a1f45; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🐾 みきわめろ!スリーニーズ・ペットケア</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="scoreLabel">SCORE 0</span>
+        <span id="timeLabel">⏱ 0s</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+
+      <div class="petArea">
+        <div class="bonusBanner hidden" id="bonusBanner">⭐ ごほうびタイム!</div>
+        <div class="petFace" id="petFace">😊</div>
+      </div>
+
+      <div class="stats" id="stats">
+        <div class="statRow" id="row-hunger">
+          <span class="ic">🍖</span>
+          <div class="barWrap"><div class="barFill hunger" id="bar-hunger"></div></div>
+        </div>
+        <div class="statRow" id="row-energy">
+          <span class="ic">💤</span>
+          <div class="barWrap"><div class="barFill energy" id="bar-energy"></div></div>
+        </div>
+        <div class="statRow" id="row-mood">
+          <span class="ic">🎾</span>
+          <div class="barWrap"><div class="barFill mood" id="bar-mood"></div></div>
+        </div>
+      </div>
+
+      <div class="actions" id="actions">
+        <button class="actBtn" id="btn-hunger" data-key="hunger">🍖ごはん<span class="key">1</span><span class="cool"></span></button>
+        <button class="actBtn" id="btn-energy" data-key="energy">💤ねむる<span class="key">2</span><span class="cool"></span></button>
+        <button class="actBtn" id="btn-mood" data-key="mood">🎾あそぶ<span class="key">3</span><span class="cool"></span></button>
+      </div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>ペットには<b>🍖おなか・💤げんき・🎾きげん</b>の3つのニーズがあり、
+          放っておくと3つとも自動でどんどん減っていく。</p>
+        <p>下の3つのボタンをタップすると、対応するニーズが回復する。ただし1つのボタンを
+          押すと少しの間<b>クールダウン</b>になるため、3つを順番にやりくりして
+          <b>どれが一番やばいか見きわめて</b>お世話し続けよう。</p>
+        <p>どれか1つでも0になるとライフが1減り、そのニーズは少し回復して仕切り直し。
+          時どき2つのニーズが同時にピンチになる「Wピンチ」も発生する。
+          まれに現れる<b>⭐ごほうびタイム</b>中はニーズが減らず、タップで全回復+高得点のチャンス。</p>
+        <p>時間がたつほど減るスピードがどんどん速くなる無限エスカレーション。ライフは♥3つの一発勝負。</p>
+        <p>👆 ボタンをタップ / ⌨ 1・2・3キーでも操作できる</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">3つのニーズを見くらべて、危ないものから優先しておせわしよう</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
