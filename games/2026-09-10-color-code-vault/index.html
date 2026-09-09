@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>あてろ!カラーコード金庫破り — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#101a24; --bg2:#060a12; --panel:#152233; --paper:#f3f8ff;
+    --gold:#ffd23f; --safe:#5fe3a8; --danger:#ff5d7a; --dim:#8494aa;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.0rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:var(--panel); padding:14px 12px; min-height:480px;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.8rem; margin-bottom:8px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+
+  .timerWrap { height:8px; border-radius:5px; background:rgba(0,0,0,.35); overflow:hidden; margin-bottom:10px; }
+  .timerBar { height:100%; background:linear-gradient(90deg,var(--safe),var(--gold)); width:100%; transition:width .1s linear; }
+  .timerBar.warn { background:linear-gradient(90deg,var(--danger),#ff8a4c); }
+
+  .hintBar { min-height:1.4em; text-align:center; font-size:.78rem; color:var(--gold); margin-bottom:8px; }
+
+  .slots { display:flex; justify-content:center; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+  .slot {
+    width:42px; height:42px; border-radius:10px; border:2px dashed rgba(243,248,255,.3);
+    display:flex; align-items:center; justify-content:center; font-size:1.3rem; color:var(--dim);
+    background:rgba(0,0,0,.25); position:relative;
+  }
+  .slot .num { position:absolute; top:1px; left:4px; font-size:.55rem; color:var(--dim); }
+  .slot.filled { border-style:solid; }
+
+  .actionRow { display:flex; justify-content:center; gap:8px; margin-bottom:12px; }
+  .actionRow button {
+    min-height:44px; border-radius:10px; border:0; font-weight:700; font-size:.85rem;
+    padding:8px 16px; cursor:pointer;
+  }
+  #backspaceBtn { background:rgba(243,248,255,.14); color:var(--paper); }
+  #submitBtn { background:var(--safe); color:#0a2a1c; }
+  #submitBtn:disabled { opacity:.4; }
+
+  .palette { display:flex; justify-content:center; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+  .peg {
+    width:46px; height:46px; border-radius:50%; border:2px solid rgba(0,0,0,.25);
+    display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#0b0b12;
+    cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    position:relative; transition:transform .08s;
+  }
+  .peg:active { transform:scale(.9); }
+  .peg .k { position:absolute; bottom:1px; right:4px; font-size:.5rem; color:rgba(0,0,0,.55); }
+
+  .historyLabel { font-size:.75rem; color:var(--dim); margin-bottom:4px; }
+  .history { max-height:150px; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    display:flex; flex-direction:column; gap:6px; padding-right:2px; }
+  .histRow { display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.22);
+    border-radius:8px; padding:6px 8px; font-size:.72rem; flex-wrap:wrap; }
+  .histRow .pegs { display:flex; gap:4px; }
+  .histRow .pegs span { width:16px; height:16px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.3); }
+  .histRow .fb { color:var(--paper); white-space:nowrap; }
+  .histRow .fb b { color:var(--safe); }
+  .histRow .fb i { color:var(--gold); font-style:normal; }
+
+  .toast {
+    position:absolute; left:50%; top:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--gold); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5;
+    max-width:90%; text-align:center;
+  }
+  .toast.show { opacity:1; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(6,10,18,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:10; }
+  .overlay h2 { color:var(--gold); font-size:1.25rem; margin-bottom:12px; }
+  .overlay p { line-height:1.7; font-size:.83rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:#2a1f45; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔐 あてろ!カラーコード金庫破り</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="roundLabel">CODE 1</span>
+        <span id="scoreLabel">SCORE 0</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+
+      <div class="timerWrap"><div class="timerBar" id="timerBar"></div></div>
+      <div class="hintBar" id="hintBar"></div>
+
+      <div class="slots" id="slots"></div>
+      <div class="actionRow">
+        <button id="backspaceBtn">⌫ 1つ消す</button>
+        <button id="submitBtn" disabled>これで試す</button>
+      </div>
+      <div class="palette" id="palette"></div>
+
+      <div class="historyLabel">これまでの試行(新しい順)</div>
+      <div class="history" id="history"></div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>金庫には色のならびの暗証コードが隠されている。下のカラーボタンをタップして
+          コードを組み立て、「これで試す」で挑戦しよう。</p>
+        <p>試すと結果が2つの数字で返ってくる。<b>🎯ちょうど</b>=色も位置もぴったり合っている数、
+          <b>🎨色だけ</b>=色は合っているが位置が違う数。この2つのヒントから正解を論理的にしぼりこもう。</p>
+        <p>制限時間内・回数内に当てられないとライフが1減り、同じ難易度のコードでやり直し。
+          正解し続けるほどコードの桁数・色数が増え、制限時間もどんどん短くなる。</p>
+        <p>まれに「ヒント」が1マスだけ最初から判明していることも。5回連続で解除すると
+          桁数が少なく得点2倍の🌟ボーナスコードが登場する。</p>
+        <p>ライフは♥3つの一発勝負。👆カラーボタンをタップ/クリック、⌨数字キーで色を選択・
+          Backspaceで1つ消す・Enterで試す、にも対応。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">🎯ちょうど・🎨色だけ、の2つの数字から正解の並びを推理しよう</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
