@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>みぬけ!間合いバトル — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#2a0e0e; --bg2:#140505; --panel:#3a1414; --paper:#fdf3ea;
+    --gold:#ffc93f; --danger:#ff4d5e; --ok:#5fe089; --line:rgba(255,255,255,.18);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.02rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board { position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:var(--panel); padding:16px 14px 20px; min-height:520px; transition:box-shadow .15s; }
+  .board.hitFlash { box-shadow:0 0 0 5px var(--danger) inset; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:.8rem; margin-bottom:10px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+
+  .foe { text-align:center; margin-bottom:6px; }
+  .foeEmoji { font-size:2.4rem; display:block; line-height:1.1; }
+  .foeLabel { font-size:.82rem; opacity:.85; min-height:1.3em; }
+  .foeLabel b { color:var(--gold); }
+
+  .timerTrack { height:10px; border-radius:6px; background:rgba(255,255,255,.15); overflow:hidden; margin:10px 0 16px; }
+  .timerBar { height:100%; width:100%; background:linear-gradient(90deg,var(--ok),var(--gold)); border-radius:6px; }
+  .timerBar.danger { background:linear-gradient(90deg,var(--danger),#ff9d5c); }
+
+  .zones { display:flex; gap:8px; margin-bottom:10px; }
+  .zone { flex:1; min-height:96px; border-radius:12px; border:2px solid var(--line);
+    background:rgba(255,255,255,.05); color:var(--paper); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:4px; cursor:pointer; touch-action:manipulation;
+    -webkit-user-select:none; user-select:none; padding:6px 4px; position:relative; transition:transform .08s; }
+  .zone:active { transform:translateY(2px); }
+  .zone .icon { font-size:1.7rem; }
+  .zone .label { font-size:.72rem; opacity:.85; }
+  .zone.danger { border-color:var(--danger); background:rgba(255,77,94,.22); animation:pulse 0.5s infinite alternate; }
+  .zone.golden { border-color:var(--gold); box-shadow:0 0 0 2px var(--gold) inset; }
+  .zone .star { position:absolute; top:4px; right:6px; font-size:.9rem; }
+  @keyframes pulse { from{ box-shadow:0 0 0 0 rgba(255,77,94,.45);} to{ box-shadow:0 0 0 8px rgba(255,77,94,0);} }
+
+  .fighterRow { position:relative; height:22px; margin-bottom:14px; }
+  .fighter { position:absolute; top:0; font-size:1.3rem; transition:left .18s ease; transform:translateX(-50%); }
+
+  .toast { position:absolute; left:50%; top:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--gold); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:20; white-space:nowrap; }
+  .toast.show { opacity:1; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(20,5,5,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:30; }
+  .overlay h2 { color:var(--gold); font-size:1.35rem; margin-bottom:12px; }
+  .overlay p { line-height:1.75; font-size:.86rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:#2a0e0e; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8901e; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8901e; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.78rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🥋 みぬけ!間合いバトル</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="scoreLabel">SCORE 0</span>
+        <span id="comboLabel">COMBO 0</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+
+      <div class="foe">
+        <span class="foeEmoji" id="foeEmoji">🥷</span>
+        <span class="foeLabel" id="foeLabel">相手の出方を見きわめよう</span>
+      </div>
+
+      <div class="timerTrack"><div class="timerBar" id="timerBar"></div></div>
+
+      <div class="zones" id="zones">
+        <div class="zone" id="zone0" data-zone="0">
+          <span class="star hidden">⭐</span>
+          <span class="icon">👊</span>
+          <span class="label">近距離</span>
+        </div>
+        <div class="zone" id="zone1" data-zone="1">
+          <span class="star hidden">⭐</span>
+          <span class="icon">🦵</span>
+          <span class="label">中距離</span>
+        </div>
+        <div class="zone" id="zone2" data-zone="2">
+          <span class="star hidden">⭐</span>
+          <span class="icon">💥</span>
+          <span class="label">遠距離</span>
+        </div>
+      </div>
+      <div class="fighterRow"><span class="fighter" id="fighter">🤺</span></div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>あなたの🤺は<b>近距離・中距離・遠距離</b>の3つの間合いのどこかに立っている。
+          相手🥷が技を繰り出す前に、<b>危険な間合い</b>が赤く光って予告される。</p>
+        <p>今いる間合いが危険なら、安全な間合いのマスをタップ(または⌨キー)して
+          すばやく<b>移動</b>しよう。今いる間合いがもともと安全なら、あわてて動かず
+          <b>じっとしているのが正解</b>。まちがった間合いをタップしたり、危険な間合いに
+          いたまま時間切れになるとライフが1減る。</p>
+        <p>レベルが上がると、<b>2つの間合いが同時に危険</b>になる荒い連続技も混ざる。
+          残る1つの安全な間合いを瞬時に見抜こう。判断できる時間はどんどん短くなる。</p>
+        <p>まれに安全な間合いに<b>⭐金色マーク</b>がつき、そこへ移動(またはそこで静観)
+          できるとボーナス得点+ライフ回復。5回成功するごとに時間長め・得点2倍の
+          🌟ボーナスラウンドも登場する。</p>
+        <p>ライフは♥3つ。0になったら終了、何点まで伸ばせるか挑戦しよう。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">👆 間合いのマスをタップ、⌨ 1/←/A=近距離・2/↓/S=中距離・3/→/D=遠距離</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
