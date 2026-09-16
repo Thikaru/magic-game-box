@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>かみ合わせろ!デュアルテンポドラム — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#1a1330; --bg2:#090713; --paper:#f4f0ff; --gold:#f4c430;
+    --left:#ff6fae; --right:#4ecbff; --miss:#e6533f; --panel:rgba(244,240,255,.06);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:var(--paper); min-height:100vh; -webkit-tap-highlight-color:transparent;
+  }
+  .wrap { max-width:400px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1rem; letter-spacing:.02em; }
+
+  .topRow { display:flex; justify-content:space-between; align-items:center; font-size:.85rem; margin-bottom:8px; }
+  .hearts { color:var(--miss); letter-spacing:2px; }
+  .score { font-weight:bold; color:var(--gold); }
+  .lvLabel { font-size:.8rem; opacity:.85; }
+
+  .stage { position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:#0d0a1a; overflow:hidden; touch-action:none; }
+
+  canvas { display:block; width:100%; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(10,7,20,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    text-align:center; padding:18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:20; }
+  .overlay h2 { color:var(--gold); font-size:1.2rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.84rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:12px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:#241a02; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #a4780f;
+    cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #a4780f; }
+  .hidden { display:none !important; }
+
+  .comboLabel { text-align:center; font-size:.8rem; opacity:.9; margin:8px 0; height:1.1em; }
+
+  .lanes { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .laneBtn { min-height:60px; font-size:1.05rem; font-weight:bold; border:0; border-radius:12px;
+    color:#fff; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.4);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    user-select:none; -webkit-user-select:none; touch-action:none; }
+  .laneBtn.left { background:#7a2c50; }
+  .laneBtn.right { background:#215a72; }
+  .laneBtn .k { font-size:.65rem; opacity:.75; }
+  .laneBtn.active.left { background:var(--left); color:#2a0714; transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.4); }
+  .laneBtn.active.right { background:var(--right); color:#04222c; transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.4); }
+
+  .hint { text-align:center; font-size:.75rem; opacity:.65; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🥁 かみ合わせろ!デュアルテンポドラム</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="topRow">
+    <span class="hearts" id="hearts">♥♥♥</span>
+    <span class="lvLabel" id="lvLabel">Lv.1</span>
+    <span class="score" id="scoreLabel">SCORE 0</span>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="game" width="320" height="420"></canvas>
+
+    <div class="overlay" id="introOverlay">
+      <h2>あそびかた</h2>
+      <p>ひだり(🥁低い音)とみぎ(🔔高い音)、2つのレーンがそれぞれ<b>ちがうテンポ</b>で
+        同時に音を鳴らしながらノーツを落としてくる、ふたつのリズムを同時に聞き分けるドラムゲーム。</p>
+      <p>ノーツが下の判定ラインに重なった瞬間に、そのレーンのボタン(またはキー)を押そう。
+        ひだりとみぎは別々のテンポなので、片方だけに集中すると反対側を逃してしまう。
+        クリック音(メトロノーム)をよく聞いて両方のリズムを同時に体で覚えるのがコツ。</p>
+      <p>まれに<b>ふちが光るノーツ</b>が両レーン同時に出現する「シンクロノーツ」。
+        両方をきちんと成功させると大きなボーナス。★金色のノーツは成功するとボーナス得点+ライフ回復。</p>
+      <p>成功するほど2つのテンポが両方どんどん速くなっていく(比率はそのまま)。
+        タイミングを外したり見逃すとライフが1減る。ライフ(♥3つ)が0になったら終了。</p>
+      <p>👆 下の「ひだり/みぎ」ボタンをタップ/クリック、⌨ F・←(ひだり) / J・→(みぎ)キーでも操作可能。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="resultOverlay">
+      <h2 id="resultTitle">GAME OVER</h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="comboLabel" id="comboLabel"></div>
+
+  <div class="lanes">
+    <button type="button" class="laneBtn left" data-lane="0"><span>🥁 ひだり</span><span class="k">F / ←</span></button>
+    <button type="button" class="laneBtn right" data-lane="1"><span>🔔 みぎ</span><span class="k">J / →</span></button>
+  </div>
+
+  <p class="hint">ひだりとみぎは別テンポ。両方の音を同時に聞き分けよう。</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
