@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>よけてねらえ!カーリング・カーブショット — DAILY GAMES</title>
+<style>
+  :root { --bg1:#0a1a33; --bg2:#041022; --ice:#0d2748; --line:#3a7bd5; --gold:#ffd23f;
+    --paper:#eef6ff; --miss:#ff5d6c; --stone:#2fd0e8; --guard:#8a95ad; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:'Hiragino Maru Gothic ProN','M PLUS Rounded 1c',system-ui,-apple-system,sans-serif;
+    background:radial-gradient(circle at 50% -10%,#123058,var(--bg2) 72%); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); white-space:nowrap; }
+  h1 { color:var(--gold); font-size:1rem; letter-spacing:.02em; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; color:#9fd0ff; margin-bottom:8px; gap:6px; flex-wrap:wrap; }
+  .hud b { color:var(--gold); }
+  .hearts { color:var(--miss); letter-spacing:2px; }
+
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; border:3px solid var(--line); border-radius:14px; background:var(--ice); touch-action:none; }
+
+  .flashMsg { position:absolute; top:8px; left:50%; transform:translateX(-50%); font-size:.85rem;
+    color:var(--gold); background:rgba(0,0,0,.6); padding:4px 14px; border-radius:8px; z-index:4; opacity:0; transition:opacity .2s; pointer-events:none; text-align:center; white-space:nowrap; }
+  .flashMsg.show { opacity:1; }
+
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(4,10,22,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:20px 16px;
+    z-index:5; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--gold); font-size:1.2rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:700; background:var(--gold);
+    color:#1c1c28; border:0; border-radius:10px; padding:12px 32px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .result-score { color:var(--gold); font-size:2rem; margin:6px 0; font-weight:700; }
+
+  .curlRow { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:10px; }
+  .curlBtn { min-height:48px; font-size:.85rem; font-weight:bold; border:2px solid rgba(255,255,255,.2);
+    border-radius:10px; background:rgba(255,255,255,.08); color:var(--paper); cursor:pointer; }
+  .curlBtn .k { display:block; font-size:.65rem; opacity:.7; }
+  .curlBtn.active { background:var(--gold); color:#1c1c28; border-color:var(--gold); }
+
+  .hint { text-align:center; font-size:.75rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🥌 よけてねらえ!カーリング・カーブショット</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span id="hearts" class="hearts">♥♥♥</span>
+    <span>Lv.<b id="levelLabel">1</b></span>
+    <span>連続<b id="comboLabel">0</b></span>
+    <span>SCORE <b id="scoreLabel">0</b></span>
+  </div>
+
+  <div class="stage">
+    <canvas id="game" width="320" height="480"></canvas>
+    <div class="flashMsg" id="flashMsg"></div>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>氷の上にストーン(🥌)を投げて、上の的「ハウス」の真ん中をねらう本格カーリング。</p>
+      <p>👆 ストーンの近くをドラッグして<b>ねらう方向と強さ</b>を決め、指をはなすと発射。ドラッグが長いほど強く飛ぶ。</p>
+      <p>下の「⬅カーブ / まっすぐ / カーブ➡」ボタンで、飛んでいる間じわじわ<b>横に曲がるクセ</b>を選べる。障害物の🪨ガードストーンをうまく迂回するのに使おう。</p>
+      <p>ハウスの中心に近いほど高得点(センター命中で最高得点)。<b>手前線(ホッグライン)を越えられない</b>と「ショート」、<b>奥まで飛びすぎる</b>と「ロング」、🪨ガードに当たると「ヒット」でどれもライフ-1。</p>
+      <p>成功するほどハウスが小さく・ガードが増えていく無限エスカレーション。まれに⭐ゴールデンエンドが出現し、命中でボーナス得点+ライフ回復。5回成功ごとにガード無し・得点2倍の🌟ボーナスエンドも登場。</p>
+      <p>ライフは♥3つの一発勝負。⌨PCでは←→で角度・↑↓で強さを調整しSpace/Enterで発射、1/2/3キーでカーブ選択も可能。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲームオーバー</h2>
+      <p id="resultDetail"></p>
+      <div class="result-score" id="finalScore"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="curlRow">
+    <button type="button" class="curlBtn" data-curl="-1">⬅ カーブ<span class="k">1</span></button>
+    <button type="button" class="curlBtn active" data-curl="0">まっすぐ<span class="k">2</span></button>
+    <button type="button" class="curlBtn" data-curl="1">カーブ ➡<span class="k">3</span></button>
+  </div>
+
+  <p class="hint">ドラッグで狙って発射。カーブでガードストーンをよけよう。</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
