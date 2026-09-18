@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>みちびけ!ロールマッチダンジョン — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#1a1410; --bg2:#0a0806; --paper:#f1e6d0; --ink:#1a1410;
+    --gold:#e8c34d; --senshi:#e6533f; --tozoku:#4caf6d; --mahou:#7c8cf0; --souryo:#f0d060;
+    --panel:rgba(241,230,208,.07); --danger:#e6533f;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:var(--paper); min-height:100vh; -webkit-tap-highlight-color:transparent;
+  }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.02rem; letter-spacing:.02em; }
+
+  .stage { position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:#14100c; padding:12px; overflow:hidden; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(8,6,4,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    text-align:center; padding:18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:20; }
+  .overlay h2 { color:var(--gold); font-size:1.2rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.83rem; margin-bottom:8px; text-align:left; }
+  .overlay .btn { margin-top:12px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #a07f1e;
+    cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #a07f1e; }
+  .hidden { display:none !important; }
+
+  .partyLegend { text-align:left; background:var(--panel); border-radius:8px; padding:8px 12px; font-size:.76rem; margin:8px 0; width:100%; }
+  .partyLegend div { margin:4px 0; }
+
+  .topRow { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; margin-bottom:8px; flex-wrap:wrap; gap:4px; }
+  .floorLabel { font-weight:bold; color:var(--gold); }
+  .scoreLabel { font-weight:bold; }
+  .hpHearts { font-size:1rem; letter-spacing:2px; }
+
+  .bossBanner { text-align:center; font-weight:bold; color:var(--danger); font-size:.85rem;
+    background:rgba(230,83,63,.15); border:1px solid var(--danger); border-radius:8px; padding:4px; margin-bottom:8px; }
+
+  .eventArea { min-height:110px; display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+  .eventCard { background:var(--panel); border-radius:10px; padding:10px; display:flex; align-items:center; gap:10px;
+    border:2px solid rgba(255,255,255,.1); transition:opacity .2s, border-color .2s; }
+  .eventCard.resolved { opacity:.35; border-color:var(--tozoku); }
+  .eventCard.failed { opacity:.5; border-color:var(--senshi); }
+  .eventCard .icon { font-size:1.9rem; flex:0 0 auto; }
+  .eventCard .txt { font-size:.8rem; line-height:1.4; flex:1; text-align:left; }
+  .eventCard .need { font-size:.7rem; opacity:.75; display:block; margin-top:2px; }
+
+  .timerBar { height:10px; border-radius:5px; background:rgba(255,255,255,.1); overflow:hidden; margin-bottom:10px; }
+  .timerFill { height:100%; width:100%; background:linear-gradient(90deg,var(--tozoku),var(--gold),var(--senshi)); transition:width .05s linear; }
+
+  .logBox { min-height:2.2em; font-size:.8rem; text-align:center; background:var(--panel);
+    border-radius:8px; padding:7px; margin-bottom:10px; line-height:1.5; }
+  .logBox b { color:var(--gold); }
+
+  .classGrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+  .classBtn { min-height:64px; border:2px solid rgba(255,255,255,.15); border-radius:12px;
+    background:#241c14; color:var(--paper); cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px; box-shadow:0 4px 0 #0f0c08; }
+  .classBtn:active { transform:translateY(3px); box-shadow:0 1px 0 #0f0c08; }
+  .classBtn .emoji { font-size:1.5rem; }
+  .classBtn .name { font-size:.72rem; font-weight:bold; }
+  .classBtn .key { font-size:.62rem; opacity:.6; }
+  .classBtn.c-senshi { border-color:var(--senshi); }
+  .classBtn.c-tozoku { border-color:var(--tozoku); }
+  .classBtn.c-mahou { border-color:var(--mahou); }
+  .classBtn.c-souryo { border-color:var(--souryo); }
+  .classBtn:disabled { opacity:.35; cursor:default; }
+  .classBtn.flashOk { background:#1c3a24; }
+  .classBtn.flashNg { background:#3a1c1c; }
+
+  .hint { text-align:center; font-size:.7rem; opacity:.6; margin-top:2px; }
+
+  #resultOverlay .scoreBig { font-size:2.1rem; color:var(--gold); font-weight:bold; margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🗺️ みちびけ!ロールマッチダンジョン</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="topRow">
+      <span class="floorLabel" id="floorLabel">地下1階</span>
+      <span class="hpHearts" id="hpHearts">♥♥♥</span>
+      <span class="scoreLabel" id="scoreLabel">SCORE 0</span>
+    </div>
+
+    <div class="bossBanner hidden" id="bossBanner">⚠ ボス階!2つの依頼に応えろ</div>
+
+    <div class="eventArea" id="eventArea"></div>
+
+    <div class="timerBar"><div class="timerFill" id="timerFill"></div></div>
+
+    <div class="logBox" id="logBox">仲間を選んで依頼にこたえよう。</div>
+
+    <div class="classGrid" id="classGrid"></div>
+
+    <p class="hint">⌨ 1=せんし / 2=とうぞく / 3=まほうつかい / 4=そうりょ</p>
+
+    <div class="overlay" id="introOverlay">
+      <h2>みちびけ!ロールマッチダンジョン</h2>
+      <p>ダンジョンの各階で起こる「依頼」に、4人の仲間の中から<b>ふさわしい1人</b>を選んで送りこむ
+        パーティ編成ローグライク。</p>
+      <div class="partyLegend">
+        <div>⚔️ <b>せんし</b> … モンスターとのたたかい向き</div>
+        <div>🗝️ <b>とうぞく</b> … 鍵や罠などの仕掛け向き</div>
+        <div>🔮 <b>まほうつかい</b> … 呪いや魔法トラブル向き</div>
+        <div>✨ <b>そうりょ</b> … 傷ついた仲間や祈りごと向き</div>
+      </div>
+      <p>依頼の内容を読んで、時間内に正しい仲間の<b>ボタンをタップ</b>しよう。まちがえたり時間切れになると
+        ハート(HP)が1減る。5階ごとの<b style="color:#ff8a7a">ボス階</b>では、2つの依頼が同時にやってくる
+        ので両方をさばく判断力が問われる。まれに⭐<b>特別な依頼</b>が出たら、だれを送っても成功でHP回復。</p>
+      <p>進むほど時間はどんどん短くなる。HPが0になったら終了、それまでの<b>到達階とスコア</b>で勝負しよう。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="resultOverlay">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <div class="scoreBig" id="scoreBig"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const CLASSES = [
+    { key:'senshi', emoji:'⚔️', name:'せんし', cls:'c-senshi' },
+    { key:'tozoku', emoji:'🗝️', name:'とうぞく', cls:'c-tozoku' },
+    { key:'mahou', emoji:'🔮', name:'まほうつかい', cls:'c-mahou' },
+    { key:'souryo', emoji:'✨', name:'そうりょ', cls:'c-souryo' },
+  ];
+  const EVENT_POOL = {
+    senshi: [ ['👹','モンスターが立ちふさがっている!'], ['🐺','狼の群れがうなり声をあげる'], ['🐉','小さなドラゴンが道をふさぐ'] ],
+    tozoku: [ ['🔒','宝箱に鍵がかかっている…'], ['🕸️','古い罠のスイッチが見える'], ['🚪','固く閉じた扉がある'] ],
+    mahou:  [ ['👻','呪いの霧が立ちこめる…'], ['🌀','不思議な魔法陣が光っている'], ['🔥','不気味な炎が揺れている'] ],
+    souryo: [ ['🩸','仲間が傷ついてうずくまっている…'], ['🙏','迷える魂が助けを求めている'], ['🕯️','消えかけた灯りがある'] ],
+  };
+  const WILD_EVENT = ['⭐','特別な依頼だ!(だれでもOK)'];
+
+  const $ = (id) => document.getElementById(id);
+  const floorLabel = $('floorLabel'), hpHearts = $('hpHearts'), scoreLabel = $('scoreLabel');
+  const bossBanner = $('bossBanner'), eventArea = $('eventArea'), timerFill = $('timerFill');
+  const logBox = $('logBox'), classGrid = $('classGrid');
+  const introOverlay = $('introOverlay'), resultOverlay = $('resultOverlay');
+  const startBtn = $('startBtn'), retryBtn = $('retryBtn');
+  const resultTitle = $('resultTitle'), resultText = $('resultText'), scoreBig = $('scoreBig');
+
+  let audioCtx = null;
+  function ensureAudio(){ if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+  function beep(freq, dur, type, vol){
+    if(!audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime((vol!=null?vol:0.15), t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0 + dur);
+  }
+  function sndOk(){ beep(660,0.12,'triangle'); beep(880,0.14,'triangle',0.12); }
+  function sndBad(){ beep(180,0.22,'sawtooth',0.15); }
+  function sndWild(){ beep(990,0.1,'sine'); beep(1320,0.16,'sine',0.12); }
+  function sndBoss(){ beep(220,0.3,'square',0.1); }
+  function sndOver(){ beep(300,0.15,'sawtooth'); beep(150,0.35,'sawtooth',0.15); }
+
+  let hp, maxHp, score, floor, successCount, running, events, rafId, timerStart, timerLimit, resolvedAll;
+
+  function buildClassButtons(){
+    classGrid.innerHTML = '';
+    CLASSES.forEach(c => {
+      const b = document.createElement('button');
+      b.className = 'classBtn ' + c.cls;
+      b.id = 'btn-' + c.key;
+      b.innerHTML = '<span class="emoji">'+c.emoji+'</span><span class="name">'+c.name+'</span><span class="key">'+ (CLASSES.indexOf(c)+1) +'</span>';
+      b.addEventListener('click', () => onChoose(c.key, b));
+      classGrid.appendChild(b);
+    });
+  }
+
+  function heartsStr(){
+    let s = '';
+    for(let i=0;i<maxHp;i++) s += (i < hp ? '♥' : '♡');
+    return s;
+  }
+
+  function updateTop(){
+    floorLabel.textContent = '地下' + floor + '階';
+    hpHearts.textContent = heartsStr();
+    scoreLabel.textContent = 'SCORE ' + score;
+  }
+
+  function timeLimitForFloor(isBoss){
+    const base = Math.max(1150, 3300 - successCount * 45);
+    return isBoss ? Math.round(base * 0.82) : base;
+  }
+
+  function randOtherClasses(n){
+    const keys = CLASSES.map(c => c.key);
+    for(let i=keys.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [keys[i],keys[j]]=[keys[j],keys[i]]; }
+    return keys.slice(0, n);
+  }
+
+  function makeEvent(classKey){
+    const pool = EVENT_POOL[classKey];
+    const pick = pool[Math.floor(Math.random()*pool.length)];
+    return { need: classKey, icon: pick[0], text: pick[1], resolved:false, failed:false, wild:false };
+  }
+
+  function startFloor(){
+    const isBoss = floor % 5 === 0;
+    bossBanner.classList.toggle('hidden', !isBoss);
+    const wildChance = isBoss ? 0 : 0.1;
+    events = [];
+    if(isBoss){
+      const two = randOtherClasses(2);
+      events = two.map(k => makeEvent(k));
+      sndBoss();
+    } else if(Math.random() < wildChance){
+      events = [{ need:'any', icon:WILD_EVENT[0], text:WILD_EVENT[1], resolved:false, failed:false, wild:true }];
+      sndWild();
+    } else {
+      const k = randOtherClasses(1)[0];
+      events = [makeEvent(k)];
+    }
+    resolvedAll = false;
+    renderEvents();
+    updateTop();
+    timerLimit = timeLimitForFloor(isBoss);
+    timerStart = performance.now();
+    setButtonsEnabled(true);
+    tick();
+  }
+
+  function renderEvents(){
+    eventArea.innerHTML = '';
+    events.forEach((ev, i) => {
+      const div = document.createElement('div');
+      div.className = 'eventCard';
+      div.id = 'ev-' + i;
+      const needName = ev.wild ? 'だれでもOK' : (CLASSES.find(c=>c.key===ev.need).name);
+      div.innerHTML = '<span class="icon">'+ev.icon+'</span><span class="txt">'+ev.text+'<span class="need">むいている仲間: <b>'+needName+'</b></span></span>';
+      eventArea.appendChild(div);
+    });
+  }
+
+  function setButtonsEnabled(on){
+    CLASSES.forEach(c => { $('btn-'+c.key).disabled = !on; });
+  }
+
+  function tick(){
+    if(!running) return;
+    const elapsed = performance.now() - timerStart;
+    const ratio = Math.max(0, 1 - elapsed / timerLimit);
+    timerFill.style.width = (ratio*100) + '%';
+    if(elapsed >= timerLimit){
+      onTimeout();
+      return;
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function onTimeout(){
+    let anyUnresolved = false;
+    events.forEach((ev, i) => {
+      if(!ev.resolved && !ev.failed){
+        ev.failed = true; anyUnresolved = true;
+        const d = $('ev-'+i); if(d) d.classList.add('failed');
+      }
+    });
+    if(anyUnresolved){
+      hp -= 1;
+      sndBad();
+      logBox.innerHTML = '⏰ <b>時間切れ…</b> だれも応じられなかった';
+    }
+    finishFloorCheck();
+  }
+
+  function onChoose(classKey, btnEl){
+    if(!running) return;
+    ensureAudio();
+    const idx = events.findIndex(ev => !ev.resolved && !ev.failed && (ev.wild || ev.need === classKey));
+    if(idx === -1){
+      const wrongTarget = events.find(ev => !ev.resolved && !ev.failed);
+      if(wrongTarget){
+        hp -= 1;
+        sndBad();
+        btnEl.classList.add('flashNg');
+        setTimeout(()=>btnEl.classList.remove('flashNg'), 220);
+        const failIdx = events.indexOf(wrongTarget);
+        wrongTarget.failed = true;
+        const d = $('ev-'+failIdx); if(d) d.classList.add('failed');
+        logBox.innerHTML = '❌ <b>ミスマッチ!</b> 依頼にふさわしい仲間ではなかった';
+        finishFloorCheck();
+      }
+      return;
+    }
+    const ev = events[idx];
+    ev.resolved = true;
+    successCount += 1;
+    const gained = ev.wild ? 25 : (events.length > 1 ? 20 : 15);
+    score += gained;
+    const d = $('ev-'+idx); if(d) d.classList.add('resolved');
+    btnEl.classList.add('flashOk');
+    setTimeout(()=>btnEl.classList.remove('flashOk'), 220);
+    if(ev.wild && hp < maxHp){ hp += 1; }
+    sndOk();
+    logBox.innerHTML = '✅ <b>成功!</b> +' + gained + (ev.wild ? '(HP回復)' : '');
+    finishFloorCheck();
+  }
+
+  function finishFloorCheck(){
+    const allDone = events.every(ev => ev.resolved || ev.failed);
+    if(!allDone) { updateTop(); return; }
+    cancelAnimationFrame(rafId);
+    setButtonsEnabled(false);
+    updateTop();
+    if(hp <= 0){
+      setTimeout(gameOver, 350);
+      return;
+    }
+    floor += 1;
+    setTimeout(startFloor, 450);
+  }
+
+  function gameOver(){
+    running = false;
+    sndOver();
+    resultTitle.textContent = '💀 ダンジョン全滅';
+    resultText.textContent = '到達階: 地下' + floor + '階';
+    scoreBig.textContent = 'SCORE ' + score;
+    resultOverlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    hp = maxHp = 3; score = 0; floor = 1; successCount = 0; running = true;
+    resultOverlay.classList.add('hidden');
+    updateTop();
+    startFloor();
+  }
+
+  startBtn.addEventListener('click', () => {
+    ensureAudio();
+    introOverlay.classList.add('hidden');
+    startGame();
+  });
+  retryBtn.addEventListener('click', () => {
+    ensureAudio();
+    startGame();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if(!running) return;
+    const map = { '1':'senshi','2':'tozoku','3':'mahou','4':'souryo' };
+    const key = map[e.key];
+    if(key){
+      const btn = $('btn-'+key);
+      if(btn && !btn.disabled) onChoose(key, btn);
+    }
+  });
+
+  buildClassButtons();
+})();
+</script>
+</body>
+</html>
