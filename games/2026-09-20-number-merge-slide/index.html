@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>くっつけて2048!ナンバーマージパズル</title>
+<style>
+  :root {
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    background: #faf8ef;
+    font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+    color: #3c3a32;
+    touch-action: manipulation;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #776e65;
+    color: #fff;
+    flex-wrap: wrap;
+  }
+  header a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    background: rgba(255,255,255,0.15);
+    padding: 8px 12px;
+    border-radius: 8px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  header h1 {
+    font-size: 16px;
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  main {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 12px 14px 24px;
+  }
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .hud-box {
+    background: #bbada0;
+    color: #fff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    text-align: center;
+    min-width: 60px;
+  }
+  .hud-box .label { font-size: 10px; opacity: 0.85; }
+  .hud-box .value { font-size: 16px; font-weight: 700; }
+  #board {
+    width: min(88vw, 340px);
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+    background: #bbada0;
+    border-radius: 10px;
+    padding: 8px;
+    touch-action: none;
+    user-select: none;
+  }
+  .cell {
+    background: rgba(238, 228, 218, 0.35);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: clamp(14px, 5.5vw, 26px);
+    color: #776e65;
+  }
+  .cell.tile {
+    color: #776e65;
+    animation: none;
+  }
+  .cell.light-text { color: #f9f6f2; }
+  .cell.blocker {
+    background: #5a5248;
+    font-size: clamp(16px, 6vw, 24px);
+  }
+  .cell.golden {
+    background: linear-gradient(145deg, #ffe082, #ffb300);
+    color: #5a3d00;
+    box-shadow: 0 0 8px rgba(255,193,7,0.8);
+  }
+  .cell.pop {
+    animation: pop 0.18s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.7); }
+    60% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+  .dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 56px);
+    grid-template-rows: repeat(3, 56px);
+    gap: 6px;
+    justify-content: center;
+    margin: 18px auto 0;
+  }
+  .dpad-btn {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 20px;
+    border: none;
+    border-radius: 8px;
+    background: #8f7a66;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dpad-btn:active { background: #a08c78; }
+  .dpad-up { grid-column: 2; grid-row: 1; }
+  .dpad-left { grid-column: 1; grid-row: 2; }
+  .dpad-down { grid-column: 2; grid-row: 3; }
+  .dpad-right { grid-column: 3; grid-row: 2; }
+  .hint {
+    text-align: center;
+    font-size: 12px;
+    color: #776e65;
+    margin-top: 10px;
+  }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(250, 248, 239, 0.96);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+  }
+  .overlay.hidden { display: none; }
+  .panel {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px 20px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    text-align: center;
+  }
+  .panel h2 {
+    margin: 0 0 10px;
+    font-size: 20px;
+  }
+  .panel p, .panel li {
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: left;
+  }
+  .panel ul { padding-left: 20px; margin: 10px 0; }
+  .big-button {
+    margin-top: 14px;
+    min-height: 48px;
+    width: 100%;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    background: #edc22e;
+    color: #5a3d00;
+    cursor: pointer;
+  }
+  .toast-body { text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <a href="../../index.html">&larr; トップへ</a>
+  <h1>くっつけて2048!ナンバーマージパズル</h1>
+</header>
+<main>
+  <div class="hud">
+    <div class="hud-box"><div class="label">ライフ</div><div class="value" id="lives">&#10084;&#65039;&#10084;&#65039;&#10084;&#65039;</div></div>
+    <div class="hud-box"><div class="label">ラウンド</div><div class="value" id="round">1</div></div>
+    <div class="hud-box"><div class="label">目標</div><div class="value" id="target">64</div></div>
+    <div class="hud-box"><div class="label">スコア</div><div class="value" id="score">0</div></div>
+  </div>
+
+  <div id="board"></div>
+
+  <div class="dpad" aria-hidden="false">
+    <button class="dpad-btn dpad-up" data-dir="up">&#8593;</button>
+    <button class="dpad-btn dpad-left" data-dir="left">&#8592;</button>
+    <button class="dpad-btn dpad-down" data-dir="down">&#8595;</button>
+    <button class="dpad-btn dpad-right" data-dir="right">&#8594;</button>
+  </div>
+
+  <p class="hint">盤面をスワイプ / ボタン / 矢印キー・WASDでスライド</p>
+</main>
+
+<div class="overlay" id="intro-overlay">
+  <div class="panel">
+    <h2>くっつけて2048!ナンバーマージパズル</h2>
+    <p>同じ数字のタイルをスライドでぶつけて合体させ、どんどん大きな数字を作ろう。</p>
+    <ul>
+      <li>盤面をスワイプ、下のボタン、または矢印キー/WASDでタイルを上下左右にスライド。</li>
+      <li>同じ数字が隣り合うと合体して2倍の数字になる。</li>
+      <li>「目標」の数字のタイルを作ればラウンドクリア!次はもっと難しくなる。</li>
+      <li>&#129521;ブロックタイルは動かず合体もしない。ラウンドが進むほど増えて盤面がせまくなる。</li>
+      <li>金色に光るタイルを合体させるとボーナス得点+ライフ回復。</li>
+      <li>どこにもスライドできなくなるとライフが1減って盤面を作り直す。ライフが0でゲームオーバー。</li>
+    </ul>
+    <button class="big-button" id="start-button">スタート</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="toast-overlay">
+  <div class="panel">
+    <h2 id="toast-title"></h2>
+    <p class="toast-body" id="toast-body"></p>
+    <button class="big-button" id="toast-button"></button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="gameover-overlay">
+  <div class="panel">
+    <h2>ゲームオーバー</h2>
+    <p>スコア: <strong id="final-score">0</strong><br>到達ラウンド: <strong id="final-round">1</strong></p>
+    <button class="big-button" id="retry-button">もういちど</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
