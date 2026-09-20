@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ゴーノーゴー・シグナル — DAILY GAMES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg1:#101226; --bg2:#1c1f42; --go:#33d17a; --nogo:#ff5d6c; --gold:#ffd23f; --ink:#fffdf5; --sub:#a7abd6; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'M PLUS Rounded 1c',system-ui,sans-serif; background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:16px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; flex-wrap:wrap; row-gap:6px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-family:'DotGothic16',monospace; color:var(--gold); font-size:1.25rem; }
+
+  .stage { position:relative; border:4px solid var(--gold); border-radius:14px; background:#0b0d20; padding:16px; min-height:420px; }
+
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(11,13,32,.95);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:22px 18px;
+    overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:5; }
+  .overlay h2 { font-family:'DotGothic16',monospace; color:var(--gold); font-size:1.5rem; margin-bottom:14px; }
+  .overlay p { line-height:1.85; font-size:.92rem; margin-bottom:8px; color:var(--ink); }
+  .overlay .em { color:var(--go); font-weight:700; }
+  .overlay .bad { color:var(--nogo); font-weight:700; }
+  .overlay .btn { margin-top:18px; font-family:'DotGothic16',monospace; font-size:1.1rem; background:var(--gold);
+    color:#1c1c28; border:0; border-radius:10px; padding:12px 36px; min-height:48px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .overlay .btn:hover { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; font-family:'DotGothic16',monospace; font-size:.95rem; color:var(--ink); margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  .hud .lives { color:var(--nogo); letter-spacing:2px; }
+  .hud .score { color:var(--gold); }
+  .hud .combo { color:var(--go); font-size:.85rem; }
+
+  .roundBanner { text-align:center; font-family:'DotGothic16',monospace; font-size:1rem; color:var(--sub); margin-bottom:6px; min-height:1.3em; }
+  .roundBanner.bonus { color:var(--gold); }
+
+  .timerTrack { width:100%; height:10px; border-radius:6px; background:rgba(255,255,255,.12); overflow:hidden; margin-bottom:16px; }
+  .timerFill { height:100%; width:100%; background:linear-gradient(90deg,var(--go),var(--gold)); }
+  .timerFill.danger { background:linear-gradient(90deg,var(--nogo),var(--gold)); }
+
+  .lampGrid { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-bottom:14px; min-height:170px; align-content:center; }
+  .lampSlot { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .lamp { width:64px; height:64px; border-radius:14px; border:2px solid rgba(255,255,255,.35);
+    background:rgba(255,255,255,.06); font-size:1.9rem; display:flex; align-items:center; justify-content:center;
+    touch-action:manipulation; user-select:none; -webkit-user-select:none; cursor:pointer; transition:transform .08s; }
+  .lamp:active { transform:scale(.93); }
+  .lamp.good { background:rgba(51,209,122,.28); border-color:var(--go); }
+  .lamp.bad { background:rgba(255,93,108,.35); border-color:var(--nogo); }
+  .lamp.gold.good { background:rgba(255,210,63,.35); border-color:var(--gold); }
+  .lampKey { font-size:.7rem; color:var(--sub); font-family:'DotGothic16',monospace; }
+
+  .roundMsg { text-align:center; font-family:'DotGothic16',monospace; font-size:1.1rem; min-height:1.6em; margin-bottom:4px; }
+  .roundMsg.ok { color:var(--go); }
+  .roundMsg.ng { color:var(--nogo); }
+
+  .helpHint { text-align:center; font-size:.78rem; color:var(--sub); margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>とっさの判断!ゴーノーゴー・シグナル</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage" id="stage">
+
+    <div class="hud">
+      <span class="lives" id="livesEl">♥♥♥</span>
+      <span class="score" id="scoreEl">SCORE 0</span>
+      <span class="combo" id="comboEl"></span>
+    </div>
+
+    <div class="roundBanner" id="roundBanner"></div>
+    <div class="timerTrack"><div class="timerFill" id="timerFill"></div></div>
+
+    <div class="lampGrid" id="lampGrid"></div>
+
+    <div class="roundMsg" id="roundMsg"></div>
+    <div class="helpHint">👆タップ / ⌨数字キーでも操作できます</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="introOverlay">
+      <h2>ゴーノーゴー・シグナル</h2>
+      <p>ランプがいっせいに光る!<span class="em">⭕(ゴー)だけ</span>を全部すばやくタップしよう。</p>
+      <p><span class="bad">✖️(ノーゴー)</span>には絶対に触れないこと。1つでも触れたら即アウトでライフが1減る。</p>
+      <p>もしランプが全部✖️だったら…それは「何もしない」のが正解!指を止めてじっと時間切れを待とう。</p>
+      <p>制限時間内に⭕を全部タップ(または✖️だけの時は何もせず待機)できればラウンドクリア。成功が続くほどランプの数が増え、制限時間も短くなっていく。まれに光る<span class="em">⭐</span>は最優先でねらうとボーナス得点+ライフ回復。</p>
+      <p>操作: 👆ランプをタップ/クリック、⌨数字キー(1〜7)でも対応。ライフは♥3つ、0になったら終了。</p>
+      <button type="button" class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- ゲームオーバー画面: もういちどボタンで再挑戦(必須要件2) -->
+    <div class="overlay hidden" id="overOverlay">
+      <h2>ゲームオーバー</h2>
+      <p id="finalScore">SCORE 0</p>
+      <p id="finalClears"></p>
+      <button type="button" class="btn" id="retryBtn">もういちど</button>
+    </div>
+
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
