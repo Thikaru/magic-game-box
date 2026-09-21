@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>みやぶれ!一瞬わざ名タイピング道場 — DAILY GAMES</title>
+<style>
+  :root { --bg:#170a0a; --panel:#2a1210; --line:#6b2a24; --gold:#ffd23f; --ember:#ff7043; --paper:#fff3ea; --danger:#ff5d6c; --ok:#57e389; --teal:#4de6c8; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:'Hiragino Maru Gothic ProN','M PLUS Rounded 1c',system-ui,sans-serif; background:radial-gradient(circle at 50% -10%,#3a1512,var(--bg) 70%); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--ember); white-space:nowrap; }
+  h1 { font-family:monospace; color:var(--gold); font-size:1rem; letter-spacing:.02em; }
+  .hud { display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:.88rem; color:var(--teal); margin-bottom:8px; flex-wrap:wrap; gap:4px; }
+  .hud b { color:var(--gold); }
+  .stage { position:relative; border:3px solid var(--line); border-radius:14px; background:var(--panel); padding:16px 14px; min-height:440px; overflow:hidden; display:flex; flex-direction:column; }
+  .stage.shake { animation:shake .25s; }
+  @keyframes shake { 0%,100%{ transform:translateX(0) } 25%{ transform:translateX(-6px) } 75%{ transform:translateX(6px) } }
+  .opponentRow { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px; font-family:monospace; font-size:.8rem; color:rgba(255,255,255,.7); }
+  .opponentRow .face { font-size:1.6rem; }
+  .opponentHP { display:flex; gap:3px; }
+  .opponentHP span { width:14px; height:10px; border-radius:2px; background:rgba(255,255,255,.15); }
+  .opponentHP span.on { background:var(--danger); }
+  .timerBarWrap { height:10px; border-radius:6px; background:rgba(255,255,255,.1); overflow:hidden; margin-bottom:10px; }
+  .timerBar { height:100%; width:100%; background:var(--gold); transition:width .05s linear, background .2s; }
+  .timerBar.input { background:var(--ok); }
+  .timerBar.low { background:var(--danger); }
+  .phaseTag { font-family:monospace; font-size:.78rem; color:var(--teal); text-align:center; margin-bottom:6px; }
+  .phaseTag.golden { color:var(--gold); }
+  .phaseTag.bonus { color:var(--ember); }
+  .wordBox { flex:1; display:flex; align-items:center; justify-content:center; text-align:center; min-height:120px; }
+  .wordBox .kana { font-size:2.3rem; font-weight:bold; color:var(--gold); letter-spacing:.04em; }
+  .wordBox .blanks { font-family:monospace; font-size:1.6rem; color:var(--teal); letter-spacing:.12em; word-break:break-all; }
+  .typedHint { text-align:center; font-family:monospace; font-size:.78rem; color:rgba(255,255,255,.5); min-height:1.2em; margin-bottom:4px; }
+  .toast { position:absolute; left:50%; top:44%; transform:translate(-50%,-50%); font-family:monospace; font-size:1.15rem; color:var(--gold); background:rgba(0,0,0,.65); padding:8px 20px; border-radius:10px; z-index:6; pointer-events:none; opacity:0; transition:opacity .15s; text-align:center; max-width:90%; }
+  .toast.show { opacity:1; }
+  .rule { font-size:.72rem; color:rgba(255,255,255,.5); text-align:center; margin-top:auto; padding-top:6px; }
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(8,4,4,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 16px; z-index:5; overflow-y:auto; }
+  .overlay h2 { font-family:monospace; color:var(--gold); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-family:monospace; font-size:1.1rem; background:var(--gold);
+    color:#1c1508; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .result-score { font-family:monospace; color:var(--gold); font-size:2rem; margin:6px 0; }
+  .vkb-toggle { display:block; margin:10px auto 4px; font-family:monospace; font-size:.85rem; background:rgba(255,255,255,.1);
+    color:var(--paper); border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:8px 14px; min-height:44px; cursor:pointer; width:100%; }
+  .vkb { margin-top:6px; }
+  .vkb-row { display:flex; gap:4px; margin-bottom:4px; }
+  .vkb-row button { flex:1; min-width:0; min-height:44px; font-family:monospace; font-size:1rem; background:rgba(255,255,255,.1);
+    color:var(--paper); border:1px solid rgba(255,255,255,.25); border-radius:6px; cursor:pointer; }
+  .vkb-row button:active { background:var(--gold); color:#1c1508; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>みやぶれ!一瞬わざ名タイピング道場</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span id="lives">❤️❤️❤️</span>
+    <span>SCORE <b id="scoreLabel">0</b></span>
+    <span>連勝 <b id="comboLabel">0</b></span>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="opponentRow">
+      <span class="face" id="opponentFace">🥋</span>
+      <span id="opponentLabel">見習い道場破り</span>
+      <span class="opponentHP" id="opponentHP"></span>
+    </div>
+    <div class="timerBarWrap"><div class="timerBar" id="timerBar"></div></div>
+    <div class="phaseTag" id="phaseTag">わざの名前をよくみて!</div>
+    <div class="wordBox" id="wordBox"><div class="kana" id="kanaDisplay">-</div></div>
+    <div class="typedHint" id="typedHint">&nbsp;</div>
+    <div class="toast" id="toast"></div>
+    <div class="rule">見えなくなったら記憶だけを頼りにローマ字入力!</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>道場破りが繰り出す<b>わざの名前</b>が、かなでほんの一瞬だけ表示される。よく見て覚えたら、わざが<b>見えなくなったあと</b>に記憶だけを頼りにローマ字でタイピングして「打ち返す」のがルール。</p>
+      <p>制限時間内に最後まで正しく打ちきればカウンター成功!打ちまちがえるとロスタイムが発生し、時間切れになるとわざを食らってライフが1減る(正解は表示されてから次のわざへ)。</p>
+      <p>連続成功が続くほど<b>見せる時間はどんどん短く</b>なり、わざの名前も長く難しくなっていく。5回成功するごとに見せる時間・答える時間が長めで得点2倍の<b style="color:#ffd23f">🌟会心ラウンド</b>が登場し、まれに現れる<b style="color:#ffd23f">⭐会心のわざ</b>を打ち返すとライフも1回復する。</p>
+      <p>相手を3回カウンターすると1人抜き、次のより手ごわい道場破りへ!⌨ 物理キーボードまたは下の仮想キーボードでタップ入力できる。ライフは♥3つの一発勝負。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">ゲームオーバー</h2>
+      <p>カウンター成功 <b id="finalCleared"></b>回 / 最大連勝 <b id="finalCombo"></b> / <b id="finalDefeated"></b>人抜き</p>
+      <div class="result-score" id="finalScore"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <button class="vkb-toggle" id="vkbToggle">⌨️ 仮想キーボード 表示/非表示</button>
+  <div class="vkb hidden" id="vkb">
+    <div class="vkb-row" data-row="qwertyuiop"></div>
+    <div class="vkb-row" data-row="asdfghjkl"></div>
+    <div class="vkb-row" data-row="zxcvbnm"></div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
