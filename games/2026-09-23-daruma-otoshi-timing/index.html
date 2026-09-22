@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>くずすな!だるま落としタイミング — DAILY GAMES</title>
+<style>
+  :root { --bg1:#1a1208; --bg2:#2e1c0c; --wood:#c9752f; --wood-dark:#8a4a1e; --gold:#ffd23f; --ink:#fff6e8; --sub:#d9b48a; --good:#57e389; --bad:#ff5d6c; --perfect:#4de6c8; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:'Hiragino Maru Gothic ProN','M PLUS Rounded 1c',system-ui,sans-serif; background:radial-gradient(circle at 50% -10%,var(--bg2),var(--bg1) 75%); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--ink); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); white-space:nowrap; }
+  h1 { font-family:monospace; color:var(--gold); font-size:1rem; letter-spacing:.02em; }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:.88rem; color:var(--sub); margin-bottom:8px; flex-wrap:wrap; gap:4px; }
+  .hud b { color:var(--gold); }
+  .hud .lives { color:var(--bad); letter-spacing:1px; }
+
+  .stage { position:relative; border:3px solid var(--wood-dark); border-radius:14px; background:#241608; padding:16px 14px; min-height:480px; overflow:hidden; display:flex; flex-direction:column; }
+  .stage.shake { animation:shake .3s; }
+  @keyframes shake { 0%,100%{ transform:translateX(0) } 25%{ transform:translateX(-7px) } 75%{ transform:translateX(7px) } }
+
+  .roundBanner { text-align:center; font-family:monospace; font-size:.9rem; color:var(--sub); margin-bottom:6px; min-height:1.3em; }
+  .roundBanner.bonus { color:var(--gold); }
+
+  .tiltWrap { margin-bottom:10px; }
+  .tiltLabel { font-family:monospace; font-size:.72rem; color:var(--sub); margin-bottom:3px; display:flex; justify-content:space-between; }
+  .tiltTrack { height:12px; border-radius:7px; background:rgba(255,255,255,.1); overflow:hidden; }
+  .tiltFill { height:100%; width:0%; background:linear-gradient(90deg,var(--good),var(--gold)); transition:width .25s ease; }
+  .tiltFill.danger { background:linear-gradient(90deg,var(--gold),var(--bad)); }
+
+  .towerArea { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; min-height:190px; padding:6px 0 10px; }
+  .tower { display:flex; flex-direction:column-reverse; align-items:center; gap:3px; transform-origin:bottom center; transition:transform .15s ease; }
+  .block { width:min(56vw,220px); height:26px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:monospace; font-size:.75rem; color:#2a1608; box-shadow:inset 0 -3px 0 rgba(0,0,0,.2), 0 2px 3px rgba(0,0,0,.35); }
+  .block.target { background:var(--perfect); outline:2px solid var(--ink); font-weight:bold; }
+  .block.gold { background:var(--gold); outline:2px solid #fff; }
+  .block.plain { background:var(--wood); }
+  .face { font-size:2.2rem; margin-bottom:2px; }
+
+  .attemptMsg { text-align:center; font-family:monospace; font-size:1.1rem; min-height:1.6em; margin-bottom:4px; }
+  .attemptMsg.perfect { color:var(--perfect); }
+  .attemptMsg.good { color:var(--good); }
+  .attemptMsg.miss { color:var(--bad); }
+  .attemptMsg.clear { color:var(--gold); }
+
+  .track { position:relative; height:34px; border-radius:8px; background:rgba(255,255,255,.08); margin:6px 0 12px; overflow:hidden; border:1px solid rgba(255,255,255,.2); }
+  .zoneGood { position:absolute; top:0; bottom:0; background:rgba(255,210,63,.35); }
+  .zonePerfect { position:absolute; top:0; bottom:0; background:rgba(77,230,200,.55); }
+  .marker { position:absolute; top:-3px; bottom:-3px; width:5px; background:var(--ink); border-radius:3px; box-shadow:0 0 6px rgba(255,255,255,.8); }
+
+  .hitBtn { display:block; width:100%; min-height:56px; font-family:monospace; font-size:1.2rem; background:var(--gold); color:#2a1608; border:0; border-radius:12px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .hitBtn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+
+  .rule { font-size:.72rem; color:var(--sub); text-align:center; margin-top:8px; }
+
+  .overlay { position:absolute; inset:4px; border-radius:10px; background:rgba(20,12,4,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 16px; z-index:5; overflow-y:auto; }
+  .overlay h2 { font-family:monospace; color:var(--gold); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.85rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-family:monospace; font-size:1.1rem; background:var(--gold);
+    color:#2a1608; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:44px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .result-score { font-family:monospace; color:var(--gold); font-size:2rem; margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>くずすな!だるま落としタイミング</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span class="lives" id="livesEl">♥♥♥</span>
+    <span>SCORE <b id="scoreEl">0</b></span>
+    <span>連続会心 <b id="comboEl">0</b></span>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="roundBanner" id="roundBanner">タワー 1</div>
+
+    <div class="tiltWrap">
+      <div class="tiltLabel"><span>ゆがみ</span><span id="tiltPct">0%</span></div>
+      <div class="tiltTrack"><div class="tiltFill" id="tiltFill"></div></div>
+    </div>
+
+    <div class="towerArea">
+      <div class="tower" id="tower"></div>
+    </div>
+
+    <div class="attemptMsg" id="attemptMsg">&nbsp;</div>
+
+    <div class="track" id="track">
+      <div class="zoneGood" id="zoneGood"></div>
+      <div class="zonePerfect" id="zonePerfect"></div>
+      <div class="marker" id="marker"></div>
+    </div>
+
+    <button type="button" class="hitBtn" id="hitBtn">たたく!</button>
+    <div class="rule">タイミングよくねらいゾーンで「たたく!」(⌨スペース/Enterキーでも可)</div>
+
+    <!-- 説明画面: ここから開始する(必須要件1) -->
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>積みあがった<b>だるま落とし</b>の一番下のブロック(<span style="color:#4de6c8">水色</span>)めがけて、下の「たたく!」ボタンをタイミングよく押そう。マーカーが左右にうごき、ゾーンの中でジャストに止められると<b style="color:#4de6c8">会心</b>、少しズレても<b style="color:#57e389">おしい</b>で成功。ゾーンを外すと<b style="color:#ff5d6c">ミス</b>になり、ブロックは抜けずに<b>ゆがみゲージ</b>だけがたまってしまう。</p>
+      <p>おしい/ミスのたびに積み木がグラっと傾いて<b>ゆがみゲージ</b>が増え、100%になるとタワーが崩れてライフが1減る(その場でタワーは作り直して再挑戦)。会心を続けるとゆがみを抑えたままどんどんブロックを抜ける。</p>
+      <p>1つのタワーのブロックを全部抜ければ「タワークリア!」で次はさらに高いタワー・速いマーカーに挑戦する無限エスカレーション。まれに現れる<b style="color:#ffd23f">⭐金色ブロック</b>を成功で抜けるとボーナス得点+ゆがみが大きく回復する。クリアを5回重ねるごとにゾーンが広めで得点2倍の<b style="color:#ffd23f">🌟ボーナスタワー</b>も登場。</p>
+      <p>ライフは♥3つの一発勝負。👆ボタンをタップ/クリック、⌨スペースまたはEnterキーでも「たたく!」を実行できる(単一ボタン操作のため仮想コントローラは非搭載)。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- リザルト画面: 何度でもやり直せる(必須要件2) -->
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle">タワーがくずれた…</h2>
+      <p>クリアしたタワー <b id="finalTowers"></b>個 / 最大連続会心 <b id="finalCombo"></b></p>
+      <div class="result-score" id="finalScore"></div>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
