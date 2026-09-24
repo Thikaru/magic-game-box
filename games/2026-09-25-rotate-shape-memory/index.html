@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>見ぬけ!回転シェイプメモリー — DAILY GAMES</title>
+<style>
+  :root { --bg1:#0d1b2e; --bg2:#1c3352; --paper:#f2f7ff; --ink:#0d1b2e;
+    --accent:#5ab0ff; --accent2:#ffb15a; --danger:#ff5d6c; --gold:#ffd23f; --ok:#5be3c9;
+    --cell-empty:#142640; --cell-border:#25406a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; flex-wrap:wrap; row-gap:6px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board { border:3px solid var(--accent); border-radius:14px; background:#0f2038;
+    min-height:460px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:14px; }
+
+  .bonusBanner, .goldBanner { display:none; text-align:center; color:var(--gold); font-weight:bold; font-size:.82rem; margin-bottom:6px; }
+  .bonusBanner.show, .goldBanner.show { display:block; }
+
+  .phaseLabel { font-size:.9rem; opacity:.9; margin-bottom:8px; text-align:center; }
+  .phaseLabel b { color:var(--accent2); }
+
+  .timerTrack { width:100%; height:10px; background:#1c3352; border-radius:6px; overflow:hidden; margin-bottom:14px; }
+  .timerBar { height:100%; width:100%; background:var(--ok); border-radius:6px; transform-origin:left; }
+  .timerBar.warn { background:var(--gold); }
+  .timerBar.danger2 { background:var(--danger); }
+
+  .memoZone { width:min(72vw,250px); height:min(72vw,250px); display:none; }
+  .memoZone.show { display:grid; gap:3px; }
+  .cell { border-radius:5px; background:var(--cell-empty); border:1px solid var(--cell-border); }
+  .cell.filled { border:1px solid rgba(0,0,0,.25); }
+
+  .choices { display:none; flex-wrap:wrap; gap:10px; width:100%; margin-top:2px; }
+  .choices.show { display:flex; }
+  .choiceCard { position:relative; width:calc(50% - 5px); aspect-ratio:1/1; border-radius:12px;
+    background:#142640; border:3px solid #25406a; padding:6px; cursor:pointer; }
+  .choiceCard:active { transform:translateY(2px); }
+  .choiceCard .num { position:absolute; top:3px; left:6px; font-size:.7rem; opacity:.6; }
+  .choiceCard .grid { width:100%; height:100%; display:grid; gap:2px; }
+  .choiceCard.correctFlash { border-color:var(--ok); box-shadow:0 0 0 4px rgba(91,227,201,.35); }
+  .choiceCard.wrongFlash { border-color:var(--danger); box-shadow:0 0 0 4px rgba(255,93,108,.35); }
+  .choiceCard.pickedFlash { border-color:var(--accent2); }
+  .choiceCard.disabledCard { pointer-events:none; opacity:.7; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(6,12,22,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:16px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay h2 { color:var(--accent2); font-size:1.2rem; margin-bottom:10px; }
+  .overlay p { line-height:1.65; font-size:.82rem; margin-bottom:8px; }
+  .overlay .legend { display:flex; flex-direction:column; gap:6px; margin:6px 0 10px; width:100%; text-align:left; }
+  .overlay .legend div { display:flex; align-items:center; gap:8px; font-size:.78rem; }
+  .overlay .legend .dot { width:24px; height:24px; border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.85rem; background:#1c3352; }
+  .overlay .btn { margin-top:10px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #2f6ba0; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #2f6ba0; }
+  .overlay .exampleRow { display:flex; align-items:center; justify-content:center; gap:10px; margin:8px 0; }
+  .exGrid { width:64px; height:64px; display:grid; gap:2px; }
+  .exArrow { font-size:1.3rem; opacity:.7; }
+  .hidden { display:none !important; }
+
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:10px; font-size:.9rem; }
+  .combo { opacity:.85; }
+  .hint { text-align:center; font-size:.75rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔄 見ぬけ!回転シェイプメモリー</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board" id="board">
+      <div class="bonusBanner" id="bonusBanner">🌟 ボーナスラウンド!得点2倍・時間長め</div>
+      <div class="goldBanner" id="goldBanner">⭐ ゴールドラウンド!正解でライフ回復</div>
+      <div class="phaseLabel" id="phaseLabel">この形を <b>おぼえて!</b></div>
+      <div class="timerTrack"><div class="timerBar" id="timerBar"></div></div>
+
+      <div class="memoZone" id="memoZone"></div>
+      <div class="choices" id="choices">
+        <div class="choiceCard" data-idx="0"><span class="num">1</span><div class="grid" id="cGrid0"></div></div>
+        <div class="choiceCard" data-idx="1"><span class="num">2</span><div class="grid" id="cGrid1"></div></div>
+        <div class="choiceCard" data-idx="2"><span class="num">3</span><div class="grid" id="cGrid2"></div></div>
+        <div class="choiceCard" data-idx="3"><span class="num">4</span><div class="grid" id="cGrid3"></div></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>色マスの図形が数秒だけ表示されるので、しっかり<b>おぼえよう</b>。図形が消えたら、下に4つの候補が出るので、その中から「元の図形をぐるっと回転させただけ(0°/90°/180°/270°のどれか)」のものを<b>1つだけ</b>選んでタップ/クリックしよう。</p>
+      <div class="exampleRow">
+        <div class="exGrid" id="exOrig"></div>
+        <span class="exArrow">🔄→</span>
+        <div class="exGrid" id="exRot"></div>
+      </div>
+      <p>(例)これは同じ形を90°回転させただけなので「正解」。ほかの3つの候補は、色が1つ違う・マスが1つずれている・増減しているなど、回転だけでは説明できない<b>ニセモノ</b>になっている。</p>
+      <div class="legend">
+        <div><span class="dot">🧠</span>正解を重ねるほど、マス数(3×3→4×4)・色の種類・おぼえる時間・答える時間がどんどんシビアになる無限エスカレーション(通算正解数で管理・ライフを失ってもリセットされない)</div>
+        <div><span class="dot" style="background:var(--gold);color:#5a4400">⭐</span>まれに「ゴールドラウンド」になり、正解するとボーナス得点+ライフ回復</div>
+        <div><span class="dot" style="background:var(--gold);color:#5a4400">🌟</span>5コンボごとに時間長め・得点2倍の「ボーナスラウンド」が登場</div>
+      </div>
+      <p>まちがえたり時間切れになるとライフが1減ってコンボがリセット(マス数などの難易度はリセットされない)。ライフは♥3つの一発勝負!</p>
+      <p>👆 候補カードをタップ、⌨ 1・2・3・4キーでも選べます。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span class="combo" id="comboLabel">COMBO 0</span>
+    <span id="livesLabel">♥♥♥</span>
+  </div>
+  <p class="hint">おぼえた図形を回転させただけの候補を見ぬこう。</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
