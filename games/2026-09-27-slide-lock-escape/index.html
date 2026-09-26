@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>そろえて脱出!スライドロック — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#101a24; --bg2:#060a12; --panel:#152233; --paper:#f3f8ff;
+    --gold:#ffd23f; --safe:#5fe3a8; --danger:#ff5d7a; --dim:#8494aa; --tile:#274263;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.0rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:var(--panel); padding:14px 12px; min-height:480px;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.8rem; margin-bottom:8px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+
+  .timerWrap { height:8px; border-radius:5px; background:rgba(0,0,0,.35); overflow:hidden; margin-bottom:10px; }
+  .timerBar { height:100%; background:linear-gradient(90deg,var(--safe),var(--gold)); width:100%; transition:width .1s linear; }
+  .timerBar.warn { background:linear-gradient(90deg,var(--danger),#ff8a4c); }
+
+  .hintBar { min-height:1.4em; text-align:center; font-size:.78rem; color:var(--gold); margin-bottom:10px; }
+
+  .gridWrap { display:flex; justify-content:center; margin-bottom:14px; }
+  .grid {
+    display:grid; gap:6px; width:100%; max-width:340px; aspect-ratio:1/1;
+  }
+  .tile {
+    display:flex; align-items:center; justify-content:center;
+    background:var(--tile); border-radius:8px; border:0;
+    font-size:1.4rem; font-weight:700; color:var(--paper);
+    cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    min-height:44px; transition:transform .06s, background .15s;
+  }
+  .tile:active { transform:scale(.94); }
+  .tile.blank { background:transparent; cursor:default; box-shadow:none; }
+  .tile.movable { box-shadow:inset 0 0 0 2px rgba(243,248,255,.35); }
+  .tile.golden { background:var(--gold); color:#2a1f45; box-shadow:0 0 10px rgba(255,210,63,.8); }
+  .tile.solved { background:var(--safe); color:#0a2a1c; }
+
+  .toast {
+    position:absolute; left:50%; top:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--gold); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5;
+    max-width:90%; text-align:center;
+  }
+  .toast.show { opacity:1; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(6,10,18,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:10; }
+  .overlay h2 { color:var(--gold); font-size:1.25rem; margin-bottom:12px; }
+  .overlay p { line-height:1.7; font-size:.83rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:#2a1f45; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔓 そろえて脱出!スライドロック</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="roundLabel">LOCK 1</span>
+        <span id="scoreLabel">SCORE 0</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+
+      <div class="timerWrap"><div class="timerBar" id="timerBar"></div></div>
+      <div class="hintBar" id="hintBar"></div>
+
+      <div class="gridWrap"><div class="grid" id="grid"></div></div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>バラバラになった番号パネルをスライドさせて、1から順番に並べ替えれば
+          ロックが解除できる脱出ゲーム。空いているマスのとなり(上下左右)の
+          パネルをタップすると、そのパネルが空きマスへスライドする。</p>
+        <p>制限時間内に番号を1から順番(左上から右下、最後が空きマス)に
+          並べきれば解錠成功!次のロックはパネル数が増え、制限時間も
+          どんどん短くなる。時間切れになるとライフが1減り、同じ難易度の
+          盤面を作り直して再挑戦できる。</p>
+        <p>まれに1枚だけ⭐金色に光るパネルが混ざり、そのパネルを正しい
+          位置までスライドさせられるとボーナス得点+残り時間が回復する。
+          5回連続で解錠すると制限時間長めで得点2倍の🌟ボーナスロックも
+          登場する。</p>
+        <p>ライフは♥3つの一発勝負、👆パネルをタップ/クリック、⌨矢印キーでも
+          空きマスを動かして操作できる(タップのみで完結する操作のため
+          仮想コントローラは非搭載)。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">空きマスのとなりのパネルをタップしてスライド、1〜順番に並べて解錠しよう</p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
