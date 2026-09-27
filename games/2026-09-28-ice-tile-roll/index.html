@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>すべらせろ!アイスタイルロール — DAILY GAMES</title>
+<style>
+  :root {
+    --bg1:#0b1a2b; --bg2:#050d17; --panel:#122438; --paper:#eaf6ff;
+    --gold:#ffd23f; --safe:#5fe3a8; --danger:#ff5d7a; --dim:#8aa2b8; --ice:#3aa9e0; --wall:#233a52;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold); }
+  h1 { font-size:1.0rem; letter-spacing:.02em; }
+
+  .stage { position:relative; }
+  .board {
+    position:relative; border:3px solid var(--gold); border-radius:14px;
+    background:var(--panel); padding:14px 12px; min-height:480px;
+  }
+
+  .hud { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.8rem; margin-bottom:8px; flex-wrap:wrap; }
+  .hud .lives { color:var(--danger); letter-spacing:.1em; }
+  .movesWrap { display:flex; justify-content:center; align-items:center; gap:6px; font-size:.8rem; margin-bottom:8px; color:var(--dim); }
+  .movesWrap b { color:var(--gold); font-size:.95rem; }
+
+  .toast {
+    position:absolute; left:50%; top:6px; transform:translateX(-50%);
+    background:rgba(0,0,0,.75); color:var(--gold); font-weight:700; font-size:.85rem;
+    padding:6px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5;
+    max-width:90%; text-align:center;
+  }
+  .toast.show { opacity:1; }
+
+  .canvasWrap { display:flex; justify-content:center; margin-bottom:12px; }
+  canvas { display:block; width:100%; max-width:340px; aspect-ratio:1/1; border-radius:10px;
+    background:#081522; touch-action:none; }
+
+  .overlay { position:absolute; inset:3px; border-radius:11px; background:rgba(6,10,18,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+    padding:22px 18px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:10; }
+  .overlay h2 { color:var(--gold); font-size:1.25rem; margin-bottom:12px; }
+  .overlay p { line-height:1.7; font-size:.83rem; margin-bottom:8px; }
+  .overlay .btn { margin-top:14px; font-size:1.05rem; font-weight:bold; background:var(--gold);
+    color:#2a1f45; border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #b8912a; cursor:pointer; min-height:48px; }
+  .overlay .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none; }
+
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:10px; }
+
+  .vpadArea { max-width:420px; margin:14px auto 0; padding:0 12px; display:flex;
+    flex-direction:column; align-items:center; gap:10px; }
+  .vpadToggle { font-family:inherit; font-size:.85rem; color:#fff; background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:0 14px; min-height:44px; cursor:pointer; }
+  .vpadPanel { display:flex; align-items:center; justify-content:center; width:100%;
+    background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.25); border-radius:16px; padding:16px; }
+  .vpadPanel.hidden { display:none; }
+  .vpad { position:relative; width:150px; height:150px; flex-shrink:0; }
+  .vpadBtn { position:absolute; width:48px; height:48px; border-radius:10px; border:1px solid rgba(255,255,255,.5);
+    background:rgba(255,255,255,.14); color:#fff; font-size:1.2rem; display:flex; align-items:center; justify-content:center;
+    touch-action:none; user-select:none; -webkit-user-select:none; }
+  .vpadUp    { left:51px; top:0; }
+  .vpadLeft  { left:0;    top:51px; }
+  .vpadRight { left:102px; top:51px; }
+  .vpadDown  { left:51px; top:102px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧊 すべらせろ!アイスタイルロール</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="board">
+      <div class="toast" id="toast"></div>
+
+      <div class="hud">
+        <span id="levelLabel">LEVEL 1</span>
+        <span id="scoreLabel">SCORE 0</span>
+        <span class="lives" id="livesLabel">♥♥♥</span>
+      </div>
+      <div class="movesWrap">のこり手数 <b id="movesLabel">0</b></div>
+
+      <div class="canvasWrap"><canvas id="game" width="400" height="400"></canvas></div>
+
+      <!-- 説明画面: 必須要件1 -->
+      <div class="overlay" id="intro">
+        <h2>あそびかた</h2>
+        <p>盤面をかたむけて、⚪こおりのタマを🚩ゴールまで転がそう。
+          タマは一度すべりだすと、かべ(🧱)か盤の端にぶつかるまで
+          止まらずにまっすぐ転がり続ける。</p>
+        <p>ゴールの上でぴったり止まらないとクリアにならないので、
+          どの方向にどう当てれば止まるか、何手か先までよみながら
+          かたむける方向を選ぼう。</p>
+        <p>⚫あな に落ちるとこおりが割れて失敗、ライフが1へる。
+          決められた手数を使いきってもゴールできなければ同じく失敗。
+          失敗しても同じ難易度の盤面を作りなおして再挑戦できる。</p>
+        <p>まれに現れる⭐金色マスは、通り道に入るだけでボーナス得点+
+          ライフ回復。5回クリアするごとに手数多め・得点2倍の
+          🌟ボーナス盤面も登場する。</p>
+        <p>ライフは♥3つの一発勝負。👆画面下の🎮十字ボタンをタップ、
+          ⌨矢印キー/WASDキーでも操作できる。</p>
+        <button class="btn" id="startBtn">スタート</button>
+      </div>
+
+      <!-- リザルト画面: 必須要件2 -->
+      <div class="overlay hidden" id="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button class="btn" id="retryBtn">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">かたむける方向を選んで、タマをゴールにぴったり止めよう</p>
+</div>
+
+<div class="vpadArea">
+  <button type="button" class="vpadToggle" id="vpadToggle">🎮 コントローラ 表示/非表示</button>
+  <div class="vpadPanel hidden" id="vpadWrap">
+    <div class="vpad">
+      <button type="button" class="vpadBtn vpadUp" data-dir="up">▲</button>
+      <button type="button" class="vpadBtn vpadLeft" data-dir="left">◀</button>
+      <button type="button" class="vpadBtn vpadRight" data-dir="right">▶</button>
+      <button type="button" class="vpadBtn vpadDown" data-dir="down">▼</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
