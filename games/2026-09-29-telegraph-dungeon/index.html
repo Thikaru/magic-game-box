@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>よみきれ!予告ダンジョン — DAILY GAMES</title>
+<style>
+  :root { --bg1:#1a1226; --bg2:#2a1b3d; --paper:#f5eefc; --ink:#1a1226;
+    --accent:#c79bff; --gold:#ffd23f; --danger:#ff5d6c; --ok:#6be08a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent); }
+  h1 { font-size:1rem; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; border:3px solid var(--accent); border-radius:12px; background:#20162e; touch-action:manipulation; }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(26,18,38,.96);
+    display:flex; flex-direction:column; align-items:center; text-align:center; padding:18px; overflow-y:auto; }
+  .overlay h2 { color:var(--accent); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.65; font-size:.84rem; margin-bottom:7px; }
+  .overlay b.neg { color:var(--danger); }
+  .overlay b.pos { color:var(--ok); }
+  .btn { margin-top:8px; font-size:1.05rem; font-weight:bold; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; padding:12px 34px; box-shadow:0 5px 0 #8a5fcf; cursor:pointer; min-height:48px; }
+  .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #8a5fcf; }
+  .hidden { display:none; }
+  .hud { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:10px; font-size:.9rem; }
+  .actions { display:flex; gap:10px; margin-top:10px; }
+  .actions .btn { flex:1; margin:0; padding:10px; font-size:.95rem; min-height:48px; }
+  .hint { text-align:center; font-size:.76rem; opacity:.7; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🗡️ よみきれ!予告ダンジョン</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <canvas id="game" width="350" height="350"></canvas>
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>1マスずつ進む<b>ターン制ローグライク</b>。🪜階段をめざして、どんどん下の階へ潜ろう。</p>
+      <p>敵は<b class="neg">つぎに動くマスが赤く予告</b>されている。あなたが動いたあと、敵は予告どおりに動く。予告マスの上で立ち止まると攻撃をくらうので、<b>敵の動きを読んで</b>よけよう。</p>
+      <p>敵のいるマスへ動くと<b class="pos">こうげき</b>して倒せる(1発)。🦇コウモリは2マス動く。❤️で回復。</p>
+      <p>HPは♥3つ。何階まで潜れるかな?</p>
+      <p>操作: 画面タップ(自分から見た方向へ1マス)/⌨矢印・WASD、Space で待機</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+  <div class="hud">
+    <span id="floorLabel">B1F</span>
+    <span id="scoreLabel">SCORE 0</span>
+    <span id="hpLabel">♥♥♥</span>
+  </div>
+  <div class="actions">
+    <button class="btn" id="waitBtn">⏳ 待機(1ターン)</button>
+  </div>
+  <p class="hint">タップ: 自分から見て上下左右のマスへ移動 ・ 敵の赤い予告マスを避けよう</p>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
