@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ボウリング・チェインパズル — DAILY GAMES</title>
+<style>
+  :root { --bg:#1d1530; --wood:#d9a441; --ink:#22160a; --paper:#fffdf5; --accent:#ff5d5d; --cy:#5fe0d8; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { overflow-x:hidden; }
+  body { font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; background:linear-gradient(180deg,#2a1d47,#150e26); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:44px; margin-bottom:8px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--accent); padding:10px 0; }
+  h1 { color:#ffd23f; font-size:1.1rem; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; margin-bottom:8px; font-size:.95rem; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; border:4px solid #ffd23f; border-radius:12px; background:#000; touch-action:none; }
+  .overlay { position:absolute; inset:4px; border-radius:8px; background:rgba(21,14,38,.93); display:flex; flex-direction:column; align-items:center; text-align:center; padding:18px 16px; overflow-y:auto; }
+  .overlay h2 { color:#ffd23f; font-size:1.4rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.92rem; margin-bottom:6px; }
+  .btn { margin-top:14px; font-size:1.1rem; font-weight:700; background:#ffd23f; color:var(--ink); border:0; border-radius:10px; min-height:48px; padding:0 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none; }
+  .note { margin-top:8px; font-size:.8rem; opacity:.8; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎳 チェインパズル</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="hud">
+    <span id="hStage">STAGE 1</span>
+    <span id="hBalls">🎳 ×3</span>
+    <span id="hScore">SCORE 0</span>
+  </div>
+  <div class="stage">
+    <canvas id="game" width="360" height="560"></canvas>
+    <div class="overlay" id="intro">
+      <h2>🎳 ボウリング・チェインパズル</h2>
+      <p>ピンを1本たおすと、<b>線でつながった近くのピン</b>が<br>つぎつぎ連鎖してたおれます。</p>
+      <p>ボールは<b>かべではね返る</b>ので、<br>バンクショットで離れたピンも狙おう。</p>
+      <p>👆 <b>ドラッグ</b>で狙って、はなすと発射<br>(下の赤い帯は「スタートライン」:<br>ここをなぞるとボールの位置が動き、<br>ここではなすと発射キャンセル)</p>
+      <p>⌨ ←→ 角度 / A・D 位置 / Space 発射</p>
+      <p>ボールがなくなるまでに、すべてのピンをたおせばクリア。<br>のこりボールはボーナス点。ステージが進むほどピンがふえ、つながりにくくなります。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+  <p class="note">点線=予想コース / うすい線=連鎖がつながる距離</p>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
