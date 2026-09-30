@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ひっくりかえせ!鉄板フリップ — DAILY GAMES</title>
+<style>
+  :root { --ink:#2a1608; --paper:#fff8ec; --hot:#ff6a3d; --gold:#ffd23f; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; background:linear-gradient(180deg,#3b1f12,#1a0d07); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:44px; margin-bottom:8px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--hot); padding:12px 0; }
+  h1 { color:var(--gold); font-size:1.05rem; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; margin-bottom:8px; font-size:.95rem; }
+  .stage { position:relative; }
+  .grill { display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#111; border:4px solid var(--gold); border-radius:12px; padding:10px; }
+  .slot { position:relative; min-height:104px; border:0; border-radius:12px; background:#2c2c2c; color:var(--paper); font:inherit; cursor:pointer; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; user-select:none; touch-action:manipulation; }
+  .slot .num { position:absolute; top:4px; left:8px; font-size:.75rem; opacity:.6; }
+  .slot .food { font-size:2.4rem; line-height:1; transition:transform .15s; }
+  .slot.flipped .food { transform:scaleY(-1); }
+  .slot .bar { position:relative; width:84%; height:14px; background:#444; border-radius:7px; overflow:hidden; }
+  .slot .zf, .slot .zd { position:absolute; top:0; bottom:0; }
+  .slot .zf { background:rgba(80,170,255,.75); }
+  .slot .zd { background:rgba(90,220,110,.75); }
+  .slot .fill { position:absolute; left:0; top:0; bottom:0; width:0; background:rgba(255,255,255,.55); border-right:3px solid #fff; }
+  .slot .hint { font-size:.72rem; opacity:.85; min-height:1em; }
+  .slot.hot { background:#4a2a1a; }
+  .slot.ok { animation:pop .3s; }
+  .slot.bad { animation:shake .25s; }
+  .slot.burnt { background:#000; }
+  @keyframes pop { 50% { background:#2f7a3a; transform:scale(1.05); } }
+  @keyframes shake { 25% { transform:translateX(-5px);} 75% { transform:translateX(5px);} }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(26,13,7,.95); display:flex; flex-direction:column; align-items:center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { color:var(--gold); font-size:1.35rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.9rem; margin-bottom:6px; }
+  .btn { margin-top:14px; font-size:1.1rem; font-weight:700; background:var(--gold); color:var(--ink); border:0; border-radius:10px; min-height:48px; padding:0 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none; }
+  .msg { text-align:center; min-height:1.6em; margin-top:8px; font-weight:700; color:var(--gold); }
+  .note { margin-top:6px; font-size:.8rem; opacity:.8; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔥 鉄板フリップ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="hud">
+    <span id="hTime">⏱ 60</span>
+    <span id="hLife">❤️❤️❤️</span>
+    <span id="hScore">0点</span>
+  </div>
+  <div class="stage">
+    <div class="grill" id="grill"></div>
+    <div class="overlay" id="intro">
+      <h2>🔥 ひっくりかえせ!鉄板フリップ</h2>
+      <p>鉄板にのった食材は、<b>2回タップ</b>で焼きあがり!</p>
+      <p>① ゲージが<b style="color:#6bf">青ゾーン</b>に入ったら<b>タップでひっくり返す</b><br>② そのあと<b style="color:#6e6">緑ゾーン</b>でもう一度タップして<b>お皿へ</b></p>
+      <p>食材ごとに焼ける速さがちがいます(🍤は速く🥩はゆっくり)。<br>ゾーン外のタップはコンボが切れ、焦がす・ひっくり返し忘れは❤️が減ります。<br>ライフ3つ、60秒で何点とれる?</p>
+      <p>👆 鉄板をタップ / ⌨ 数字キー 1〜6</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+  <div class="msg" id="msg"></div>
+  <p class="note">タップ位置 = ゲージの白い線が青/緑に重なった瞬間</p>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
