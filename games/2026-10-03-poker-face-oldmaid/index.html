@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ポーカーフェイス・ババぬき — DAILY GAMES</title>
+<style>
+  :root { --ink:#1d1030; --paper:#fff6e6; --green:#1f6b4a; --gold:#ffd23f; --red:#e84a5f; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; background:#0f3d2b; color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; min-height:44px; margin-bottom:8px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--gold); padding:12px 0; }
+  h1 { color:var(--gold); font-size:1.05rem; }
+  .table { position:relative; background:var(--green); border:3px solid #8a5a2b; border-radius:14px; padding:12px 8px; min-height:470px; }
+  .seat { background:rgba(0,0,0,.2); border-radius:10px; padding:8px; margin-bottom:10px; }
+  .seat.target { outline:3px solid var(--gold); }
+  .seat.out { opacity:.45; }
+  .who { display:flex; align-items:center; gap:10px; font-weight:700; font-size:.9rem; margin-bottom:6px; }
+  .face { font-size:2.2rem; line-height:1; }
+  .cards { display:flex; flex-wrap:wrap; gap:6px; min-height:56px; }
+  .card { width:46px; height:56px; border-radius:7px; border:2px solid #fff; font-size:1.6rem; display:flex; align-items:center; justify-content:center; cursor:default; font-family:inherit; }
+  .card.back { background:repeating-linear-gradient(45deg,#c0392b,#c0392b 6px,#a93226 6px,#a93226 12px); cursor:pointer; }
+  .card.back.sel { transform:translateY(-8px); border-color:var(--gold); box-shadow:0 0 0 2px var(--gold); }
+  .card.front { background:#fff; color:#000; }
+  .card.ghost { background:#efe6ff; }
+  .msg { text-align:center; min-height:2.6em; font-weight:700; color:var(--gold); margin:6px 0; font-size:.95rem; line-height:1.4; }
+  .btn { font-size:1.1rem; font-weight:700; background:var(--gold); color:var(--ink); border:0; border-radius:10px; min-height:48px; padding:0 30px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .btn:disabled { opacity:.4; }
+  .btn:active { transform:translateY(2px); }
+  .act { text-align:center; margin-top:6px; }
+  .overlay { position:absolute; inset:0; border-radius:11px; background:rgba(10,25,18,.97); display:flex; flex-direction:column; align-items:center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { color:var(--gold); font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.9rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:14px; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>👻 ポーカーフェイス・ババぬき</h1><a href="../../index.html">← トップへ</a></header>
+  <div class="table">
+    <div class="seat" id="seatA"><div class="who"><span class="face" id="faceA">🙂</span><span id="nameA">ミミ(あなたの左)</span><span id="cntA"></span></div><div class="cards" id="cardsA"></div></div>
+    <div class="seat" id="seatB"><div class="who"><span class="face" id="faceB">🙂</span><span id="nameB">ポコ(あなたの右)</span><span id="cntB"></span></div><div class="cards" id="cardsB"></div></div>
+    <div class="msg" id="msg"></div>
+    <div class="seat" id="seatP"><div class="who"><span class="face">😎</span><span>あなた</span><span id="cntP"></span></div><div class="cards" id="cardsP"></div></div>
+    <div class="act"><button class="btn" id="drawBtn" disabled>この札をひく</button></div>
+    <div class="overlay" id="intro">
+      <h2>👻 ポーカーフェイス・ババぬき</h2>
+      <p>同じフルーツ2枚はペアで捨てられます。最後まで👻(おばけ)を持っていた人の負け!</p>
+      <p><b>あなたの番:</b> 左のミミの伏せ札を1枚タップして選ぶと、ミミが<b>表情</b>で反応します。<br>😰=おばけっぽい / 😎=セーフっぽい。ただしミミは<b>ときどきウソの顔</b>をします(約3割)。<br>決めたら「この札をひく」(選んだ札をもう一度タップでもOK)。</p>
+      <p>ミミとポコが相手の札を引くときは自動です。3人中、おばけを持ち続けなければ勝ち!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
