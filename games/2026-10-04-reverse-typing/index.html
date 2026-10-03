@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>うしろから!リバースタイピング — DAILY GAMES</title>
+<style>
+  :root { --ink:#1b1230; --paper:#fff7ec; --pink:#ff5d8f; --blue:#3aa0ff; --gold:#ffd23f; --green:#43d17a; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; background:linear-gradient(180deg,#2a1b52,#120a25); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:10px 10px 28px; }
+  header { display:flex; justify-content:space-between; align-items:center; min-height:44px; margin-bottom:6px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--pink); padding:12px 0; }
+  h1 { color:var(--gold); font-size:1.05rem; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.9rem; margin-bottom:6px; }
+  .bar { height:10px; border-radius:6px; background:#3b2a66; overflow:hidden; margin-bottom:8px; }
+  .bar i { display:block; height:100%; width:100%; background:var(--green); }
+  .stage { position:relative; background:#1d1340; border:3px solid var(--blue); border-radius:14px; padding:12px 8px; min-height:210px; }
+  .mode { text-align:center; font-weight:900; font-size:1.2rem; border-radius:10px; padding:8px; }
+  .mode.fwd { background:var(--green); color:var(--ink); }
+  .mode.rev { background:var(--pink); color:#fff; }
+  .word { display:flex; justify-content:center; flex-wrap:wrap; gap:4px; margin:14px 0 8px; font-size:2rem; font-weight:900; letter-spacing:.05em; }
+  .word span { min-width:1ch; text-transform:uppercase; }
+  .slots { display:flex; justify-content:center; gap:4px; min-height:44px; }
+  .slot { width:34px; height:44px; border-bottom:4px solid #7b68c8; text-align:center; font-size:1.8rem; font-weight:900; text-transform:uppercase; color:var(--gold); }
+  .slot.cur { border-color:var(--gold); }
+  .msg { text-align:center; min-height:1.6em; margin-top:8px; font-weight:700; color:var(--gold); }
+  .kb { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .row { display:flex; justify-content:center; gap:4px; }
+  .key { flex:1; max-width:36px; height:46px; border:0; border-radius:8px; background:#e8dcff; color:var(--ink); font-size:1rem; font-weight:800; text-transform:uppercase; box-shadow:0 3px 0 #9a88c9; touch-action:manipulation; cursor:pointer; }
+  .key:active { transform:translateY(2px); box-shadow:0 1px 0 #9a88c9; }
+  .shake { animation:sh .2s; }
+  @keyframes sh { 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  .overlay { position:absolute; inset:0; border-radius:11px; background:rgba(18,10,37,.97); display:flex; flex-direction:column; align-items:center; text-align:center; padding:14px; overflow-y:auto; z-index:5; }
+  .overlay h2 { color:var(--gold); font-size:1.3rem; margin-bottom:8px; }
+  .overlay p { line-height:1.65; font-size:.88rem; margin-bottom:6px; }
+  .btn { margin-top:12px; font-size:1.1rem; font-weight:700; background:var(--gold); color:var(--ink); border:0; border-radius:10px; min-height:48px; padding:0 36px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>⬅️ リバースタイピング</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="hud"><span id="hTime">⏱ 40.0</span><span id="hCombo">コンボ 0</span><span id="hScore">0点</span></div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="stage" id="stage">
+    <div class="mode fwd" id="mode">➡️ そのまま打つ</div>
+    <div class="word" id="word"></div>
+    <div class="slots" id="slots"></div>
+    <div class="msg" id="msg"></div>
+    <div class="overlay" id="intro">
+      <h2>⬅️ うしろから!リバースタイピング</h2>
+      <p>ローマ字の単語が出ます。上の帯の指示にしたがって打とう!</p>
+      <p><b style="color:#43d17a">➡️ そのまま</b>:先頭の文字から順に<br><b style="color:#ff5d8f">⬅️ うしろから</b>:最後の文字から逆順に<br>(例: <b>sakura</b> → A R U K A S)</p>
+      <p>指示は単語ごとにランダムで切りかわります。まちがえると時間が減ってコンボが途切れ、1語打ち終わると時間が増えます。</p>
+      <p>⌨ キーボード / 👆 画面のキー</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+  <div class="kb" id="kb"></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
