@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>まほうの菜園マージ — DAILY GAMES</title>
+<style>
+  :root { --ink:#1f3a1c; --paper:#f4ffe9; --leaf:#5cb85c; --gold:#ffd23f; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { overflow-x:hidden; }
+  body { font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; background:linear-gradient(180deg,#bfe8a8,#6fb06a); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; min-height:44px; margin-bottom:8px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--ink); padding:12px 0; }
+  h1 { font-size:1.05rem; }
+  .hud { display:flex; justify-content:space-between; align-items:center; font-weight:700; margin-bottom:8px; }
+  .next { background:#fff; border-radius:12px; padding:4px 12px; font-size:1.6rem; }
+  .stage { position:relative; }
+  .board { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; background:#7a5230; border-radius:12px; padding:8px; }
+  .cell { aspect-ratio:1; min-height:44px; border:0; border-radius:10px; background:#a67a4b; font-size:clamp(1.5rem,9vw,2.4rem); line-height:1; cursor:pointer; touch-action:manipulation; font-family:inherit; }
+  .cell:focus-visible { outline:3px solid var(--gold); }
+  .cell.full { background:#d9f0c4; cursor:default; }
+  .cell.pest { background:#f6c2b8; }
+  .cell.stone { background:#cfcfcf; }
+  .cell.pop { animation:pop .3s; }
+  @keyframes pop { 50% { transform:scale(1.2); background:var(--gold); } }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(244,255,233,.96); display:flex; flex-direction:column; align-items:center; text-align:center; padding:14px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.3rem; margin-bottom:10px; }
+  .overlay p { line-height:1.65; font-size:.88rem; margin-bottom:6px; }
+  .btn { margin-top:12px; font-size:1.1rem; font-weight:700; background:var(--leaf); color:#fff; border:0; border-radius:10px; min-height:48px; padding:0 36px; box-shadow:0 5px 0 #3d8b3d; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #3d8b3d; }
+  .hidden { display:none; }
+  .msg { text-align:center; min-height:1.6em; margin-top:8px; font-weight:700; }
+  .legend { margin-top:6px; font-size:.85rem; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌱 まほうの菜園マージ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="hud">
+    <span id="hScore">0点</span>
+    <span>つぎ: <span class="next" id="next">🌱</span></span>
+    <span id="hTurn">0手</span>
+  </div>
+  <div class="stage">
+    <div class="board" id="board"></div>
+    <div class="overlay" id="intro">
+      <h2>🌱 まほうの菜園マージ</h2>
+      <p>畑の空きマスをタップして「つぎ」の苗を植えよう。<br><b>同じ植物が3つ以上つながる</b>と1つ育って進化!</p>
+      <p>🌱 → 🌿 → 🌷 → 🌳 → 🍎<br>🍎が3つつながると収穫ボーナスで消えます。</p>
+      <p>🐛 <b>害虫</b>は毎ターン動き回ります。まわりを囲んで動けなくすると🪨になり、🪨を3つつなげると🌷に変身!</p>
+      <p>畑がうまったら終了。何点まで育てられる?</p>
+      <p>👆 マスをタップ / ⌨ 矢印キーで移動・Enterで植える</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+  <div class="msg" id="msg"></div>
+  <p class="legend">🪨×3→🌷 / 🌱×3→🌿 / 🌿×3→🌷 / 🌷×3→🌳 / 🌳×3→🍎</p>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
