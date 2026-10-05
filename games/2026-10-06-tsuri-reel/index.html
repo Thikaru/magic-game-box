@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>つりあげろ!ゆらゆらリール — DAILY GAMES</title>
+<style>
+  :root { --sea:#0b3d6b; --sun:#ffd23f; --coral:#ff6b6b; --paper:#fffdf5; --ink:#1c1c28; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:linear-gradient(180deg,#0b3d6b,#06223f); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap; }
+  header a { color:var(--paper); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--coral); padding:10px 0; }
+  h1 { color:var(--sun); font-size:1.15rem; }
+  .stage { position:relative; user-select:none; -webkit-user-select:none; }
+  canvas { display:block; width:100%; border:4px solid var(--sun); border-radius:12px; background:#0d4a80; touch-action:none; }
+  .overlay { position:absolute; inset:4px; border-radius:8px; background:rgba(6,34,63,.94); display:flex; flex-direction:column; align-items:center; text-align:center; padding:20px 16px; overflow-y:auto; }
+  .overlay h2 { color:var(--sun); font-size:1.4rem; margin-bottom:12px; }
+  .overlay p { line-height:1.8; font-size:.92rem; margin-bottom:8px; }
+  .btn { margin-top:14px; font-family:inherit; font-size:1.1rem; font-weight:700; background:var(--sun); color:var(--ink); border:0; border-radius:10px; padding:0 36px; min-height:48px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none; }
+  .holdBtn { display:block; width:100%; margin-top:12px; min-height:64px; font-family:inherit; font-size:1.2rem; font-weight:700; color:#fff; background:var(--coral); border:0; border-radius:14px; box-shadow:0 5px 0 #b34747; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .holdBtn.on { transform:translateY(3px); box-shadow:0 2px 0 #b34747; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎣 つりあげろ!ゆらゆらリール</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="520"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>🎣 あそびかた</h2>
+      <p>制限時間 <b>75秒</b>。できるだけ大きな魚をつりあげよう!</p>
+      <p><b>① あたりを待つ</b><br>ウキが ブクブク沈んだ瞬間に タップ!<br>早すぎると逃げられて時間ロス。</p>
+      <p><b>② リールを巻く</b><br>右の筒で、<b>緑のワク</b>に魚をおさめ続ける。<br><b>おしっぱなし</b>でワクが上がり、<b>はなす</b>と下がる。</p>
+      <p>ゲージが満タンでゲット。空になると逃げられる(ハート3つ)。大物ほど速く動くぞ!</p>
+      <p>🖱 マウス長押し / 👆 画面や下のボタン長押し / ⌨ スペースキー長押し</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <button class="holdBtn" id="holdBtn">🎣 おしてる間 巻く / あたりでタップ</button>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
