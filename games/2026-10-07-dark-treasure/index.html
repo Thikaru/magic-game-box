@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>おぼえて!まっくらトレジャー — DAILY GAMES</title>
+<style>
+  :root { --bg:#14102b; --gold:#ffd23f; --red:#ff6b6b; --paper:#fffdf5; --ink:#1c1c28; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:10px 12px 30px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--red); padding:12px 0; }
+  h1 { color:var(--gold); font-size:1.1rem; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; margin-bottom:6px; font-size:.95rem; }
+  #msg { text-align:center; min-height:1.6em; color:var(--gold); font-weight:700; margin-bottom:6px; }
+  .stage { position:relative; }
+  #board { display:grid; gap:3px; background:#2a2250; padding:4px; border:4px solid var(--gold); border-radius:12px; width:100%; aspect-ratio:1; }
+  .cell { background:#0b0818; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:clamp(18px,7vw,32px); position:relative; transition:background .15s; }
+  .cell.shown { background:#3b3170; }
+  .cell.got { background:#4a3b10; }
+  .cell.boom { background:#6b1f1f; }
+  .cell.me::after { content:'🧑‍🚀'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:clamp(18px,7vw,32px); }
+  .cell.me { background:#241c4d; }
+  .overlay { position:absolute; inset:0; border-radius:10px; background:rgba(20,16,43,.95); display:flex; flex-direction:column; align-items:center; text-align:center; padding:18px 14px; overflow-y:auto; z-index:5; }
+  .overlay h2 { color:var(--gold); font-size:1.35rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.9rem; margin-bottom:6px; }
+  .btn { margin-top:12px; font-family:inherit; font-size:1.05rem; font-weight:700; background:var(--gold); color:var(--ink); border:0; border-radius:10px; padding:0 30px; min-height:48px; box-shadow:0 4px 0 #b8912a; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 2px 0 #b8912a; }
+  .btn.sub { background:#4b3f8f; color:#fff; box-shadow:0 4px 0 #2e2660; padding:0 16px; font-size:.95rem; }
+  .row { display:flex; gap:10px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
+  .hidden { display:none !important; }
+  #pad { display:grid; grid-template-columns:repeat(3,64px); grid-template-rows:repeat(2,56px); gap:6px; justify-content:center; margin-top:12px; }
+  #pad button { min-height:56px; font-size:1.4rem; border:0; border-radius:12px; background:#4b3f8f; color:#fff; box-shadow:0 3px 0 #2e2660; touch-action:manipulation; }
+  #pad button:active { transform:translateY(2px); }
+  #pad .u { grid-column:2; grid-row:1; } #pad .l { grid-column:1; grid-row:2; } #pad .d { grid-column:2; grid-row:2; } #pad .r { grid-column:3; grid-row:2; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>💎 おぼえて!まっくらトレジャー</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="hud"><span id="lv">ステージ 1</span><span id="hearts">❤️❤️❤️</span><span id="left">💎 0/0</span></div>
+  <div id="msg"></div>
+  <div class="stage">
+    <div id="board"></div>
+    <div class="overlay" id="intro">
+      <h2>💎 あそびかた</h2>
+      <p>最初の数秒だけ、🗺 <b>💎お宝</b>と<b>💣わな</b>の場所が見えるよ。</p>
+      <p>そのあと画面が<b>まっくら</b>に!おぼえた場所をたよりに、宇宙飛行士を動かして<b>お宝を全部</b>あつめよう。</p>
+      <p>💣をふむとハートが1つへる(場所も見える)。ハート0でゲームオーバー。</p>
+      <p>👀「のぞく」は1ゲームに<b>2回だけ</b>。0.8秒ぜんぶ見える!<br>ステージ8までクリアで大成功!</p>
+      <p>⌨ 矢印キー / WASD ・ 📱 下のボタン</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="resTitle"></h2>
+      <p id="resText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+  <div class="row">
+    <button class="btn sub" id="peekBtn">👀 のぞく (2)</button>
+    <button class="btn sub" id="padToggle">🎮 コントローラ</button>
+  </div>
+  <div id="pad" class="hidden">
+    <button class="u" data-d="u">▲</button><button class="l" data-d="l">◀</button><button class="d" data-d="d">▼</button><button class="r" data-d="r">▶</button>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
