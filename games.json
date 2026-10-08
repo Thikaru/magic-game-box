@@ -1,6 +1,14 @@
 {
   "games": [
     {
+      "id": "2026-10-09-crack-floor-escape",
+      "title": "いちどだけ!ひびわれフロア脱出",
+      "genre": "脱出×パズル",
+      "date": "2026-10-09",
+      "description": "ふんだ床はくずれて穴になる!同じマスを2度通らずに🔑カギを取って🚪とびらまでたどりつこう。",
+      "path": "games/2026-10-09-crack-floor-escape/"
+    },
+    {
       "id": "2026-10-08-shiritori-race",
       "title": "はしれ!しりとりレース",
       "genre": "クイズ×レース",
