@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビート・ハードル — DAILY GAMES</title>
+<style>
+  :root { --bg:#1b1535; --ink:#fff; --pink:#ff5fa2; --cyan:#4de3ff; --yellow:#ffd84d; --card:#2a2250; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; }
+  .wrap { max-width:480px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; min-height:44px; gap:8px; margin-bottom:6px; }
+  header a { color:var(--cyan); text-decoration:none; font-size:.9rem; padding:10px 0; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.88rem; margin-bottom:6px; gap:6px; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; background:#120d28; border:3px solid var(--pink); border-radius:14px; touch-action:manipulation; }
+  .layers { display:flex; gap:6px; margin:8px 0; font-size:.78rem; font-weight:700; }
+  .layers span { flex:1; text-align:center; padding:6px 0; border-radius:8px; background:var(--card); opacity:.45; }
+  .layers span.on { opacity:1; background:var(--pink); }
+  #jump { width:100%; min-height:72px; font-family:inherit; font-size:1.3rem; font-weight:800; color:#fff; background:var(--pink); border:0; border-radius:16px; box-shadow:0 5px 0 #b02e6c; touch-action:manipulation; cursor:pointer; }
+  #jump:active { transform:translateY(3px); box-shadow:0 2px 0 #b02e6c; }
+  .overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(18,13,40,.93); border-radius:12px; padding:14px; text-align:center; }
+  .overlay.hide { display:none; }
+  .overlay h2 { font-size:1.3rem; margin-bottom:8px; color:var(--yellow); }
+  .overlay p { font-size:.88rem; line-height:1.6; margin-bottom:6px; }
+  .overlay button { margin-top:8px; min-height:48px; padding:0 28px; font-family:inherit; font-size:1.05rem; font-weight:800; border:0; border-radius:24px; background:var(--yellow); color:#3a2a00; cursor:pointer; touch-action:manipulation; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><a href="../../index.html">← トップへ</a><h1>🎵 ビート・ハードル</h1></header>
+  <div class="hud"><span id="hLife">♥♥♥</span><span id="hCombo">コンボ 0</span><span id="hScore">0 点</span><span id="hLeft">のこり 40</span></div>
+  <div class="stage">
+    <canvas id="cv" width="360" height="260"></canvas>
+    <div class="overlay" id="ovStart">
+      <div>
+        <h2>🎵 ビート・ハードル</h2>
+        <p>リズムにのってハードルをとびこえよう!<br>ハードルがピンクの線にかさなる<b>ビートの瞬間</b>に「ジャンプ!」</p>
+        <p>うまくいくほど曲に<b>ドラム→ベース→コード→メロディ</b>がかさなっていきます。ミスすると楽器が消える…!</p>
+        <p>操作: 画面タップ / ボタン / スペースキー<br>🔊 音が出ます</p>
+        <button id="btnStart">スタート</button>
+      </div>
+    </div>
+    <div class="overlay hide" id="ovEnd">
+      <div>
+        <h2 id="endTitle"></h2>
+        <p id="endText"></p>
+        <button id="btnRetry">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <div class="layers"><span id="l1">🥁 ドラム</span><span id="l2">🎸 ベース</span><span id="l3">🎹 コード</span><span id="l4">🎺 メロディ</span></div>
+  <button id="jump">ジャンプ!</button>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
