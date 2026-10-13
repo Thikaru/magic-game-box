@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ころがれ!ゆきだまダッシュ — DAILY GAMES</title>
+<style>
+  :root { --bg:#10264a; --ink:#fff; --ice:#9fe6ff; --yellow:#ffd84d; --card:#1c3a6b; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; }
+  .wrap { max-width:420px; margin:0 auto; padding:12px 12px 28px; }
+  header { display:flex; justify-content:space-between; align-items:center; min-height:44px; gap:8px; margin-bottom:6px; }
+  header a { color:var(--ice); text-decoration:none; font-size:.9rem; padding:10px 0; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.88rem; margin-bottom:6px; gap:6px; }
+  .bar { height:10px; background:var(--card); border-radius:5px; overflow:hidden; margin-bottom:8px; }
+  .bar i { display:block; height:100%; width:0; background:var(--yellow); }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; background:#eaf6ff; border:3px solid var(--ice); border-radius:14px; touch-action:none; user-select:none; }
+  .hint { font-size:.78rem; text-align:center; margin-top:8px; opacity:.8; }
+  .overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(16,38,74,.94); border-radius:12px; padding:14px; text-align:center; }
+  .overlay.hide { display:none; }
+  .overlay h2 { font-size:1.3rem; margin-bottom:8px; color:var(--yellow); }
+  .overlay p { font-size:.88rem; line-height:1.6; margin-bottom:6px; }
+  .overlay button { margin-top:8px; min-height:48px; padding:0 28px; font-family:inherit; font-size:1.05rem; font-weight:800; border:0; border-radius:24px; background:var(--yellow); color:#3a2a00; cursor:pointer; touch-action:manipulation; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><a href="../../index.html">← トップへ</a><h1>⛄ ゆきだまダッシュ</h1></header>
+  <div class="hud"><span id="hTime">のこり 60</span><span id="hSize">おおきさ 14</span><span id="hDist">0%</span></div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="stage">
+    <canvas id="cv" width="360" height="480"></canvas>
+    <div class="overlay" id="ovStart">
+      <div>
+        <h2>⛄ ころがれ!ゆきだまダッシュ</h2>
+        <p>坂をころがるゆきだまを左右に動かして、<b>60秒以内にゴール</b>しよう!</p>
+        <p>❄️をひろうと<b>大きく&速く</b>なる。でも岩のゲートは<b>せまい</b>!大きすぎると岩にぶつかって小さくなり、🌲にぶつかっても縮むよ。</p>
+        <p>操作: 画面をドラッグ / ← → キー</p>
+        <button id="btnStart">スタート</button>
+      </div>
+    </div>
+    <div class="overlay hide" id="ovEnd">
+      <div>
+        <h2 id="endTitle"></h2>
+        <p id="endText"></p>
+        <button id="btnRetry">もういちど</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">大きいほど速い。でもゲートは通れる大きさで!</p>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
