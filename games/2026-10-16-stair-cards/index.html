@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>のぼれ!かいだんカード — DAILY GAMES</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { overflow-x:hidden; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:linear-gradient(180deg,#2b1d4f,#130f30); color:#fff; min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:12px 12px 32px; position:relative; }
+  header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px; }
+  header h1 { font-size:1.05rem; color:#ffd23f; }
+  header a { color:#fff; font-size:.9rem; text-decoration:none; border-bottom:2px dotted #ff77a8; min-height:44px; display:flex; align-items:center; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.95rem; margin-bottom:6px; }
+  .bar { height:12px; background:rgba(255,255,255,.15); border-radius:6px; overflow:hidden; }
+  .bar i { display:block; height:100%; transition:width .3s; }
+  #mhp { background:#ff77a8; } #php { background:#7dffb0; }
+  .monster { text-align:center; padding:8px 0; }
+  .monster .face { font-size:4.2rem; line-height:1.1; }
+  .monster.hit .face { animation:shake .3s; }
+  @keyframes shake { 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+  .intent { font-weight:800; color:#ffb347; min-height:1.6em; }
+  .row { display:flex; justify-content:space-between; font-size:.85rem; margin:4px 0; }
+  .preview { text-align:center; font-weight:800; min-height:1.8em; margin:6px 0; color:#ffd23f; }
+  .hand { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+  .card { min-height:96px; border:0; border-radius:10px; background:#fffdf5; color:#1c1c28; font-family:inherit; font-weight:800; box-shadow:0 4px 0 #b8b4a2; cursor:pointer; padding:2px; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .card .ic { font-size:1.5rem; } .card .n { font-size:1.6rem; }
+  .card.atk { background:#ffe3e3; } .card.def { background:#dcecff; } .card.heal { background:#dcffe6; }
+  .card.sel { transform:translateY(-8px); outline:3px solid #ffd23f; }
+  .card.sel::after { content:attr(data-o); position:absolute; top:-10px; right:-4px; background:#ffd23f; border-radius:50%; width:22px; height:22px; font-size:.8rem; line-height:22px; }
+  .card:disabled { opacity:.35; box-shadow:none; }
+  .actions { display:flex; gap:10px; margin-top:12px; }
+  .btn { font-size:1.05rem; font-weight:800; font-family:inherit; background:#ffd23f; color:#1c1c28; border:0; border-radius:12px; padding:0 22px; min-height:48px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .btn.sub { background:#8fa0c8; box-shadow:0 5px 0 #5c6a90; }
+  .actions .btn { flex:1; }
+  .log { text-align:center; min-height:1.6em; margin-top:10px; font-weight:700; font-size:.9rem; }
+  .overlay { position:absolute; inset:0; background:rgba(19,15,48,.96); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px; z-index:5; }
+  .overlay h2 { color:#ffd23f; font-size:1.5rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.92rem; margin-bottom:6px; }
+  .rewards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%; margin-top:10px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🪜 のぼれ!かいだんカード</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="hud"><span id="floor">1F</span><span id="turn"></span><span id="deck"></span></div>
+  <div class="monster" id="mon">
+    <div class="face" id="mface">👾</div>
+    <div class="bar"><i id="mhp"></i></div>
+    <div class="row"><span id="mname"></span><span id="mhpt"></span></div>
+    <div class="intent" id="intent"></div>
+  </div>
+  <div class="row"><span>🧑 じぶん <b id="phpt"></b></span><span id="shield"></span></div>
+  <div class="bar"><i id="php"></i></div>
+  <div class="preview" id="preview"></div>
+  <div class="hand" id="hand"></div>
+  <div class="actions">
+    <button class="btn sub" id="clearBtn" type="button">えらびなおし</button>
+    <button class="btn" id="goBtn" type="button">ターンけってい</button>
+  </div>
+  <div class="log" id="log"></div>
+
+  <div class="overlay" id="startOv">
+    <h2>のぼれ!かいだんカード</h2>
+    <p>モンスターを倒して6階のボスを目指そう!</p>
+    <p>手札から<b>前に出したカードより大きい数字</b>の順にしか出せません(1→3→4 など)。<br>出した<b>枚数ぶん</b>、⚔️こうげきがバイバイ! 🛡️は防御、💚は回復。</p>
+    <p>敵の次のこうげきは上に予告されます。<br>勝つたびに新しいカードを1枚ゲット。</p>
+    <p>操作:カードをタップ → 「ターンけってい」<br>キーボード:1〜5キーで選択、Enterで決定</p>
+    <button class="btn" id="startBtn" type="button">スタート</button>
+  </div>
+  <div class="overlay hidden" id="rewardOv">
+    <h2>しょうり!</h2>
+    <p>デッキに加えるカードを1枚えらぼう(HPも少し回復)</p>
+    <div class="rewards" id="rewards"></div>
+  </div>
+  <div class="overlay hidden" id="endOv">
+    <h2 id="endTitle"></h2>
+    <p id="endDetail"></p>
+    <button class="btn" id="retryBtn" type="button">もういちど</button>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
