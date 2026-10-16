@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>うて!消える魔球バッティング — DAILY GAMES</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { overflow-x:hidden; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:#0e2a18; color:#fff; min-height:100vh; -webkit-tap-highlight-color:transparent; }
+  .wrap { max-width:420px; margin:0 auto; padding:10px 12px 24px; position:relative; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  header h1 { font-size:1.02rem; color:#ffd23f; }
+  header a { color:#fff; font-size:.9rem; text-decoration:none; border-bottom:2px dotted #7dffb0; min-height:44px; display:flex; align-items:center; }
+  .hud { display:flex; justify-content:space-between; font-weight:800; font-size:.95rem; margin:2px 0 6px; }
+  canvas { display:block; width:100%; height:auto; border-radius:12px; touch-action:manipulation; background:#2f7a43; }
+  .btn { font-size:1.1rem; font-weight:800; font-family:inherit; background:#ffd23f; color:#1c1c28; border:0; border-radius:12px; padding:0 22px; min-height:52px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  #swing { width:100%; margin-top:10px; font-size:1.3rem; background:#ff6b4a; color:#fff; box-shadow:0 5px 0 #b33d25; }
+  .overlay { position:absolute; inset:0; background:rgba(8,24,14,.96); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px; z-index:5; }
+  .overlay h2 { color:#ffd23f; font-size:1.5rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.92rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:14px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>⚾ 消える魔球バッティング</h1><a href="../../index.html">← トップへ</a></header>
+  <div class="hud"><span id="score">0点</span><span id="strikes">ストライク ○○</span><span id="outs">アウト ○○○</span></div>
+  <canvas id="cv" width="360" height="440"></canvas>
+  <button id="swing" class="btn">⚾ スイング!</button>
+
+  <div id="intro" class="overlay">
+    <h2>⚾ 消える魔球バッティング</h2>
+    <p>ピッチャーが投げたボールを、ミートの瞬間に打ち返そう。<br>
+    投球前に<b>球種</b>が表示されるよ。</p>
+    <p>🔵ストレート:ふつうの速さ<br>🟡チェンジアップ:ゆっくり<br>🔴カーブ:だんだん加速<br>👻魔球:途中でボールが消える!</p>
+    <p>空ぶり・見のがしで1ストライク、3ストライクで1アウト。<br>3アウトでゲームオーバー。</p>
+    <p><b>操作:</b>画面タップ / スイングボタン / スペースキー</p>
+    <button id="start" class="btn">スタート</button>
+  </div>
+  <div id="over" class="overlay hidden">
+    <h2>ゲームセット!</h2>
+    <p id="result"></p>
+    <button id="retry" class="btn">もういちど</button>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
