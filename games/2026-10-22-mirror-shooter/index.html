@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>さかさまシューター — DAILY GAMES</title>
+<style>
+  :root { --bg:#0d1b2a; --cy:#5ce1e6; --pk:#ff6fb5; --yl:#ffd166; --paper:#f4f9ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:linear-gradient(180deg,#0d1b2a,#050a12); color:var(--paper); min-height:100vh; overflow-x:hidden; }
+  .wrap { max-width:420px; margin:0 auto; padding:10px 12px 28px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.9rem; min-height:44px; display:inline-flex; align-items:center; border-bottom:2px dotted var(--cy); }
+  h1 { color:var(--cy); font-size:1.05rem; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.95rem; margin-bottom:6px; color:var(--yl); }
+  .stage { position:relative; border:3px solid var(--cy); border-radius:14px; overflow:hidden; background:#07101c; }
+  canvas { display:block; width:100%; height:auto; touch-action:none; }
+  .overlay { position:absolute; inset:0; background:rgba(5,10,18,.94); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:18px; text-align:center; }
+  .overlay.hidden { display:none; }
+  .overlay h2 { color:var(--cy); font-size:1.5rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.92rem; margin-bottom:4px; }
+  .btn { font-family:inherit; cursor:pointer; touch-action:manipulation; min-height:48px; padding:0 36px; font-size:1.1rem; font-weight:700; background:var(--cy); color:#06202a; border:0; border-radius:12px; box-shadow:0 4px 0 #2a9ca0; margin-top:14px; }
+  .btn:active { transform:translateY(2px); }
+  .tools { display:flex; justify-content:center; margin-top:8px; }
+  .tog { font-family:inherit; cursor:pointer; min-height:44px; padding:0 16px; font-size:.9rem; background:#1b2b40; color:var(--paper); border:1px solid var(--cy); border-radius:10px; }
+  .pad { display:none; gap:12px; margin-top:8px; }
+  .pad.show { display:flex; }
+  .pad button { flex:1; min-height:60px; font-size:1.8rem; background:#1b2b40; color:var(--paper); border:2px solid var(--cy); border-radius:12px; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .pad button.on { background:#2a4a66; }
+  .big { font-size:2.2rem; color:var(--yl); font-weight:700; margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="../../index.html">← トップへ</a>
+    <h1>さかさまシューター</h1>
+  </header>
+  <div class="hud"><span id="lives">❤️❤️❤️</span><span id="time">のこり 75</span><span id="score">0 pt</span></div>
+  <div class="stage">
+    <canvas id="cv" width="360" height="500"></canvas>
+    <div class="overlay" id="intro">
+      <h2>🚀 さかさまシューター</h2>
+      <p>じどうで弾を撃つ宇宙船を動かして、<br>👾🛸をやっつけよう。75びょう生きのこればクリア!</p>
+      <p>⚠️ <b>ときどき操作が「さかさま」</b>に!<br>ドラッグ/←→が左右ぎゃくになる🔄ときは<br>画面の警告をよく見よう。</p>
+      <p>操作: 画面をドラッグ / ← → キー / A D キー<br>⭐=+50pt 💖=ライフ回復</p>
+      <button class="btn" id="start">スタート</button>
+    </div>
+    <div class="overlay hidden" id="end">
+      <h2 id="endTitle">GAME OVER</h2>
+      <div class="big" id="endScore">0 pt</div>
+      <p id="endMsg"></p>
+      <button class="btn" id="retry">もういちど</button>
+    </div>
+  </div>
+  <div class="tools"><button class="tog" id="togPad">🎮 コントローラ</button></div>
+  <div class="pad" id="pad"><button id="bl">◀</button><button id="br">▶</button></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
