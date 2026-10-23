@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>おぼえてごはん!ペットしょくどう — DAILY GAMES</title>
+<style>
+  :root { --cream:#fff6e0; --orange:#ff9f43; --brown:#5a3b24; --pink:#ffb8c6; --green:#7ed6a0; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:linear-gradient(180deg,#ffe3b3,#ffc9a0); color:var(--brown); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; }
+  header a { color:var(--brown); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--orange); min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .stage { position:relative; background:var(--cream); border:4px solid var(--orange); border-radius:14px; padding:12px; min-height:470px; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; margin-bottom:8px; }
+  .bubble { background:#fff; border:3px solid var(--brown); border-radius:16px; padding:10px 8px 8px; min-height:92px; position:relative; }
+  .bubble::after { content:''; position:absolute; bottom:-14px; left:50%; margin-left:-10px; border:10px solid transparent; border-top-color:var(--brown); border-bottom:0; }
+  .slots { display:flex; justify-content:center; gap:6px; flex-wrap:wrap; }
+  .slot { width:44px; height:48px; font-size:1.7rem; line-height:48px; text-align:center; border-radius:10px; background:#f3ead2; }
+  .slot.ok { background:#c8f2d4; }
+  .slot.ng { background:#ffc4c4; }
+  .slot.next { outline:3px dashed var(--orange); }
+  .timer { height:8px; background:#eee; border-radius:4px; margin-top:8px; overflow:hidden; }
+  .timer i { display:block; height:100%; width:100%; background:var(--orange); }
+  .pet { text-align:center; font-size:4.2rem; line-height:1.2; margin:20px 0 2px; transition:transform .2s; }
+  .pet.pop { transform:scale(1.25); }
+  .msg { text-align:center; font-weight:700; min-height:1.6em; margin-bottom:8px; font-size:.95rem; }
+  .shelf { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .food { font-size:1.9rem; min-height:60px; border:0; border-radius:12px; background:#fff; box-shadow:0 4px 0 #d9c7a0; cursor:pointer; touch-action:manipulation; }
+  .food:active { transform:translateY(2px); box-shadow:0 2px 0 #d9c7a0; }
+  .food small { display:block; font-size:.62rem; color:#a08c6a; line-height:1; }
+  .hintBtn { display:block; width:100%; margin-top:12px; min-height:48px; font-family:inherit; font-size:1rem; font-weight:700; color:var(--brown); background:var(--pink); border:0; border-radius:12px; box-shadow:0 4px 0 #d98aa0; cursor:pointer; }
+  .hintBtn:disabled { opacity:.5; }
+  .overlay { position:absolute; inset:0; border-radius:10px; background:rgba(255,246,224,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; overflow-y:auto; }
+  .overlay h2 { font-size:1.45rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.92rem; margin-bottom:6px; }
+  .btn { margin-top:14px; font-family:inherit; font-size:1.1rem; font-weight:700; background:var(--orange); color:#fff; border:0; border-radius:10px; padding:0 36px; min-height:48px; box-shadow:0 5px 0 #c9751d; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #c9751d; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🍽️ おぼえてごはん!</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="hud">
+      <span id="servedLabel">ごはん 0/10</span>
+      <span id="livesLabel">♥♥♥</span>
+    </div>
+    <div class="bubble">
+      <div class="slots" id="slots"></div>
+      <div class="timer"><i id="timerBar"></i></div>
+    </div>
+    <div class="pet" id="pet">🥚</div>
+    <div class="msg" id="msg">&nbsp;</div>
+    <div class="shelf" id="shelf"></div>
+    <button type="button" class="hintBtn" id="hintBtn">💡 もういちど見る(のこり2)</button>
+
+    <div class="overlay" id="intro">
+      <h2>🍽️ あそびかた</h2>
+      <p>ペットが「ごはん」を注文するよ。<br>吹き出しの<b>食べものの順番</b>を覚えよう!</p>
+      <p>しばらくすると吹き出しは<b>かくれる</b>よ。<br>棚から同じ順番でタップしてね。</p>
+      <p>⚠ 棚の食べものは毎回<b>ならびかわる</b>!<br>注文は だんだん長くなるよ。</p>
+      <p>まちがえるとハートが1つへる(3つ)。<br>10回ごはんをあげて、ペットを大人に育てよう。</p>
+      <p>💡「もういちど見る」は2回だけ。<br>⌨ キー1〜8でもえらべるよ。</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
