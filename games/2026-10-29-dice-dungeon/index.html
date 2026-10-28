@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ふりわけ!ダイスダンジョン — DAILY GAMES</title>
+<style>
+  :root { --bg1:#1d2b2a; --bg2:#2f4a3f; --accent:#f59e0b; --red:#ef4444; --blue:#3b82f6; --green:#22c55e; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:#fff; min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; }
+  header a { color:#fff; text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--accent); min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .stage { position:relative; background:#14201f; border:4px solid var(--accent); border-radius:14px; padding:12px; min-height:520px; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.92rem; margin-bottom:8px; gap:6px; }
+  .enemy { text-align:center; background:#1f3130; border-radius:12px; padding:10px; margin-bottom:8px; }
+  .enemy .face { font-size:3.2rem; line-height:1.1; }
+  .bar { height:12px; background:#0b1413; border-radius:6px; overflow:hidden; margin:6px 0; }
+  .bar i { display:block; height:100%; background:var(--red); transition:width .2s; }
+  .intent { font-weight:700; font-size:1rem; }
+  .msg { text-align:center; font-size:.9rem; min-height:2.8em; line-height:1.4; margin-bottom:8px; color:#fde68a; }
+  .tray { display:flex; justify-content:center; gap:12px; min-height:62px; margin-bottom:10px; }
+  .die { width:58px; height:58px; border-radius:12px; border:3px solid #fff; background:#fff; color:#222; font-size:1.9rem; font-weight:800; cursor:pointer; touch-action:manipulation; font-family:inherit; }
+  .die.sel { border-color:var(--accent); transform:translateY(-4px); box-shadow:0 0 0 3px var(--accent); }
+  .die.empty { visibility:hidden; }
+  .slots { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+  .slot { min-height:104px; border-radius:12px; border:3px dashed #7aa; background:#1f3130; color:#fff; font-family:inherit; cursor:pointer; touch-action:manipulation; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:4px; }
+  .slot b { font-size:.85rem; }
+  .slot .pv { font-size:1.15rem; font-weight:800; }
+  .slot.atk { border-color:var(--red); } .slot.grd { border-color:var(--blue); } .slot.heal { border-color:var(--green); }
+  .slot .die { width:44px; height:44px; font-size:1.4rem; pointer-events:none; }
+  .row { display:flex; gap:8px; }
+  .sub { flex:1; min-height:48px; font-family:inherit; font-size:.95rem; font-weight:700; color:#222; background:#fde68a; border:0; border-radius:12px; box-shadow:0 4px 0 #b8902a; cursor:pointer; }
+  .sub.go { background:var(--accent); }
+  .sub:disabled { opacity:.35; cursor:default; }
+  .relics { margin-top:8px; font-size:.8rem; color:#9bb; min-height:1.4em; }
+  .overlay { position:absolute; inset:0; border-radius:10px; background:rgba(20,32,31,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; overflow-y:auto; }
+  .overlay h2 { font-size:1.4rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.92rem; margin-bottom:6px; }
+  .btn { margin-top:14px; font-family:inherit; font-size:1.1rem; font-weight:700; background:var(--accent); color:#222; border:0; border-radius:10px; padding:0 36px; min-height:48px; box-shadow:0 5px 0 #b8741a; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b8741a; }
+  .pick { display:block; width:100%; margin-top:8px; min-height:56px; font-family:inherit; font-size:.95rem; text-align:left; color:#fff; background:#2a4543; border:2px solid var(--accent); border-radius:10px; padding:8px 12px; cursor:pointer; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎲 ふりわけ!ダイスダンジョン</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="stage">
+    <div class="hud">
+      <span id="floorLabel">1/6階</span>
+      <span id="hpLabel">❤️ 22/22</span>
+    </div>
+    <div class="enemy">
+      <div class="face" id="face">🐀</div>
+      <div class="bar"><i id="ehp"></i></div>
+      <div class="intent" id="intent"></div>
+    </div>
+    <div class="msg" id="msg">&nbsp;</div>
+    <div class="tray" id="tray"></div>
+    <div class="slots" id="slots"></div>
+    <div class="row">
+      <button type="button" class="sub" id="rerollBtn">🎲 ふりなおし</button>
+      <button type="button" class="sub go" id="goBtn">けってい!</button>
+    </div>
+    <div class="relics" id="relics"></div>
+
+    <div class="overlay" id="intro">
+      <h2>🎲 あそびかた</h2>
+      <p>毎ターン<b>3つのサイコロ</b>が出るよ。<br>サイコロをタップして、下の3つの枠に<b>1つずつ</b>ふりわけよう。</p>
+      <p>⚔️ <b>こうげき</b>=目の数のダメージ<br>🛡️ <b>ぼうぎょ</b>=目の数だけ敵の攻撃をへらす<br>💖 <b>かいふく</b>=目の半分(切り上げ)回復</p>
+      <p>敵の次の行動は上に<b>予告</b>されるよ。<br>勝つたびに<b>お宝を1つ</b>選んで強くなろう。6階のボスを倒せばクリア!</p>
+      <p>枠のサイコロをタップすると戻せるよ</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="reward">
+      <h2>🎁 お宝をえらぼう</h2>
+      <div id="picks" style="width:100%"></div>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
