@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ぴよぴよおせわ!ひよこ育成 — DAILY GAMES</title>
+<style>
+  :root { --y:#f5b400; --ink:#4a3200; --paper:#fffbe8; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:#fff1c2; color:var(--ink); min-height:100vh; overflow-x:hidden; }
+  .wrap { max-width:480px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--y); min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .gauges { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px; }
+  .g { background:#fff; border-radius:8px; padding:4px 6px; font-size:.8rem; font-weight:700; }
+  .bar { height:10px; border-radius:5px; background:#eee; margin-top:3px; overflow:hidden; }
+  .bar i { display:block; height:100%; width:100%; background:#4cc36a; transition:width .1s; }
+  .bar i.low { background:#e5484d; }
+  .stage { position:relative; }
+  .field { position:relative; height:380px; border:4px solid var(--y); border-radius:12px; background:linear-gradient(#cdeeff 0,#cdeeff 55%,#9bd96b 55%); overflow:hidden; touch-action:manipulation; }
+  .chick { position:absolute; left:50%; top:50%; transform:translate(-50%,-40%); font-size:5rem; transition:font-size .3s; pointer-events:none; }
+  .chick.bounce { animation:bn .35s; }
+  @keyframes bn { 50% { transform:translate(-50%,-55%); } }
+  .bub { position:absolute; width:58px; height:58px; border-radius:50%; border:3px solid #fff; background:#fff8; font-size:1.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; box-shadow:0 3px 0 rgba(0,0,0,.2); font-family:inherit; }
+  .bub .t { position:absolute; left:50%; bottom:-6px; transform:translateX(-50%); width:44px; height:5px; background:#0003; border-radius:3px; overflow:hidden; }
+  .bub .t i { display:block; height:100%; background:#e5484d; }
+  .bub.pop { animation:pp .3s forwards; }
+  @keyframes pp { to { transform:scale(1.6); opacity:0; } }
+  .bub.full { border-color:#e5484d; }
+  .hud { display:flex; justify-content:space-between; margin-top:10px; font-weight:700; font-size:.95rem; }
+  .msg { text-align:center; min-height:1.5em; margin-top:4px; font-size:.9rem; }
+  .overlay { position:absolute; inset:4px; border-radius:8px; background:rgba(255,251,232,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.5rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.92rem; margin-bottom:6px; }
+  .btn { margin-top:14px; font-family:inherit; font-size:1.1rem; font-weight:700; background:var(--y); color:var(--ink); border:0; border-radius:10px; padding:0 36px; min-height:48px; box-shadow:0 5px 0 #b38200; cursor:pointer; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🐥 ぴよぴよおせわ!</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="gauges">
+    <div class="g">🍙 ごはん<div class="bar"><i id="b0"></i></div></div>
+    <div class="g">🎾 あそび<div class="bar"><i id="b1"></i></div></div>
+    <div class="g">💤 ねんね<div class="bar"><i id="b2"></i></div></div>
+  </div>
+  <div class="stage">
+    <div class="field" id="field"><div class="chick" id="chick">🥚</div></div>
+    <div class="hud"><span id="time">のこり 60</span><span id="grow">せいちょう 0%</span><span id="best">BEST -</span></div>
+    <div class="msg" id="msg"></div>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>🐣 ひよこの「ほしい」がふきだしで ぽんぽん出るよ。</p>
+      <p>👆 ふきだしを<b>すばやくタップ</b>してお世話しよう。(🍙ごはん/🎾あそび/💤ねんね)</p>
+      <p>⚠ ゲージが<b>まんぷく近い</b>のに出る 赤ふちのふきだしは<b>やりすぎ</b>!さわるとゲージが下がるよ。</p>
+      <p>💩 うんちは放っておくと ぜんぶのゲージがへる。見つけたら そうじ!</p>
+      <p>🐔 60びょうで どこまで育つかな? どれかのゲージが0になるとおわり。</p>
+      <p>⌨ キー: 1=🍙 2=🎾 3=💤 4(Space)=💩</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
