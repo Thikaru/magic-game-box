@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>きりのなかの砲撃手 — DAILY GAMES</title>
+<style>
+  :root { --b:#3b4a8f; --ink:#e9ecff; --bg:#141a3a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; }
+  .wrap { max-width:480px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted #8fa0ff; min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .stage { position:relative; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.95rem; margin-bottom:6px; gap:6px; }
+  .info { text-align:center; font-weight:700; min-height:2.8em; font-size:.92rem; line-height:1.4; margin-bottom:6px; }
+  .bar { height:8px; background:#2a3366; border-radius:4px; overflow:hidden; margin-bottom:8px; }
+  .bar i { display:block; height:100%; width:0; background:#ffd24a; }
+  .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; margin-bottom:10px; }
+  .cell { position:relative; font-family:inherit; aspect-ratio:1; min-height:44px; background:#26306b; border:2px solid var(--b); border-radius:8px; color:var(--ink); font-size:1.5rem; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; }
+  .cell small { position:absolute; right:2px; top:0; font-size:.8rem; color:#ffd24a; }
+  .grid.fog .cell { background:#4a5385; border-color:#6a74b0; }
+  .cell.done { background:#0f1330; cursor:default; }
+  .cell.ghost { background:#5a2a46; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:#ffd24a; color:#222; border:0; border-radius:10px; padding:0 20px; min-height:48px; box-shadow:0 5px 0 #b08a1a; cursor:pointer; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(20,26,58,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.5rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.92rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:14px; padding:0 36px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌫 きりのなかの砲撃手</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <div class="hud"><span id="wave">WAVE 1</span><span id="lives">❤❤❤</span><span id="ammo">たま 0</span><span id="score">0点</span></div>
+    <div class="info" id="info"></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="grid" id="grid"></div>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>👾 画面に出る<b>おばけ</b>と、その<b>やじるし</b>をおぼえよう。</p>
+      <p>🌫 きりがかかったら、おばけは<b>やじるしの方へ1マス</b>すすむ!</p>
+      <p>🎯 いなくなった場所ではなく、<b>すすんだ先のマス</b>をタップして砲撃。</p>
+      <p>はずすと たまが1つ減るよ。たまが切れるとライフ-1。ライフ3つで終了、WAVE 8 までクリアでぜんめつ!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
