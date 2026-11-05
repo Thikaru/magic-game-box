@@ -1,6 +1,14 @@
 {
   "games": [
     {
+      "id": "2026-11-06-penguin-curling",
+      "title": "ペンギンカーリング",
+      "genre": "スポーツ",
+      "date": "2026-11-06",
+      "description": "ストーンをはじいて、ブラシでこすって、まとの中心へ。ライバルの石をはじき出そう!",
+      "path": "games/2026-11-06-penguin-curling/"
+    },
+    {
       "id": "2026-11-04-fog-gunner",
       "title": "きりのなかの砲撃手",
       "genre": "記憶×シューティング",
