@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ペンギンカーリング — DAILY GAMES</title>
+<style>
+  :root { --ink:#eaf6ff; --bg:#0e2238; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; }
+  .wrap { max-width:420px; margin:0 auto; padding:10px 12px 28px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted #8fd0ff; min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.95rem; margin-bottom:6px; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; border-radius:12px; touch-action:none; background:#dff3ff; }
+  .info { text-align:center; font-size:.88rem; min-height:1.5em; margin:6px 0; font-weight:700; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:#ffd24a; color:#222; border:0; border-radius:10px; padding:0 20px; min-height:48px; box-shadow:0 5px 0 #b08a1a; cursor:pointer; }
+  #sweep { width:100%; min-height:56px; background:#6ad0ff; box-shadow:0 5px 0 #2b86b3; user-select:none; -webkit-user-select:none; touch-action:manipulation; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(14,34,56,.96); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.5rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.92rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:14px; padding:0 36px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🐧 ペンギンカーリング</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="hud"><span id="shots">のこり 🥌×6</span><span id="score">0点</span></div>
+  <div class="stage">
+    <canvas id="cv" width="360" height="520"></canvas>
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>🥌 <b>青い石</b>を下へ引っぱって、はなすと発射!引くほど強く飛ぶよ。</p>
+      <p>🧹 すべっている間に<b>「ブラシ」ボタン</b>を連打すると、氷がなめらかになって遠くまで進む。</p>
+      <p>🎯 まとの中心ほど高得点(10/5/3点)。まとの中の<b>赤いライバル石は −3点</b>。ぶつけてはじき出そう!</p>
+      <p>6投で <b>25点</b> 以上ならクリア。<br>⌨ キーボード:←→でねらい、Spaceで力をためて離す、Bでブラシ</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+  <div class="info" id="info"></div>
+  <button class="btn" id="sweep" type="button">🧹 ブラシ(連打!)</button>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
