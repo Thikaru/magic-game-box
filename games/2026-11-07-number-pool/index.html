@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ナンバーポケット — DAILY GAMES</title>
+<style>
+  :root { --ink:#f1fff4; --bg:#0f2a1e; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; }
+  .wrap { max-width:420px; margin:0 auto; padding:10px 12px 28px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted #7fe0a0; min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .stage { position:relative; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.92rem; margin-bottom:4px; gap:6px; }
+  .info { text-align:center; font-weight:700; min-height:2.6em; font-size:.9rem; line-height:1.4; margin-bottom:6px; }
+  canvas { display:block; width:100%; height:auto; border-radius:12px; touch-action:none; background:#5a3a1e; }
+  .ctl { display:flex; gap:8px; margin-top:10px; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:#ffd24a; color:#222; border:0; border-radius:10px; padding:0 16px; min-height:48px; box-shadow:0 5px 0 #b08a1a; cursor:pointer; }
+  .ctl .btn { flex:1; padding:0 4px; font-size:1rem; }
+  .ctl .sub { background:#9be8b4; box-shadow:0 5px 0 #4f9a68; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(10,36,24,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.5rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.92rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:14px; padding:0 36px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎱 ナンバーポケット</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <div class="hud"><span id="lv">LEVEL 1</span><span id="shots">のこり 0 打</span><span id="score">0点</span></div>
+    <div class="info" id="info"></div>
+    <canvas id="cv" width="360" height="520"></canvas>
+    <div class="ctl">
+      <button class="btn sub" id="leftBtn">⟲ 左</button>
+      <button class="btn" id="shootBtn">うつ!</button>
+      <button class="btn sub" id="rightBtn">右 ⟳</button>
+    </div>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>🎱 白い玉をはじいて、<b>数字の小さい順</b>(1→2→3…)にポケットへ落とそう。</p>
+      <p>👆 <b>白い玉から後ろへドラッグ</b>して離すと発射(引くほど強い)。キーボードは ←→ で角度、↑↓ で強さ、スペースで発射。下のボタンでも角度を調整できるよ。</p>
+      <p>⚠ 順番をまちがえて落とした玉は台にもどされ、白い玉を落とすと1打ムダに。打数が切れたら終了。LEVEL 4 まで全クリアで勝ち!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
