@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>いれかわりかご!フルーツ仕分け — DAILY GAMES</title>
+<style>
+  :root { --ink:#fff7e6; --bg:#3a2a1a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; touch-action:manipulation; }
+  .wrap { max-width:480px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted #ffb84a; min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .stage { position:relative; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.95rem; margin-bottom:6px; gap:6px; }
+  .bar { height:8px; background:#5a4430; border-radius:4px; overflow:hidden; margin-bottom:8px; }
+  .bar i { display:block; height:100%; width:0; background:#ffb84a; }
+  .lane { position:relative; height:300px; background:#52402b; border-radius:12px; overflow:hidden; border-bottom:4px dashed #e0554a; }
+  .item { position:absolute; left:50%; width:56px; height:56px; margin-left:-28px; font-size:2.4rem; line-height:56px; text-align:center; }
+  .item.next { filter:drop-shadow(0 0 6px #fff); }
+  .banner { position:absolute; left:0; right:0; top:10px; text-align:center; font-weight:900; font-size:1.1rem; color:#ffd24a; text-shadow:0 2px 0 #000; pointer-events:none; }
+  .baskets { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+  .basket { font-family:inherit; min-height:72px; border:3px solid #fff; border-radius:12px; color:#fff; font-weight:900; font-size:1rem; cursor:pointer; text-shadow:0 1px 2px #000; }
+  .basket b { display:block; font-size:1.6rem; }
+  .basket:active { transform:translateY(2px); }
+  .flash { animation:fl .25s; }
+  @keyframes fl { 50% { background:#e0554a !important; } }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:#ffb84a; color:#222; border:0; border-radius:10px; padding:0 20px; min-height:48px; box-shadow:0 5px 0 #a8701a; cursor:pointer; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(40,28,16,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.5rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.92rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:14px; padding:0 36px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧺 いれかわりかご!フルーツ仕分け</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <div class="hud"><span id="lives">❤❤❤</span><span id="combo">コンボ 0</span><span id="score">0点</span></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="lane" id="lane"><div class="banner" id="banner"></div></div>
+    <div class="baskets" id="baskets"></div>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>🍎🫐🍋 ながれてくるフルーツを、<b>いろが同じかご</b>に入れよう。いちばん下のフルーツが対象!</p>
+      <p>🧺 かごをタップ(PCは 1・2・3 キー / ←↓→ キー)で仕分け。</p>
+      <p>⚠ ときどき<b>かごの場所がいれかわる</b>よ!場所でなく<b>いろ</b>を見よう。</p>
+      <p>まちがい・とりこぼしでライフ-1(3つで終了)。60秒がんばればクリア!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
