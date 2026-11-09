@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビートボクシング — DAILY GAMES</title>
+<style>
+  :root { --ink:#fff4e6; --bg:#2a1020; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; }
+  .wrap { max-width:420px; margin:0 auto; padding:10px 12px 24px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted #ff9a6a; min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.95rem; margin-bottom:6px; gap:6px; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; background:#3b1730; border-radius:12px; touch-action:none; }
+  .pads { display:grid; grid-template-columns:1fr 1.2fr 1fr; gap:8px; margin-top:10px; }
+  .pad { font-family:inherit; font-size:1.05rem; font-weight:700; min-height:64px; border:0; border-radius:12px; color:#fff; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; box-shadow:0 5px 0 rgba(0,0,0,.4); }
+  .pad:active { transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.4); }
+  #pL { background:#3b82f6; } #pC { background:#e0a21a; color:#222; } #pR { background:#16a37f; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:#ffd24a; color:#222; border:0; border-radius:10px; padding:0 20px; min-height:48px; box-shadow:0 5px 0 #b08a1a; cursor:pointer; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(42,16,32,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.5rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.9rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:14px; padding:0 36px; }
+  .hidden { display:none !important; }
+  .note { text-align:center; font-size:.78rem; opacity:.8; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🥊 ビートボクシング</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="hud"><span id="round">ROUND 1</span><span id="lives">❤❤❤❤❤</span><span id="combo">0 COMBO</span><span id="score">0点</span></div>
+  <div class="stage">
+    <canvas id="cv" width="360" height="480"></canvas>
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>🤖 ロボのパンチが<b>赤い玉</b>になって落ちてくるよ。</p>
+      <p>ラインにぴったりのタイミングで、同じがわの<b>◀ガード / ガード▶</b>をタップ!(キーボード: A / D か ← / →)</p>
+      <p>1小節の3発を<b>ノーミスでガード</b>すると、ロボがぐらぐら…<b>金色のチャンス玉</b>が出るので<b>👊パンチ</b>(中央 / S / ↓ / スペース)でカウンター!</p>
+      <p>ミスしていると玉は灰色で、パンチできないよ。ガードをしそこなうとハート-1(5つ)。3ラウンドで だんだん速くなる!</p>
+      <p>♪ 音が鳴ります</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+  <div class="pads">
+    <button class="pad" id="pL">◀ ガード</button>
+    <button class="pad" id="pC">👊 パンチ</button>
+    <button class="pad" id="pR">ガード ▶</button>
+  </div>
+  <p class="note">玉がラインにかさなった瞬間をねらおう</p>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
