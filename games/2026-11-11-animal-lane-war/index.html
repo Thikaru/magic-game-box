@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三すくみ!どうぶつ陣とり合戦 — DAILY GAMES</title>
+<style>
+  :root { --ink:#fff8e7; --bg:#1f3a2e; --acc:#ffd24a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; }
+  .wrap { max-width:440px; margin:0 auto; padding:8px 12px 28px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--acc); min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1rem; }
+  .stage { position:relative; }
+  .hud { display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:.9rem; gap:6px; margin-bottom:4px; }
+  .hud .time { font-variant-numeric:tabular-nums; background:#12251d; border-radius:8px; padding:2px 10px; }
+  canvas { display:block; width:100%; height:auto; border-radius:12px; background:#2d5a41; touch-action:manipulation; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .energy { display:flex; align-items:center; gap:6px; margin:8px 0 6px; font-weight:700; font-size:.85rem; }
+  .pips { flex:1; display:grid; grid-template-columns:repeat(10,1fr); gap:3px; }
+  .pips i { height:14px; border-radius:4px; background:#12251d; overflow:hidden; display:block; }
+  .pips i b { display:block; height:100%; width:0; background:var(--acc); }
+  .units { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .unit { font-family:inherit; min-height:64px; border-radius:12px; border:3px solid #48705a; background:#2a4c3b; color:var(--ink); font-weight:700; font-size:.8rem; line-height:1.25; cursor:pointer; padding:4px 2px; touch-action:manipulation; }
+  .unit span { display:block; font-size:1.5rem; line-height:1.1; }
+  .unit.sel { border-color:var(--acc); background:#3f6b3a; box-shadow:0 0 0 2px rgba(255,210,74,.35); }
+  .unit.poor { opacity:.45; }
+  .hint { text-align:center; font-size:.8rem; margin-top:8px; opacity:.85; line-height:1.5; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:var(--acc); color:#222; border:0; border-radius:10px; padding:0 36px; min-height:48px; box-shadow:0 5px 0 #b08a1a; cursor:pointer; margin-top:12px; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(18,37,29,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:14px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.35rem; margin-bottom:8px; }
+  .overlay p { line-height:1.6; font-size:.88rem; margin-bottom:5px; }
+  .overlay .tri { font-size:1.05rem; font-weight:700; background:#2a4c3b; border-radius:10px; padding:6px 10px; margin:4px 0 6px; }
+  .overlay small { opacity:.8; font-size:.78rem; line-height:1.5; display:block; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚩 三すくみ!どうぶつ陣とり合戦</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <div class="hud"><span id="ehp">🏯</span><span class="time" id="time">90</span><span id="php">🏠</span></div>
+    <canvas id="cv" width="360" height="430"></canvas>
+    <div class="energy"><span>⚡<span id="en">5</span></span><div class="pips" id="pips"></div></div>
+    <div class="units" id="units">
+      <button class="unit" type="button" data-t="0"><span>🐭</span>ねずみ ⚡2<br>はやい</button>
+      <button class="unit" type="button" data-t="1"><span>🐱</span>ねこ ⚡3<br>ふつう</button>
+      <button class="unit" type="button" data-t="2"><span>🐘</span>ぞう ⚡4<br>おそい・2ダメ</button>
+    </div>
+    <p class="hint">どうぶつをえらんで → 道をタップで出撃!<br>キー: 1/2/3 でえらぶ、← ↓ → で左・中・右の道へ</p>
+
+    <div class="overlay" id="intro">
+      <h2>あそびかた</h2>
+      <p>下の<b>どうぶつ</b>をえらんで、3本の<b>道</b>のどれかをタップすると出撃!<br>上の🏯赤とりでまでたどりつくとダメージ。</p>
+      <p class="tri">🐭 ▶ 🐘 ▶ 🐱 ▶ 🐭</p>
+      <p>道でぶつかると<b>三すくみ</b>で勝負(ねずみはぞうに、ぞうはねこに、ねこはねずみに勝つ)。おなじ同士はあいうち。勝ったほうはそのまま進むよ。</p>
+      <p>出撃には⚡エネルギーがいる。相手は<b>「!」の予告</b>のあとに動きだすから、よく見て有利などうぶつを出そう。</p>
+      <p>90秒のうちに相手のとりで(❤6)を先にくずすか、時間切れで❤が多いほうの勝ち!</p>
+      <small>PC: 1/2/3 でどうぶつ、← ↓ →(または A S D)で道</small>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
