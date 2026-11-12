@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ぐるっと!かいてん四目ならべ — DAILY GAMES</title>
+<style>
+  :root { --ink:#fff7e6; --bg:#1d2b3a; --board:#2f6f8f; --hole:#16222e; --me:#ff6b6b; --cpu:#ffd24a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; }
+  .wrap { max-width:440px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted #8fd0ff; min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1rem; }
+  .stage { position:relative; }
+  .hud { display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:.92rem; margin-bottom:6px; gap:6px; }
+  .hud .spin { background:#35485c; border-radius:999px; padding:4px 10px; white-space:nowrap; }
+  .hud .spin.soon { background:#e8590c; animation:pulse .5s infinite alternate; }
+  @keyframes pulse { to { transform:scale(1.07); } }
+  .info { text-align:center; font-weight:700; min-height:2.9em; font-size:.95rem; line-height:1.45; margin-bottom:6px; display:flex; align-items:center; justify-content:center; }
+  .cols { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; padding:0 6px; margin-bottom:4px; }
+  .colbtn { font-family:inherit; min-height:44px; border:0; border-radius:8px; background:#35485c; color:var(--ink); font-size:1.1rem; cursor:pointer; padding:0; }
+  .colbtn.sel { background:var(--me); color:#222; }
+  .colbtn:disabled { opacity:.35; cursor:default; }
+  .boardbox { padding:6px; overflow:hidden; border-radius:14px; }
+  .board { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; background:var(--board); padding:6px; border-radius:12px; aspect-ratio:1; }
+  .board.spin { transition:transform .6s ease-in-out; transform:rotate(90deg) scale(.82); }
+  .cell { aspect-ratio:1; border-radius:50%; background:var(--hole); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.2rem; line-height:1; }
+  .cell.p1 { background:var(--me); box-shadow:inset 0 -4px 0 rgba(0,0,0,.25); }
+  .cell.p2 { background:var(--cpu); box-shadow:inset 0 -4px 0 rgba(0,0,0,.25); }
+  .cell.new { animation:drop .25s ease-out; }
+  @keyframes drop { from { transform:translateY(-140%); } }
+  .cell.win { outline:4px solid #fff; outline-offset:-2px; animation:pulse .35s infinite alternate; }
+  .cell.ghost { background:rgba(255,107,107,.35); }
+  .down { text-align:center; font-size:.8rem; opacity:.8; margin-top:4px; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:#ffd24a; color:#222; border:0; border-radius:10px; padding:0 20px; min-height:48px; box-shadow:0 5px 0 #b08a1a; cursor:pointer; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(29,43,58,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.4rem; margin-bottom:10px; }
+  .overlay p { line-height:1.65; font-size:.9rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:14px; padding:0 36px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔄 ぐるっと!かいてん四目ならべ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <div class="hud"><span id="score">🔴0 − 0🟡</span><span id="round">ラウンド1</span><span class="spin" id="spin">🔄 あと4手</span></div>
+    <div class="info" id="info"></div>
+    <div class="cols" id="cols"></div>
+    <div class="boardbox"><div class="board" id="board"></div></div>
+    <div class="down">⬇ こまは下へおちる ⬇</div>
+
+    <div class="overlay" id="intro">
+      <h2>🔄 かいてん四目ならべ</h2>
+      <p>🔴 あなたと 🟡 ロボが、こうたいで こまを落とすよ。</p>
+      <p>たて・よこ・ななめに <b>4つならべたら勝ち</b>!</p>
+      <p>🔄 ただし <b>4手ごとに ばんめんが右へ90°回転</b>して、こまが下へおちなおす。回転のあとの形を先読みしよう。</p>
+      <p>回転で両方そろったら引き分け。<b>先に2勝</b>で優勝!</p>
+      <p>📱 列(▼かマス)をタップ / ⌨ ←→でえらんで Enter・Space、または 1〜6キー</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
