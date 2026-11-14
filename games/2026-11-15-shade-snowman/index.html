@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>とけるな!かげふみゆきだるま — DAILY GAMES</title>
+<style>
+  :root { --sky:#2b4a7a; --accent:#ffd23f; --snow:#f4fbff; --ink:#1c1c28; --ice:#8fe3ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { overflow-x:hidden; }
+  body { font-family:"Hiragino Maru Gothic ProN","M PLUS Rounded 1c",system-ui,sans-serif;
+    background:linear-gradient(180deg,#1d3557,#14243d); color:var(--snow); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:14px 12px 30px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; row-gap:6px; margin-bottom:10px; }
+  header a { color:var(--snow); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--ice); }
+  h1 { color:var(--accent); font-size:1.15rem; }
+  .hud { display:flex; justify-content:space-between; gap:6px; font-size:.85rem; margin-bottom:8px; flex-wrap:wrap; }
+  .hud span { background:rgba(255,255,255,.1); border-radius:8px; padding:4px 8px; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; border:3px solid var(--ice); border-radius:12px; background:#87c5ff; touch-action:none; }
+  .overlay { position:absolute; inset:3px; border-radius:9px; background:rgba(16,30,58,.93);
+    display:flex; flex-direction:column; align-items:center; text-align:center; padding:18px 16px; overflow-y:auto; }
+  .overlay h2 { color:var(--accent); font-size:1.35rem; margin-bottom:10px; }
+  .overlay p { line-height:1.7; font-size:.9rem; margin-bottom:8px; }
+  .overlay .big { font-size:2.4rem; }
+  .btn { margin-top:10px; font-family:inherit; font-weight:700; font-size:1.1rem; background:var(--accent);
+    color:var(--ink); border:0; border-radius:10px; min-height:48px; padding:0 34px; box-shadow:0 4px 0 #b8912a; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 2px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .vpadArea { margin-top:12px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .vpadToggle { font-family:inherit; font-size:.85rem; color:#fff; background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:0 14px; min-height:44px; cursor:pointer; }
+  .vpadPanel { display:flex; justify-content:space-between; width:100%; gap:12px; }
+  .vbtn { flex:1; min-height:64px; font-size:1.6rem; color:#fff; background:rgba(143,227,255,.22);
+    border:2px solid rgba(143,227,255,.6); border-radius:14px; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .vbtn.on { background:rgba(143,227,255,.55); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>⛄ とけるな!かげふみゆきだるま</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span id="dayLabel">1日目</span>
+    <span id="quotaLabel">❄️ 0/5</span>
+    <span id="scoreLabel">SCORE 0</span>
+  </div>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="480"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>⛄ とけるな!かげふみゆきだるま</h2>
+      <p class="big">☀️ → 🏢 → ⛄</p>
+      <p>ゆきだるまは<b>ひなた</b>に出るとどんどん<b>とける</b>!<br>
+        たてものや木の<b>影</b>の中ならとけない。</p>
+      <p>太陽は朝から夕方へ動き、<b>影の向きと長さも変わる</b>。<br>
+        朝・夕は長く、お昼は真下だけ…!</p>
+      <p>日がしずむまでに<b>❄️ をノルマ数</b>集めよう。<br>
+        ❄️ でちょっと元に戻る。🧊 は大回復。<br>
+        ☁️ 雲やトラック 🚚 の影も使えるぞ。</p>
+      <p>👆 画面をタッチ/ドラッグした方へ歩く<br>
+        ⌨ ←→ / A D キー でも移動<br>
+        3日間の晴れをのりきればクリア!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <p class="big" id="resultIcon"></p>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+
+  <div class="vpadArea">
+    <button type="button" class="vpadToggle" id="vpadToggle">🎮 コントローラ 表示/非表示</button>
+    <div class="vpadPanel hidden" id="vpadPanel">
+      <button type="button" class="vbtn" data-dir="-1">◀</button>
+      <button type="button" class="vbtn" data-dir="1">▶</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
