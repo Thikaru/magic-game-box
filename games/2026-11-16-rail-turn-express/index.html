@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>まわして!レールきゅうこう — DAILY GAMES</title>
+<style>
+  :root { --bg1:#173a2b; --bg2:#0e261c; --gold:#ffd23f; --paper:#fffdf5; --ink:#1c1c28; --mint:#7fe0b0; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"Hiragino Maru Gothic ProN","M PLUS Rounded 1c",system-ui,sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:14px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; row-gap:6px; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--gold);
+    min-height:44px; display:inline-flex; align-items:center; }
+  h1 { color:var(--gold); font-size:1.15rem; }
+  .hud { display:flex; justify-content:space-between; gap:6px; font-weight:700; font-size:.9rem; margin-bottom:8px; flex-wrap:wrap; }
+  .hud span { background:rgba(0,0,0,.3); border-radius:8px; padding:4px 8px; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; border:4px solid var(--gold); border-radius:12px; background:#2a5a3c; touch-action:none; }
+  .overlay { position:absolute; inset:4px; border-radius:8px; background:rgba(10,30,20,.94);
+    display:flex; flex-direction:column; align-items:center; text-align:center; padding:20px 16px; overflow-y:auto; }
+  .overlay h2 { color:var(--gold); font-size:1.4rem; margin-bottom:10px; }
+  .overlay p { line-height:1.75; font-size:.9rem; margin-bottom:6px; }
+  .overlay .big { font-size:2rem; color:var(--gold); font-weight:700; }
+  .btn { margin-top:14px; font-size:1.1rem; font-weight:700; background:var(--gold); color:var(--ink); border:0;
+    border-radius:10px; padding:0 36px; min-height:48px; box-shadow:0 5px 0 #b8912a; cursor:pointer; font-family:inherit; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none; }
+  .hint { font-size:.8rem; opacity:.85; margin-top:8px; line-height:1.6; }
+  .seats { letter-spacing:2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚂 まわして!レールきゅうこう</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="hud">
+    <span>⭐ <b id="score">0</b></span>
+    <span>⏱ <b id="time">90</b></span>
+    <span>❤️ <b id="lives">3</b></span>
+    <span class="seats">🚃 <b id="seats">・・・</b></span>
+  </div>
+  <div class="stage">
+    <canvas id="game" width="420" height="540"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>🚂 まわして!レールきゅうこう</h2>
+      <p>汽車は<b>止まらず</b>走りつづけます。<br>前のレールを<b>タップして回し</b>、道をつなごう!</p>
+      <p>🙋 お客さんのマスを通ると乗せられる(<b>3人まで</b>)。<br>同じ色の🏠駅を通るとおろして得点!</p>
+      <p>まとめて届けると高得点<br>(1人=100 / 2人=400 / 3人=900)。<br>届けるたびに汽車は速くなるよ。</p>
+      <p>レールが切れている・外に出る・🪨にぶつかると<b>だっせん</b>(❤️−1)。<br>汽車がいるマスは回せません。<br>点線のマスが「次に入るマス」。赤いときはキケン!</p>
+      <p>⌨️ スペース:次のマスを回す / 矢印+Enter:カーソルのマスを回す</p>
+      <p>⏱ 90びょうでどこまでかせげるかな?</p>
+      <button class="btn" id="startBtn" type="button">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resTitle">しゅうりょう!</h2>
+      <p id="resMsg"></p>
+      <p class="big" id="resScore">0</p>
+      <p id="resDetail"></p>
+      <p id="resBest"></p>
+      <button class="btn" id="retryBtn" type="button">もういちど</button>
+    </div>
+  </div>
+  <p class="hint">タップでレールが時計回りに回るよ。十字レールは回せないけど、まっすぐ通りぬけられる。</p>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
