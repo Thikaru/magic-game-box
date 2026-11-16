@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>そだててダッシュ!ハムスター杯 — DAILY GAMES</title>
+<style>
+  :root { --ink:#3a2a14; --bg:#fff4dc; --card:#fffaf0; --acc:#ff8a3d; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .wrap { max-width:480px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--acc); min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .stage { position:relative; min-height:520px; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.9rem; margin-bottom:6px; gap:6px; flex-wrap:wrap; }
+  canvas { display:block; width:100%; height:auto; border-radius:10px; background:#9fd98a; touch-action:none; }
+  .hint { text-align:center; font-weight:700; font-size:.88rem; min-height:1.5em; margin:6px 0 4px; }
+  .stam { display:flex; align-items:center; gap:6px; font-weight:700; font-size:.85rem; }
+  .stam .bar { flex:1; height:14px; background:#e8d6b0; border-radius:7px; overflow:hidden; }
+  .stam .bar i { display:block; height:100%; width:100%; background:#4cc46a; transition:background .2s; }
+  .stats { display:flex; justify-content:space-around; font-size:.85rem; font-weight:700; margin:6px 0; }
+  .dash { display:block; width:100%; min-height:72px; margin-top:8px; font-family:inherit; font-size:1.2rem; font-weight:800; color:#fff; background:var(--acc); border:0; border-radius:14px; box-shadow:0 6px 0 #c25a17; touch-action:none; cursor:pointer; }
+  .dash.on { transform:translateY(4px); box-shadow:0 2px 0 #c25a17; background:#ff6a10; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:#ffcf3d; color:#222; border:0; border-radius:10px; padding:0 24px; min-height:48px; box-shadow:0 5px 0 #b08a1a; cursor:pointer; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(255,248,232,.98); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:14px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.35rem; margin-bottom:8px; }
+  .overlay p { line-height:1.65; font-size:.9rem; margin-bottom:5px; }
+  .overlay .btn { margin-top:12px; }
+  .cards { display:flex; flex-direction:column; gap:8px; width:100%; margin-top:8px; }
+  .tcard { font-family:inherit; display:flex; align-items:center; gap:10px; text-align:left; width:100%; min-height:60px; padding:8px 12px; background:var(--card); border:3px solid #e2b86b; border-radius:12px; color:var(--ink); cursor:pointer; }
+  .tcard .em { font-size:1.9rem; }
+  .tcard b { display:block; font-size:1rem; }
+  .tcard span { font-size:.85rem; }
+  .up { color:#1d8a3a; } .down { color:#c0392b; }
+  .rank { font-size:1rem; line-height:1.8; margin:6px 0; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🐹 そだててダッシュ!ハムスター杯</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <div class="hud"><span id="raceName">よせん</span><span id="pos">-い</span><span id="dist">0m</span></div>
+    <canvas id="cv" width="360" height="250"></canvas>
+    <div class="hint" id="hint"></div>
+    <div class="stam">⚡<div class="bar"><i id="stBar"></i></div><span id="stNum">0</span></div>
+    <div class="stats"><span>🏃 はやさ <b id="sSpd">1</b></span><span>🫁 スタミナ <b id="sSta">1</b></span><span>💤 かいふく <b id="sRec">1</b></span></div>
+    <button class="dash" id="dash" type="button">🔥 おしているあいだ ダッシュ</button>
+
+    <div class="overlay" id="intro">
+      <h2>🐹 ハムスター杯</h2>
+      <p>レースの前に <b>とっくんカード</b>を3回えらんで、ハムスターをそだてよう。</p>
+      <p>レースでは <b>ボタン(またはスペース/→キー)をおしているあいだダッシュ</b>!<br>はなすとスタミナが回復する。0にすると <b>へとへと</b>で2びょう のろのろに!</p>
+      <p>⛰ <b>のぼり坂</b>でダッシュしても あまり速くならず、スタミナをたくさん使う。<br>🛝 <b>くだり坂</b>のダッシュは ぐーんと速くてスタミナもほとんど使わない!</p>
+      <p>よせん・じゅんけっしょうは<b>2い以内</b>、けっしょうは<b>1い</b>で優勝!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="train">
+      <h2 id="tTitle">とっくん</h2>
+      <p id="tText"></p>
+      <div class="cards" id="cards"></div>
+    </div>
+    <div class="overlay hidden" id="after">
+      <h2 id="aTitle"></h2>
+      <div class="rank" id="aRank"></div>
+      <p id="aText"></p>
+      <button class="btn" id="nextBtn">つぎへ</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <div class="rank" id="rRank"></div>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
