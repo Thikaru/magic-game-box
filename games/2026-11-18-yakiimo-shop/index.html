@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ほくほく!やきいも屋さん — DAILY GAMES</title>
+<style>
+  :root { --ink:#fff3e0; --bg:#2b1a12; --wood:#5a3420; --line:#8a5a3a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; -webkit-user-select:none; user-select:none; }
+  .wrap { max-width:480px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted #ffb35a; min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.05rem; }
+  .stage { position:relative; min-height:520px; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.92rem; gap:6px; margin-bottom:4px; }
+  .goal { font-size:.85rem; margin-bottom:4px; display:flex; justify-content:space-between; }
+  .bar { height:8px; background:#4a2c1c; border-radius:4px; overflow:hidden; margin-bottom:8px; }
+  .bar i { display:block; height:100%; width:0; background:#ffb35a; }
+  .sec { font-size:.8rem; opacity:.8; margin:4px 0; }
+  .row { display:grid; gap:6px; }
+  .cust { position:relative; font-family:inherit; color:var(--ink); background:#3d2518; border:2px solid var(--line); border-radius:10px; min-height:118px; padding:6px 4px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; cursor:pointer; }
+  .cust.empty { opacity:.35; cursor:default; }
+  .cust.target { border-color:#ffd24a; box-shadow:0 0 0 2px #ffd24a inset; }
+  .cust .face { font-size:2rem; line-height:1.1; }
+  .cust .bub { background:#fff3e0; color:#3a2210; border-radius:8px; font-size:.78rem; font-weight:700; padding:2px 6px; margin-top:3px; display:flex; align-items:center; gap:4px; white-space:nowrap; }
+  .chip { display:inline-block; width:14px; height:10px; border-radius:50%; }
+  .pat { width:90%; height:6px; background:#22140c; border-radius:3px; overflow:hidden; margin-top:6px; }
+  .pat i { display:block; height:100%; background:#7bd36a; }
+  .key { position:absolute; left:4px; top:2px; font-size:.7rem; opacity:.6; }
+  .vip { position:absolute; right:4px; top:2px; font-size:.9rem; }
+  .oven { background:#3a3a3a; border-radius:14px; padding:8px; border:3px solid #555; }
+  .slot { position:relative; font-family:inherit; color:var(--ink); background:#262626; border:2px solid #4a4a4a; border-radius:10px; min-height:132px; padding:6px 4px; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
+  .slot.sel { border-color:#ffd24a; box-shadow:0 0 12px #ffd24a; }
+  .slot .heat { font-size:.72rem; white-space:nowrap; }
+  .imo { width:62px; height:34px; border-radius:50% 45% 50% 45%; margin:8px 0 4px; position:relative; box-shadow:inset -4px -4px 0 rgba(0,0,0,.25); }
+  .imo.none { background:transparent !important; box-shadow:none; border:2px dashed #666; }
+  .steam { position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:.9rem; }
+  .lbl { font-size:.78rem; font-weight:700; min-height:1.2em; white-space:nowrap; }
+  .meter { position:relative; width:92%; height:9px; border-radius:4px; margin-top:4px; overflow:hidden; display:flex; }
+  .meter b { display:block; height:100%; }
+  .meter .mk { position:absolute; top:-2px; width:3px; height:13px; background:#fff; border-radius:1px; }
+  .msg { text-align:center; font-weight:700; min-height:1.5em; margin:8px 0 2px; font-size:.95rem; }
+  .legend { display:flex; justify-content:center; gap:10px; font-size:.75rem; flex-wrap:wrap; margin-top:4px; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:#ffb35a; color:#2b1a12; border:0; border-radius:10px; padding:0 20px; min-height:48px; box-shadow:0 5px 0 #a8651e; cursor:pointer; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(43,26,18,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.45rem; margin-bottom:10px; }
+  .overlay p { line-height:1.65; font-size:.9rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:14px; padding:0 36px; }
+  .ups { display:flex; flex-direction:column; gap:8px; width:100%; max-width:320px; margin-top:8px; }
+  .ups .btn { margin-top:0; padding:8px 12px; font-size:.92rem; line-height:1.35; text-align:left; }
+  .ups small { display:block; font-weight:400; font-size:.78rem; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🍠 ほくほく!やきいも屋さん</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <div class="hud"><span id="day">1日目</span><span id="time">⏱ 40</span><span id="rep">⭐⭐⭐</span></div>
+    <div class="goal"><span id="sales">売上 ¥0</span><span id="target">目標 ¥0</span></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="sec">🧑 お客さん(A / S / D)</div>
+    <div class="row" id="custRow" style="grid-template-columns:repeat(3,1fr)"></div>
+    <div class="msg" id="msg"></div>
+    <div class="sec">🔥 石やきがま(1〜4)</div>
+    <div class="oven"><div class="row" id="ovenRow"></div></div>
+    <div class="legend" id="legend"></div>
+
+    <div class="overlay" id="intro">
+      <h2>🍠 やきいも屋さん</h2>
+      <p>空いた<b>石やき穴</b>をタップでおいもを入れる(1本 ¥50)。</p>
+      <p>焼けたおいもをタップでえらび、<b>同じ焼きかげん</b>をほしがる<b>お客さん</b>をタップして売ろう!</p>
+      <p>🟡やわらか → 🟠ほくほく → 🟤こんがり → ⚫こげ<br>ゲージの<b>まん中</b>で出すほどチップがふえる。</p>
+      <p>⚠ 穴ごとに<b>火力がちがう</b>!強火はすぐ焼けるけど、すぐこげる。</p>
+      <p>待たせすぎると⭐ひょうばんが減る(0で閉店)。<br>3日間、毎日の売上目標をクリアしよう。1日ごとにお店をパワーアップ!</p>
+      <p style="font-size:.8rem;opacity:.8">キーボード: 1〜4で穴 / A・S・Dでお客さん / Escで選択解除</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="upOv">
+      <h2 id="upTitle"></h2>
+      <p id="upText"></p>
+      <div class="ups" id="ups"></div>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
