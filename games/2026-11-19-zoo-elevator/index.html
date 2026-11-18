@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ぎゅうぎゅう!どうぶつエレベーター — DAILY GAMES</title>
+<style>
+  :root { --ink:#2b2340; --bg:#fff4e0; --wall:#ffe2b0; --line:#e0a85a; --acc:#ff7a45; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; -webkit-user-select:none; user-select:none; }
+  .wrap { max-width:480px; margin:0 auto; padding:10px 12px 28px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted var(--acc); min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1rem; }
+  .stage { position:relative; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.95rem; margin-bottom:4px; gap:6px; }
+  .tbar { height:8px; background:#f1d3a3; border-radius:4px; overflow:hidden; margin-bottom:6px; }
+  .tbar i { display:block; height:100%; width:100%; background:var(--acc); }
+  .bld { position:relative; background:var(--wall); border:3px solid var(--line); border-radius:10px; overflow:hidden; touch-action:manipulation; }
+  .floor { display:flex; align-items:stretch; height:56px; border-bottom:2px solid var(--line); cursor:pointer; }
+  .floor:last-child { border-bottom:0; }
+  .floor.target { background:#ffd08a; }
+  .fl { width:40px; flex:none; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.95rem; background:#f7c27a; border-right:2px solid var(--line); }
+  .shaft { width:70px; flex:none; border-right:2px dashed var(--line); background:#f3d6a6; }
+  .queue { flex:1; display:flex; align-items:center; gap:4px; padding:0 6px; overflow:hidden; }
+  .p { position:relative; width:42px; height:46px; flex:none; text-align:center; font-size:1.55rem; line-height:30px; }
+  .p b { position:absolute; right:-2px; top:-1px; background:#3b6cff; color:#fff; font-size:.7rem; line-height:1; padding:2px 4px; border-radius:8px; }
+  .p s { position:absolute; left:-2px; top:-1px; background:#555; color:#fff; font-size:.6rem; line-height:1; padding:2px 3px; border-radius:6px; text-decoration:none; }
+  .p u { position:absolute; left:3px; right:3px; bottom:3px; height:5px; background:#ddd; border-radius:3px; overflow:hidden; }
+  .p u i { display:block; height:100%; background:#3cc46a; }
+  .p.angry { animation:shake .3s linear infinite; }
+  @keyframes shake { 50% { transform:translateX(2px); } }
+  .car { position:absolute; left:43px; width:66px; height:52px; background:#fffdf7; border:3px solid #6b5a8a; border-radius:6px; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; font-size:.95rem; line-height:1.1; pointer-events:none; transition:background .2s; }
+  .car.open { background:#d9ffe1; border-color:#2ea65a; }
+  .car.full { border-color:#e0453a; }
+  .fx { position:absolute; font-weight:800; pointer-events:none; animation:up 1s ease-out forwards; font-size:.95rem; }
+  @keyframes up { to { transform:translateY(-30px); opacity:0; } }
+  .panel { margin-top:8px; background:#fff; border:2px solid var(--line); border-radius:10px; padding:6px 8px; font-size:.88rem; }
+  .panel .row { display:flex; justify-content:space-between; align-items:center; gap:6px; font-weight:700; }
+  .wbar { height:10px; background:#eee; border-radius:5px; overflow:hidden; margin:4px 0; }
+  .wbar i { display:block; height:100%; width:0; background:#6b5a8a; }
+  .riders { min-height:32px; display:flex; flex-wrap:wrap; gap:4px; font-size:1.3rem; align-items:center; }
+  .riders span { position:relative; padding-right:10px; }
+  .riders b { position:absolute; right:-2px; top:0; font-size:.65rem; background:#3b6cff; color:#fff; border-radius:6px; padding:1px 3px; }
+  .msg { text-align:center; font-weight:700; min-height:1.4em; font-size:.9rem; margin-top:4px; color:#b0442a; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:var(--acc); color:#fff; border:0; border-radius:10px; padding:0 20px; min-height:48px; box-shadow:0 5px 0 #b8502a; cursor:pointer; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(255,244,224,.98); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:14px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.35rem; margin-bottom:8px; }
+  .overlay p { line-height:1.6; font-size:.88rem; margin-bottom:5px; }
+  .overlay table { font-size:.85rem; margin:4px auto 6px; border-collapse:collapse; }
+  .overlay td { padding:1px 8px; }
+  .overlay .btn { margin-top:10px; padding:0 36px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🛗 ぎゅうぎゅう!どうぶつエレベーター</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <div class="hud"><span id="time">⏱ 90</span><span id="lives">❤❤❤</span><span id="score">0点</span></div>
+    <div class="tbar"><i id="tbar"></i></div>
+    <div class="bld" id="bld"></div>
+    <div class="panel">
+      <div class="row"><span>かごの中</span><span id="wtext">おもさ 0 / 6</span></div>
+      <div class="wbar"><i id="wbar"></i></div>
+      <div class="riders" id="riders"></div>
+    </div>
+    <div class="msg" id="msg"></div>
+
+    <div class="overlay" id="intro">
+      <h2>🛗 どうぶつエレベーター</h2>
+      <p>あなたはエレベーター係。<b>階をタップ</b>するとエレベーターがその階へ行くよ。</p>
+      <p>とまった階で、<b>青い数字の階</b>へ行きたい子がおりて、ならんでいる子が<b>先頭から順に</b>のる。</p>
+      <p>⚖️ おもさは <b>6</b> まで。先頭の子がのれないと、<b>うしろの子ものれない!</b></p>
+      <table>
+        <tr><td>🐭 1</td><td>🐰 1</td><td>🐶 2</td><td>🐻 3</td><td>🐘 4</td></tr>
+      </table>
+      <p>まちくたびれて💢帰られると ❤ が1つへる。重い子ほど高得点!</p>
+      <p>⌨️ 数字キー 1〜6 / ↑↓ でも操作できるよ。<b>90びょう</b>がんばろう!</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
