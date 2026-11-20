@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>かさねて!すかしカードパズル — DAILY GAMES</title>
+<style>
+  :root { --ink:#2b2340; --bg:#f4efe6; --panel:#fffaf2; --line:#d9cdb8; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; -webkit-user-select:none; user-select:none; }
+  .wrap { max-width:520px; margin:0 auto; padding:12px 12px 32px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted #8a7aa8; min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.02rem; }
+  .stage { position:relative; min-height:600px; }
+  .hud { display:flex; justify-content:space-between; font-weight:700; font-size:.9rem; margin-bottom:6px; gap:6px; flex-wrap:wrap; }
+  .timebar { height:10px; border-radius:6px; background:#e4dccd; overflow:hidden; margin-bottom:10px; }
+  .timebar div { height:100%; background:linear-gradient(90deg,#4bb37a,#9ad15c); width:100%; transition:width .2s linear; }
+  .timebar.low div { background:linear-gradient(90deg,#e0473a,#f08a4b); }
+  .boards { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .bwrap { background:var(--panel); border:2px solid var(--line); border-radius:12px; padding:8px; text-align:center; }
+  .bwrap h3 { font-size:.82rem; margin-bottom:6px; }
+  .grid { display:grid; gap:3px; width:100%; aspect-ratio:1/1; }
+  .cell { border-radius:4px; }
+  .grid .cell.e { background:#fff; outline:1px dashed #cbbfa8; outline-offset:-1px; }
+  .card .cell.e, .stackb .cell.e { background-color:#f3efe8; background-image:linear-gradient(45deg,#e2dbcf 25%,transparent 25%,transparent 75%,#e2dbcf 75%),linear-gradient(45deg,#e2dbcf 25%,transparent 25%,transparent 75%,#e2dbcf 75%); background-size:8px 8px; background-position:0 0,4px 4px; outline:none; }
+  .order { min-height:1.5em; font-size:.8rem; margin-top:6px; word-break:break-all; }
+  .bwrap.ok { border-color:#4bb37a; box-shadow:0 0 0 3px #bfe8cf; }
+  .info { text-align:center; font-weight:700; min-height:2.6em; font-size:.9rem; line-height:1.35; margin:8px 0; }
+  .hand { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .card { background:var(--panel); border:2px solid var(--line); border-radius:12px; padding:6px; display:flex; flex-direction:column; gap:5px; align-items:stretch; }
+  .card .place { border:0; background:none; padding:0; cursor:pointer; display:block; border-radius:8px; font-family:inherit; color:inherit; }
+  .card .grid { gap:2px; }
+  .card .lbl { font-size:.72rem; font-weight:700; text-align:center; margin-top:3px; }
+  .card.used { opacity:.28; }
+  .card.used .place, .card.used .rot { pointer-events:none; }
+  .card.hint { border-color:#ffb400; box-shadow:0 0 0 3px #ffe08a; animation:blink .5s ease-in-out 4 alternate; }
+  @keyframes blink { from { transform:scale(1); } to { transform:scale(1.05); } }
+  .rot { font-family:inherit; font-size:.85rem; font-weight:700; min-height:44px; border:0; border-radius:8px; background:#e7defa; color:var(--ink); cursor:pointer; }
+  .rot:active { background:#d4c6f3; }
+  .tools { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:12px; }
+  .tool { font-family:inherit; font-size:.85rem; font-weight:700; min-height:48px; border:0; border-radius:10px; background:#ece4d6; color:var(--ink); box-shadow:0 4px 0 #c9bca4; cursor:pointer; }
+  .tool:active { transform:translateY(3px); box-shadow:0 1px 0 #c9bca4; }
+  .tool.flash { background:#ffe08a; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:700; background:#ffd24a; color:#222; border:0; border-radius:10px; padding:0 30px; min-height:48px; box-shadow:0 5px 0 #b08a1a; cursor:pointer; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(250,246,239,.97); display:flex; flex-direction:column; align-items:center; justify-content:safe center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.35rem; margin-bottom:10px; }
+  .overlay p { line-height:1.6; font-size:.88rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:12px; }
+  .demo { display:flex; align-items:center; justify-content:center; gap:6px; margin:6px 0 10px; font-size:1.2rem; font-weight:800; }
+  .demo .grid { width:56px; }
+  .toast { position:absolute; left:50%; top:150px; transform:translateX(-50%); background:#2b2340; color:#fff; font-weight:800; font-size:1.3rem; padding:12px 22px; border-radius:14px; z-index:4; pointer-events:none; white-space:nowrap; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🃏 かさねて!すかしカードパズル</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <div class="hud"><span id="stageNo">ステージ 1 / 12</span><span id="time">⏱ 100</span><span id="score">0点</span></div>
+    <div class="timebar" id="timebar"><div id="timefill"></div></div>
+    <div class="boards">
+      <div class="bwrap"><h3>🎯 おてほん</h3><div class="grid" id="target"></div></div>
+      <div class="bwrap" id="stackWrap"><h3>🃏 いまのかさね</h3><div class="grid stackb" id="stack"></div><div class="order" id="order">(まだ なにも ない)</div></div>
+    </div>
+    <div class="info" id="info"></div>
+    <div class="hand" id="hand"></div>
+    <div class="tools">
+      <button class="tool" id="undoBtn">↩ ひとつもどす</button>
+      <button class="tool" id="resetBtn">🧹 ぜんぶもどす</button>
+      <button class="tool" id="hintBtn">💡 ヒント(-5秒)</button>
+    </div>
+    <div class="toast hidden" id="toast"></div>
+
+    <div class="overlay" id="intro">
+      <h2>🃏 かさねて!すかしカードパズル</h2>
+      <p>カードは<b>すきとおったセロハン</b>。色のついたマスだけが見えて、あとはすけるよ。</p>
+      <div class="demo" id="demo"></div>
+      <p><b>あとから置いたカードが上</b>にかさなる。かさねる<b>じゅんばん</b>を考えて、<b>おてほん</b>とぴったり同じ絵をつくろう!</p>
+      <p>カードをタップで一番上に置く。<b>つかわないカード</b>もまざっているよ(同じ色のニセモノに注意)。</p>
+      <p>ステージ5からは <b>↻ でカードを回転</b>させないと合わないことも。</p>
+      <p>⏱ 時間は100秒。クリアで+12秒。12ステージ全部クリアをめざせ!</p>
+      <p style="font-size:.8rem">⌨ 1〜6:カードを置く / Q W E R T Y:回転 / Z:もどす / X:ぜんぶもどす / H:ヒント</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <p id="rText"></p>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
