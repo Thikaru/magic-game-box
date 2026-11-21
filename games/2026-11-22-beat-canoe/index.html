@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>こいで!ビートカヌー — DAILY GAMES</title>
+<style>
+  :root { --ink:#13324a; --bg:#e3f3f7; --panel:#ffffff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
+  .wrap { max-width:440px; margin:0 auto; padding:8px 8px 24px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.9rem; border-bottom:2px dotted #4a8fb0; min-height:44px; display:inline-flex; align-items:center; white-space:nowrap; }
+  h1 { font-size:1.02rem; }
+  .stage { position:relative; }
+  .hud { display:flex; justify-content:space-between; font-weight:800; font-size:.88rem; margin-bottom:4px; gap:4px; }
+  .hud span { background:#fff; border-radius:8px; padding:3px 8px; }
+  canvas { display:block; width:100%; height:auto; aspect-ratio:360/500; border-radius:12px; background:#3d8a4a; touch-action:none; }
+  .pads { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .pad { font-family:inherit; font-size:1.15rem; font-weight:900; min-height:72px; border:0; border-radius:14px; color:#fff; cursor:pointer; touch-action:none; }
+  .pad.l { background:#2f7fd0; box-shadow:0 5px 0 #1d5491; }
+  .pad.r { background:#e0703a; box-shadow:0 5px 0 #a24a1f; }
+  .pad.on { transform:translateY(4px); box-shadow:0 1px 0 #333; filter:brightness(1.15); }
+  .pad small { display:block; font-size:.7rem; font-weight:700; opacity:.9; }
+  .btn { font-family:inherit; font-size:1.05rem; font-weight:800; background:#ffd24a; color:#222; border:0; border-radius:10px; padding:0 30px; min-height:48px; box-shadow:0 5px 0 #b08a1a; cursor:pointer; }
+  .overlay { position:absolute; inset:0; border-radius:12px; background:rgba(245,252,255,.97); display:flex; flex-direction:column; align-items:center; justify-content:safe center; text-align:center; padding:16px; overflow-y:auto; z-index:5; }
+  .overlay h2 { font-size:1.35rem; margin-bottom:10px; }
+  .overlay p { line-height:1.6; font-size:.88rem; margin-bottom:6px; }
+  .overlay .btn { margin-top:12px; }
+  .overlay table { margin:6px auto; border-collapse:collapse; font-size:.9rem; }
+  .overlay td { padding:2px 10px; text-align:left; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🛶 こいで!ビートカヌー</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+  <div class="stage">
+    <div class="hud"><span id="hRank">🏁 -い</span><span id="hCombo">🎵 0コンボ</span><span id="hTime">⏱ 0.0</span></div>
+    <canvas id="cv" width="360" height="500"></canvas>
+    <div class="pads">
+      <button class="pad l" id="padL">◀ こぐ<small>ひだりへ (← / A)</small></button>
+      <button class="pad r" id="padR">こぐ ▶<small>みぎへ (→ / D)</small></button>
+    </div>
+
+    <div class="overlay" id="intro">
+      <h2>🛶 こいで!ビートカヌー</h2>
+      <p>🔊 <b>音を出して</b>あそんでね。川くだりレースで、<b>🦦カワウソ</b>と<b>🦫ビーバー</b>に勝とう!</p>
+      <p><b>「ドン」のビートに合わせて</b> ◀ か ▶ をおすとオールをこぐ。<br>ぴったりなら <b style="color:#e0a000">PERFECT</b> で大きく進む。ずれるとブレーキ!</p>
+      <p>◀でこぐと<b>ひだり</b>へ、▶でこぐと<b>みぎ</b>へよる。<br>ビートごとに<b>どちらをこぐか</b>えらんで、🪨岩・🪵丸太をよけ、川のカーブについていこう。</p>
+      <p>🌊<b>急流</b>ではテンポアップ!ぴったりこぎつづけると、曲に楽器がふえてスピードもアップ。🚩ゲートをくぐるとダッシュ!</p>
+      <p style="font-size:.8rem">画面下のバーで、両がわから来る●が真ん中でかさなる瞬間がビート。<br>⌨ ← / A / F:ひだりへ  → / D / J:みぎへ(画面の左右タップでもOK)</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+    <div class="overlay hidden" id="result">
+      <h2 id="rTitle"></h2>
+      <div id="rText"></div>
+      <button class="btn" id="againBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
