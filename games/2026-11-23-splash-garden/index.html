@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>うって育てる!みずでっぽうガーデン — DAILY GAMES</title>
+<style>
+  :root { --sky:#1f3b2c; --leaf:#8be07a; --sun:#ffd23f; --water:#5ec8ff; --paper:#fffdf5; --ink:#1c1c28; --red:#ff6b6b; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { overflow-x:hidden; }
+  body { font-family:system-ui,-apple-system,"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,#183024,#0f1f17); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--water);
+    min-height:44px; display:inline-flex; align-items:center; }
+  h1 { color:var(--sun); font-size:1.15rem; }
+  .hud { display:flex; justify-content:space-between; gap:6px; font-weight:700; font-size:.9rem; margin-bottom:6px; }
+  .hud span { background:rgba(0,0,0,.3); border-radius:8px; padding:4px 8px; }
+  .stage { position:relative; }
+  canvas { display:block; width:100%; height:auto; border:4px solid var(--leaf); border-radius:12px; background:#2c5a3c;
+    touch-action:none; user-select:none; -webkit-user-select:none; cursor:crosshair; }
+  .overlay { position:absolute; inset:4px; border-radius:8px; background:rgba(12,28,20,.94);
+    display:flex; flex-direction:column; align-items:center; text-align:center; padding:18px 16px; overflow-y:auto; }
+  .overlay h2 { color:var(--sun); font-size:1.35rem; margin:6px 0 12px; }
+  .overlay p { line-height:1.75; font-size:.9rem; margin-bottom:8px; }
+  .overlay .big { font-size:2.2rem; margin:4px 0; }
+  .btn { margin-top:12px; font-family:inherit; font-weight:700; font-size:1.1rem; background:var(--sun); color:var(--ink);
+    border:0; border-radius:10px; padding:0 36px; min-height:48px; box-shadow:0 5px 0 #b8912a; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b8912a; }
+  .hidden { display:none !important; }
+  .rules { text-align:left; background:rgba(255,255,255,.06); border-radius:10px; padding:10px 12px; }
+  .zone { display:inline-block; padding:0 5px; border-radius:4px; color:var(--ink); font-weight:700; }
+  .tip { font-size:.8rem; opacity:.8; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>💧 みずでっぽうガーデン</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span id="hudTime">⏱ 90</span>
+    <span id="hudTank">💧 10</span>
+    <span id="hudScore">🌻 0</span>
+  </div>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="560"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>うって育てる!<br>みずでっぽうガーデン</h2>
+      <div class="big">🔫💧🐛 → 🌱🌿🌷🌻</div>
+      <div class="rules">
+        <p>🐛🦗🪲 虫が花だんの花をねらってやってくる!<br>
+          <b>タップした場所に水てっぽう</b>をうって、虫をやっつけよう。</p>
+        <p>でもその水は<b>花の水やり</b>にもなる!<br>
+          花のちかくでうつと、花にも水がかかるよ。</p>
+        <p>花のメーターを
+          <span class="zone" style="background:#8be07a">ちょうどいい</span>にたもつと
+          🌱→🌿→🌷→🌻 と育って<b>しゅうかく!</b><br>
+          <span class="zone" style="background:#e0b070">からから</span>だと育たず、
+          <span class="zone" style="background:#ff6b6b">あふれる</span>と根ぐされでかれちゃう。</p>
+        <p>💡 虫は<b>花からとおいうち</b>にうつのがコツ。上の方でたおすと「とおあて」ボーナス!<br>
+          ☀️かんかん照りの間は水がすぐかわくよ。</p>
+        <p>⏱ 90びょうで、たくさんしゅうかくしよう。</p>
+      </div>
+      <p class="tip">👆 タップ / 🖱 クリック でうつ<br>⌨ ←↑→↓ でねらい・スペースでうつ・1〜5キーでその花に水やり</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <div class="big" id="resultRank"></div>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
