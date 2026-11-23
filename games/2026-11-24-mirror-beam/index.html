@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>てらせ!かがみ光線パズル — DAILY GAMES</title>
+<style>
+  :root { --bg:#14122a; --beam:#ffe45c; --gem:#6ee7ff; --paper:#fdfbff; --ink:#1c1c28; --red:#ff6b6b; --accent:#b99cff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { overflow-x:hidden; background:#0c0b1c; }
+  body { font-family:system-ui,-apple-system,"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,#1d1a3c,#0c0b1c); color:var(--paper); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  header a { color:var(--paper); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--beam);
+    min-height:44px; display:inline-flex; align-items:center; }
+  h1 { color:var(--beam); font-size:1.15rem; }
+  .hud { display:flex; justify-content:space-between; gap:4px; font-weight:700; font-size:.85rem; margin-bottom:6px; flex-wrap:wrap; }
+  .hud span { background:rgba(255,255,255,.08); border-radius:8px; padding:4px 7px; }
+  .stage { display:grid; }
+  .stage > * { grid-area:1 / 1; align-self:start; }
+  canvas { display:block; width:100%; height:auto; border:4px solid var(--accent); border-radius:12px; background:var(--bg);
+    touch-action:none; user-select:none; -webkit-user-select:none; cursor:pointer; }
+  .overlay { margin:4px; min-height:calc(100% - 8px); align-self:stretch; z-index:5; border-radius:8px; background:rgba(14,12,32,.97);
+    display:flex; flex-direction:column; align-items:center; text-align:center; padding:16px 14px 20px; }
+  .overlay h2 { color:var(--beam); font-size:1.3rem; margin:4px 0 10px; }
+  .overlay p { line-height:1.7; font-size:.88rem; margin-bottom:7px; }
+  .overlay .big { font-size:2rem; margin:4px 0; }
+  .btn { margin-top:10px; font-family:inherit; font-weight:700; font-size:1.1rem; background:var(--beam); color:var(--ink);
+    border:0; border-radius:10px; padding:0 36px; min-height:48px; box-shadow:0 5px 0 #b89a20; cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 #b89a20; }
+  .hidden { display:none !important; }
+  .rules { text-align:left; background:rgba(255,255,255,.06); border-radius:10px; padding:10px 12px; }
+  .tip { font-size:.8rem; opacity:.8; margin-top:6px; }
+  .msg { min-height:1.6em; text-align:center; font-weight:700; margin-top:8px; font-size:.95rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔦 かがみ光線パズル</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span id="hudStage">ステージ 1/10</span>
+    <span id="hudTime">⏱ 120</span>
+    <span id="hudLife">❤️❤️❤️</span>
+    <span id="hudScore">⭐ 0</span>
+  </div>
+
+  <div class="stage">
+    <canvas id="game" width="360" height="360"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>てらせ!<br>かがみ光線パズル</h2>
+      <div class="big">🔦 ━━ ╱ ━━ 💎</div>
+      <div class="rules">
+        <p>🔦ライトから出た光は、<b>かがみ</b>(╱ ╲)に当たると直角にまがるよ。<br>
+          かがみを<b>タップすると向きが入れかわる</b>。光で <b>💎を全部てらせば</b>クリア!</p>
+        <p>⚠️ でも光は<b>いつもつけっぱなし</b>。かがみを回したしゅんかんに光の道がかわって、
+          <b>💣を照らすとドカン!</b>(❤️が1へって、かがみは元にもどる)</p>
+        <p>💡 <b>光が当たっていないかがみ</b>は、いつ回しても安全。
+          光が当たっているかがみ(黄色いわく)は、まがった先をよく見てから回そう。</p>
+        <p>🔒のかがみは回せない。🧱は光をさえぎる。<br>
+          さいしょうの手数でクリアすると「ぴったり!」ボーナス。</p>
+        <p>⏱ 120びょう(クリアごとに+10びょう)で10ステージをめざそう。</p>
+      </div>
+      <p class="tip">👆 タップ / 🖱 クリック でかがみを回す<br>⌨ ←↑→↓ でえらぶ・スペース / Enter で回す</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <div class="big" id="resultRank"></div>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
