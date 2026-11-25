@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>どれだっけ?フルーツシャッフルカップ — DAILY GAMES</title>
+<style>
+  :root { --bg1:#fff1d6; --bg2:#ffd9b0; --ink:#3a2212; --accent:#e4572e; --dark:#a83a17; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { overflow-x:hidden; }
+  body { font-family:system-ui,-apple-system,"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:14px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent);
+    min-height:44px; display:inline-flex; align-items:center; }
+  h1 { color:var(--dark); font-size:1.15rem; }
+  .hud { display:flex; justify-content:space-between; gap:4px; font-weight:700; font-size:.85rem; margin-bottom:6px; flex-wrap:wrap; }
+  .hud span { background:rgba(255,255,255,.75); border-radius:8px; padding:4px 7px; }
+  .stage { display:grid; }
+  .stage > * { grid-area:1 / 1; align-self:start; }
+  canvas { display:block; width:100%; height:auto; border:4px solid #fff; border-radius:12px; background:#7a4a2a;
+    touch-action:manipulation; user-select:none; -webkit-user-select:none; cursor:pointer; box-shadow:0 4px 14px rgba(80,30,0,.25); }
+  .overlay { margin:4px; min-height:calc(100% - 8px); align-self:stretch; z-index:5; border-radius:8px; background:rgba(255,255,255,.97);
+    display:flex; flex-direction:column; align-items:center; text-align:center; padding:16px 14px 20px; }
+  .overlay h2 { color:var(--dark); font-size:1.3rem; margin:4px 0 10px; }
+  .overlay p { line-height:1.7; font-size:.88rem; margin-bottom:7px; }
+  .overlay .big { font-size:2rem; margin:4px 0; }
+  .btn { margin-top:10px; font-family:inherit; font-weight:700; font-size:1.1rem; background:var(--accent); color:#fff;
+    border:0; border-radius:10px; padding:0 36px; min-height:48px; box-shadow:0 5px 0 var(--dark); cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 var(--dark); }
+  .hidden { display:none !important; }
+  .rules { text-align:left; background:#fff4e6; border-radius:10px; padding:10px 12px; }
+  .tip { font-size:.8rem; opacity:.8; margin-top:6px; }
+  .msg { min-height:1.6em; text-align:center; font-weight:700; margin-top:8px; font-size:.95rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🥤 シャッフルカップ</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span id="hudRound">ラウンド 1/10</span>
+    <span id="hudLife">❤️❤️❤️</span>
+    <span id="hudCombo">🔥 0</span>
+    <span id="hudScore">⭐ 0</span>
+  </div>
+
+  <div class="stage">
+    <canvas id="game" width="480" height="420"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>どれだっけ?<br>フルーツシャッフルカップ</h2>
+      <div class="big">🍓 🍋 🍇 → 🥤🥤🥤</div>
+      <div class="rules">
+        <p>👀 カップの下にフルーツがかくれるよ。カップが<b>シャッフル</b>されるので、目でおいかけよう。</p>
+        <p>❓ でも<b>「どのフルーツをさがすか」はシャッフルのあとで発表</b>!フルーツが2こ・3こになったら、<b>ぜんぶ</b>おいかけないといけないよ。</p>
+        <p>🌀 とちゅうから、近づいて<b>もどるだけのフェイント</b>や、<b>2組どうじのいれかえ</b>も登場。だまされないで!</p>
+        <p>👆 発表されたら<b>6びょう以内</b>にカップをタップ。早いほど高得点、れんぞく正解でボーナス。まちがえると❤️がへる(3つ)。10ラウンドでクリア!</p>
+      </div>
+      <p class="tip">👆 カップをタップ/クリック<br>⌨ 1〜5キーで左からえらぶ / スペース・Enterでスタート</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <div class="big" id="resultRank"></div>
+      <p id="resultText"></p>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
