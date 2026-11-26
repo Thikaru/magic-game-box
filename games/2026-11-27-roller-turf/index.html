@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>かこんでぬれ!ローラー陣取り — DAILY GAMES</title>
+<style>
+  :root { --bg1:#e9f6ff; --bg2:#ffe3ef; --ink:#2b2340; --accent:#ff4f8b; --dark:#b8255a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { overflow-x:hidden; }
+  body { font-family:system-ui,-apple-system,"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:12px 12px 40px; }
+  header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+  header a { color:var(--ink); text-decoration:none; font-size:.85rem; border-bottom:2px dotted var(--accent);
+    min-height:44px; display:inline-flex; align-items:center; }
+  h1 { color:var(--dark); font-size:1.1rem; }
+  .hud { display:flex; justify-content:space-between; gap:4px; font-weight:700; font-size:.85rem; margin-bottom:5px; flex-wrap:wrap; }
+  .hud span { background:rgba(255,255,255,.8); border-radius:8px; padding:4px 7px; }
+  .bar { display:flex; height:14px; border-radius:7px; overflow:hidden; background:#ddd; margin-bottom:6px; border:2px solid #fff; }
+  .bar div { height:100%; transition:width .2s; }
+  .stage { display:grid; }
+  .stage > * { grid-area:1 / 1; align-self:start; }
+  canvas { display:block; width:100%; height:auto; border:4px solid #fff; border-radius:12px; background:#f4efe4;
+    touch-action:none; user-select:none; -webkit-user-select:none; box-shadow:0 4px 14px rgba(60,20,80,.2); }
+  .overlay { margin:4px; min-height:calc(100% - 8px); align-self:stretch; z-index:5; border-radius:8px; background:rgba(255,255,255,.97);
+    display:flex; flex-direction:column; align-items:center; text-align:center; padding:14px 12px 18px; overflow:auto; }
+  .overlay h2 { color:var(--dark); font-size:1.25rem; margin:4px 0 8px; }
+  .overlay p { line-height:1.65; font-size:.86rem; margin-bottom:6px; }
+  .overlay .big { font-size:1.8rem; margin:4px 0; }
+  .btn { margin-top:10px; font-family:inherit; font-weight:700; font-size:1.1rem; background:var(--accent); color:#fff;
+    border:0; border-radius:10px; padding:0 32px; min-height:48px; box-shadow:0 5px 0 var(--dark); cursor:pointer; }
+  .btn:active { transform:translateY(2px); box-shadow:0 3px 0 var(--dark); }
+  .hidden { display:none !important; }
+  .rules { text-align:left; background:#fff0f6; border-radius:10px; padding:8px 11px; }
+  .tip { font-size:.78rem; opacity:.8; margin-top:4px; }
+  .msg { min-height:1.6em; text-align:center; font-weight:700; margin-top:6px; font-size:.95rem; }
+  .rank { text-align:left; font-size:.95rem; line-height:1.8; margin:4px 0; }
+  .ctrlrow { display:flex; justify-content:center; margin-top:6px; }
+  .toggle { font-family:inherit; font-size:.85rem; font-weight:700; min-height:44px; padding:0 14px; border-radius:10px;
+    border:2px solid var(--accent); background:#fff; color:var(--dark); cursor:pointer; }
+  .pad { display:grid; grid-template-columns:repeat(3,64px); grid-template-rows:repeat(3,58px); gap:6px; justify-content:center; margin-top:8px; }
+  .pad button { font-size:1.5rem; border:0; border-radius:12px; background:#fff; box-shadow:0 4px 0 #c9b6d6; color:var(--ink);
+    touch-action:none; user-select:none; -webkit-user-select:none; cursor:pointer; }
+  .pad button:active { transform:translateY(2px); box-shadow:0 2px 0 #c9b6d6; background:#ffe0ec; }
+  .pad .up { grid-column:2; grid-row:1; } .pad .left { grid-column:1; grid-row:2; }
+  .pad .right { grid-column:3; grid-row:2; } .pad .down { grid-column:2; grid-row:3; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🖌️ ローラー陣取り</h1>
+    <a href="../../index.html">← トップへ</a>
+  </header>
+
+  <div class="hud">
+    <span id="hudStage">ステージ 1/3</span>
+    <span id="hudTime">⏱ 45</span>
+    <span id="hudMe">🐰 0%</span>
+    <span id="hudScore">⭐ 0</span>
+  </div>
+  <div class="bar" id="bar"></div>
+
+  <div class="stage">
+    <canvas id="game" width="420" height="540"></canvas>
+
+    <div class="overlay" id="intro">
+      <h2>かこんでぬれ!<br>ローラー陣取り</h2>
+      <div class="big">🐰🖌️⭕</div>
+      <div class="rules">
+        <p>🖌️ 通ったマスがきみの色(ピンク)に。相手の色もぬりかえせる!</p>
+        <p>⭕ 自分の色で<b>輪っか</b>をつくると<b>中身がまるごと自分の色</b>に。画面のはしは壁にならず、<b>40マスより広い輪っかはうまらない</b>よ。</p>
+        <p>💫 かこまれたローラーは目がまわって少し止まる。相手の輪っかは<b>つながる前に切ろう</b>。🪣バケツでまわりをドバッ!</p>
+        <p>🏆 45びょうで<b>いちばん広くぬれば</b>クリア。相手は1ぴき→2ひき→3びきにふえるよ。</p>
+      </div>
+      <p class="tip">📱 画面をスワイプ/タップした方向へ・🎮ボタンでも操作<br>⌨ 矢印キー・WASD で向きをかえる / スペース・Enterでスタート</p>
+      <button class="btn" id="startBtn">スタート</button>
+    </div>
+
+    <div class="overlay hidden" id="result">
+      <h2 id="resultTitle"></h2>
+      <div class="big" id="resultBig"></div>
+      <div class="rank" id="resultRank"></div>
+      <p id="resultText"></p>
+      <button class="btn" id="nextBtn">つぎのステージへ</button>
+      <button class="btn" id="retryBtn">もういちど</button>
+    </div>
+  </div>
+  <div class="msg" id="msg"></div>
+
+  <div class="pad hidden" id="pad">
+    <button class="up" data-dir="0" aria-label="うえ">▲</button>
+    <button class="left" data-dir="3" aria-label="ひだり">◀</button>
+    <button class="right" data-dir="1" aria-label="みぎ">▶</button>
+    <button class="down" data-dir="2" aria-label="した">▼</button>
+  </div>
+  <div class="ctrlrow"><button class="toggle" id="toggleBtn">🎮 コントローラ</button></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
